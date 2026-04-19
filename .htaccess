@@ -1,3 +1,19 @@
+ServerSignature Off
+FileETag None
+
 RewriteEngine On
+
+RewriteCond %{HTTP_USER_AGENT} ^-?$ [OR]
+RewriteCond %{HTTP_USER_AGENT} (acunetix|binlar|casper|curl|java|libwww|nmap|perl|python|sqlmap|wget|bot|spider|crawl) [NC]
+RewriteRule ^.* - [F,L]
+
+RewriteCond %{REQUEST_METHOD} ^(TRACE|TRACK|DEBUG) [NC]
+RewriteRule ^.* - [F,L]
+
+RewriteCond %{QUERY_STRING} (?:%3C|<)script(?:%3E|>) [NC,OR]
+RewriteCond %{QUERY_STRING} (?:union(?:%20|\s)+select) [NC,OR]
+RewriteCond %{QUERY_STRING} (?:base64_decode|eval\() [NC]
+RewriteRule ^.* - [F,L]
+
 RewriteCond %{REQUEST_URI} !^/public/
 RewriteRule ^(.*)$ public/$1 [L]
