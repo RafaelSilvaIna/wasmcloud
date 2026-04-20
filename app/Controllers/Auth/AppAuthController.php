@@ -1,6 +1,7 @@
 <?php
 namespace App\Controllers\Auth;
 
+use App\Repositories\AdminRepository;
 use App\Repositories\CoordinatorRepository;
 use App\Repositories\StudentRepository;
 use App\Services\Auth\TokenService;
@@ -16,29 +17,43 @@ class AppAuthController {
     public function login() {
         $input = json_decode(file_get_contents('php://input'), true);
 
-        if (empty($input['email']) || empty($input['password']) || empty($input['role'])) {
+        if (empty($input['email']) || empty($input['password'])) {
             self::abort(400, 'Credenciais incompletas.');
         }
 
         $email = SecurityVault::sanitize($input['email']);
-        $user = null;
+        
+        $adminRepo = new AdminRepository();
+        $coordRepo = new CoordinatorRepository();
+        $studentRepo = new StudentRepository();
 
-        if ($input['role'] === 'coordinator') {
-            $user = (new CoordinatorRepository())->findByEmail($email);
-        } elseif ($input['role'] === 'student') {
-            $user = (new StudentRepository())->findByEmail($email);
+        $user = $adminRepo->findByEmail($email);
+        $role = 'master';
+
+        if (!$user) {
+            $user = $coordRepo->findByEmail($email);
+            $role = 'coordinator';
+        }
+
+        if (!$user) {
+            $user = $studentRepo->findByEmail($email);
+            $role = 'student';
         }
 
         if (!$user || !password_verify($input['password'], $user['password_hash'])) {
-            AuditLogger::log(0, 'unknown', "Falha de login para {$email} ({$input['role']})", 'failure');
+            AuditLogger::log(0, 'unknown', "Falha de login para {$email}", 'failure');
             self::abort(401, 'Credenciais invalidas.');
         }
 
-        $token = TokenService::generateTemporaryToken($user['id'], $user['role']);
-        AuditLogger::log($user['id'], $user['role'], 'Login realizado com sucesso');
+        if ($role === 'master') {
+            $adminRepo->updateLastLogin($user['id']);
+        }
+
+        $token = TokenService::generateTemporaryToken($user['id'], $role);
+        AuditLogger::log($user['id'], $role, 'Login realizado com sucesso');
 
         http_response_code(200);
-        echo json_encode(['status' => 'success', 'token' => $token]);
+        echo json_encode(['status' => 'success', 'token' => $token, 'role' => $role]);
         exit;
     }
 

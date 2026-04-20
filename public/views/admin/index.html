@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Master Shell</title>
+    <link rel="stylesheet" href="../../assets/css/admin/theme.css">
+    <script src="../../assets/js/bootstrapper.js"></script>
+</head>
+
+<body>
+
+    <div id="sidebar-container"></div>
+    <main id="main-content" class="win95-window">
+        <div class="win95-titlebar">C:\SYSTEM\MASTER.EXE</div>
+        <div id="app-view" class="win95-content">Carregando kernel...</div>
+    </main>
+
+    <script src="../../assets/js/components/AdminSidebar.js"></script>
+    <script>
+        SecurityBootstrapper.enforceRole('master');
+
+        class AppRouter {
+            static async load(viewName) {
+                try {
+                    const response = await fetch(`${viewName}.html`);
+                    if (!response.ok) throw new Error('Modulo inacessivel');
+                    const html = await response.text();
+                    document.getElementById('app-view').innerHTML = html;
+                } catch (error) {
+                    document.getElementById('app-view').innerHTML = `<h3 style="color: red;">ERRO FATAL: Modulo protegido ou em desenvolvimento.</h3>`;
+                }
+            }
+        }
+
+        document.getElementById('sidebar-container').innerHTML = AdminSidebar.render();
+        AppRouter.load('dashboard');
+    </script>
+
+</body>
+
+</html>
