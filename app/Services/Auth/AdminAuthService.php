@@ -22,6 +22,6 @@ class AdminAuthService {
 
         $this->repository->updateLastLogin($admin['id']);
         
-        return TokenService::generateTemporaryToken($admin['id']);
+        return TokenService::generateTemporaryToken($admin['id'], $admin['role']);
     }
 }
