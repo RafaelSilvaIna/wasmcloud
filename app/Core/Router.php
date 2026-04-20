@@ -17,10 +17,11 @@ class Router {
         $parsedUrl = parse_url($uri);
         $path = $parsedUrl['path'];
 
-        $basePath = '/public';
-        if (strpos($path, $basePath) === 0) {
-            $path = substr($path, strlen($basePath));
+        $apiPos = strpos($path, '/api');
+        if ($apiPos !== false) {
+            $path = substr($path, $apiPos);
         }
+
         if ($path === '' || $path === false) {
             $path = '/';
         }

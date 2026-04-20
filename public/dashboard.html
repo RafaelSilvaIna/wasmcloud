@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - School System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 20px;
+            display: none;
+        }
+
+        .header {
+            background: #0056b3;
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: 8px;
+        }
+
+        .logout-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .logout-btn:hover {
+            background: #c82333;
+        }
+
+        .content {
+            margin-top: 20px;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="header">
+        <h2 style="margin: 0;">Painel de Controle</h2>
+        <div>
+            <span id="userName" style="margin-right: 15px; font-weight: bold;"></span>
+            <button class="logout-btn" onclick="logout()">Sair</button>
+        </div>
+    </div>
+
+    <div class="content">
+        <h3>Visão Geral do Sistema</h3>
+        <p>Autenticação JWT bem-sucedida. Bem-vindo à área segura.</p>
+        <p><strong>Nível de Acesso:</strong> <span id="userRole"></span></p>
+    </div>
+
+    <script>
+        async function validateSession() {
+            const token = localStorage.getItem('admin_token');
+
+            if (!token) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            try {
+                const response = await fetch('/customizable-school-system/public/api/admin/validate', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.status === 'success') {
+                    document.body.style.display = 'block';
+                    document.getElementById('userName').innerText = `${data.data.first_name} ${data.data.last_name}`;
+                    document.getElementById('userRole').innerText = data.data.role.toUpperCase();
+                } else {
+                    logout();
+                }
+            } catch (error) {
+                logout();
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('admin_token');
+            window.location.href = 'login.html';
+        }
+
+        window.onload = validateSession;
+    </script>
+
+</body>
+
+</html>
