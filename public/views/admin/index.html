@@ -4,77 +4,70 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Master Control Panel</title>
-    <link rel="stylesheet" href="../../assets/css/admin/theme.css">
-    <script src="../../assets/js/bootstrapper.js"></script>
+    <title>Master Shell</title>
+    <link rel="stylesheet" href="assets/css/admin/theme.css">
+    <script src="assets/js/bootstrapper.js"></script>
 </head>
 
 <body>
 
     <div id="sidebar-container"></div>
-
-    <main id="main-content" class="win95-window">
-        <div class="win95-titlebar">
-            <span>System_Explorer.exe</span>
+    <main id="main-content">
+        <div class="win95-window" style="height: 100%;">
+            <div class="win95-titlebar"><span>System_Explorer.exe</span></div>
+            <div id="app-view" class="win95-content">A carregar kernel...</div>
         </div>
-        <div id="app-view" class="win95-content"></div>
     </main>
 
     <div id="initWarningModal" class="win95-modal-overlay">
-        <div class="win95-window win95-modal">
-            <div class="win95-titlebar">Seguranca do Sistema</div>
+        <div class="win95-window" style="width: 400px;">
+            <div class="win95-titlebar">Segurança</div>
             <div class="win95-content" style="background: #c0c0c0;">
-                <p style="margin-top:0"><strong>Acesso Inicial Detectado</strong></p>
-                <p>O banco de dados indica que as diretrizes da LGPD e as permissoes globais ainda nao foram revisadas.
-                </p>
-                <p>E obrigatorio configurar o sistema antes de prosseguir com a gestao escolar.</p>
-                <div style="text-align: right; margin-top: 15px;">
-                    <button class="win95-button" style="font-weight: bold; width: 100px"
+                <p><strong>Configuração Inicial Pendente</strong></p>
+                <p>O sistema requer a definição das políticas LGPD antes do uso total.</p>
+                <div style="text-align: right; margin-top: 20px;">
+                    <button class="win95-button" style="width:100px; font-weight:bold"
                         onclick="closeInitModal()">Configurar</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <script src="../../assets/js/components/AdminSidebar.js"></script>
+    <script src="assets/js/components/AdminSidebar.js"></script>
     <script>
         SecurityBootstrapper.enforceRole('master');
 
         window.AppRouter = class {
             static async load(viewName) {
                 try {
-                    const response = await fetch(`${viewName}.html`);
+                    // Forçamos o caminho correto das views dentro de public
+                    const response = await fetch(`views/admin/${viewName}.html`);
                     if (!response.ok) throw new Error();
-
                     const html = await response.text();
-                    const temp = document.createElement('div');
-                    temp.innerHTML = html;
 
-                    document.querySelectorAll('.dynamic-script').forEach(s => s.remove());
-                    const scripts = temp.querySelectorAll('script');
+                    const appView = document.getElementById('app-view');
+                    appView.innerHTML = html;
 
-                    scripts.forEach(s => {
-                        const script = document.createElement('script');
-                        script.src = s.src;
-                        script.className = 'dynamic-script';
-                        document.body.appendChild(script);
+                    // Reinjeção de scripts dinâmicos para componentes
+                    appView.querySelectorAll('script').forEach(oldScript => {
+                        const newScript = document.createElement('script');
+                        newScript.src = oldScript.src;
+                        newScript.className = 'dynamic-script';
+                        document.body.appendChild(newScript);
                     });
-
-                    document.getElementById('app-view').innerHTML = temp.innerHTML;
                 } catch (e) {
-                    document.getElementById('app-view').innerHTML = 'Erro ao carregar componente.';
+                    document.getElementById('app-view').innerHTML = '<h3 style="color:red">ERRO: Falha ao injetar componente.</h3>';
                 }
             }
         };
 
-        async function verifyDatabaseState() {
-            const token = localStorage.getItem('sys_token');
+        async function checkSetup() {
             try {
-                const r = await fetch('../../api/master/config/get', {
+                const token = localStorage.getItem('sys_token');
+                const r = await fetch('api/master/config/get', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 const res = await r.json();
-
                 if (res.status === 'success' && res.data.status === 'pending_setup') {
                     document.getElementById('initWarningModal').style.display = 'flex';
                 }
@@ -88,9 +81,8 @@
 
         document.getElementById('sidebar-container').innerHTML = window.AdminSidebar.render();
         window.AppRouter.load('dashboard');
-        verifyDatabaseState();
+        checkSetup();
     </script>
-
 </body>
 
 </html>
