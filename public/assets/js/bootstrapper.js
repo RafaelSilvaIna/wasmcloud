@@ -1,42 +1,49 @@
-class SecurityBootstrapper {
-    static init() {
+window.SecurityBootstrapper = class {
+    static async init() {
         const token = localStorage.getItem('sys_token');
-        if (!token) {
-            this.abort();
-        }
+        if (!token) return this.abort();
 
         const payload = this.decodeJWT(token);
-        if (!payload || payload.exp < (Date.now() / 1000)) {
-            this.abort();
-        }
+        if (!payload || payload.exp < (Date.now() / 1000)) return this.abort();
 
         window.SysUser = payload;
+
+        const path = window.location.pathname;
+        if (!path.includes('/auth')) {
+            await this.verifyServerIntegrity(token);
+        }
+    }
+
+    static async verifyServerIntegrity(token) {
+        try {
+            const response = await fetch('/api/auth/verify', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!response.ok) {
+                this.abort();
+            }
+        } catch (e) {
+            this.abort();
+        }
     }
 
     static decodeJWT(token) {
         try {
             const base64Url = token.split('.')[1];
             const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-            const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-            }).join(''));
-            return JSON.parse(jsonPayload);
-        } catch (e) {
-            return null;
-        }
+            return JSON.parse(window.atob(base64));
+        } catch (e) { return null; }
     }
 
     static abort() {
         localStorage.removeItem('sys_token');
-        window.location.replace('login.html');
-        throw new Error('Acesso bloqueado pelo Bootstrapper.');
+        window.location.replace('/auth');
+        throw new Error('Acesso revogado ou interceptado.');
     }
 
     static enforceRole(requiredRole) {
-        if (!window.SysUser || window.SysUser.role !== requiredRole) {
-            this.abort();
-        }
+        if (!window.SysUser || window.SysUser.role !== requiredRole) this.abort();
     }
-}
+};
 
-SecurityBootstrapper.init();
+window.SecurityBootstrapper.init();

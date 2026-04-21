@@ -16,6 +16,8 @@ use App\Middlewares\MasterShieldMiddleware;
 $router = new Router();
 
 $router->add('POST', '/api/auth/login', [AppAuthController::class, 'login']);
+$router->add('GET', '/api/auth/verify', [AppAuthController::class, 'verifyTokenStatus']);
+
 $router->add('GET', '/api/admin/validate', [AdminAuthController::class, 'validateSession'], [AdminAuthMiddleware::class]);
 
 $router->add('GET', '/api/branding/info', [ImageDeliveryController::class, 'getBrandingInfo']);
@@ -25,6 +27,7 @@ $router->add('GET', '/api/img/icon', [ImageDeliveryController::class, 'serveIcon
 
 $router->add('GET', '/api/public/theme', [ThemeDeliveryController::class, 'getThemeColors']);
 $router->add('GET', '/api/profile-img', [ProfileImageDeliveryController::class, 'serve']);
+$router->add('GET', '/api/profile-img/.*', [ProfileImageDeliveryController::class, 'serve']);
 
 $router->add('POST', '/api/master/accounts/create', [AccountManagerController::class, 'create'], [MasterShieldMiddleware::class]);
 $router->add('GET', '/api/master/accounts/list', [AccountManagerController::class, 'listAll'], [MasterShieldMiddleware::class]);
