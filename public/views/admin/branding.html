@@ -1,0 +1,55 @@
+<h2 style="margin-top: 0;">Identidade Visual da Instituição</h2>
+<p>Personalize os elementos visuais e textuais do sistema escolar. Estas alterações afetam o portal do aluno, professor
+    e administração.</p>
+
+<div id="brandingAlert" class="status-alert"></div>
+
+<form id="brandingForm" enctype="multipart/form-data">
+    <div class="branding-grid">
+        <div class="win95-window">
+            <div class="win95-titlebar">Informações Gerais</div>
+            <div class="win95-content" style="background: #c0c0c0;">
+                <div class="form-section">
+                    <div class="input-group">
+                        <label for="institution_name">Nome Completo da Instituição</label>
+                        <input type="text" id="institution_name" name="institution_name" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="abbreviation">Nome Abreviado (Sigla)</label>
+                        <input type="text" id="abbreviation" name="abbreviation" maxlength="50">
+                    </div>
+                    <div class="input-group">
+                        <label for="slogan">Slogan Institucional</label>
+                        <input type="text" id="slogan" name="slogan">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="win95-window">
+            <div class="win95-titlebar">Arquivos de Mídia</div>
+            <div class="win95-content" style="background: #c0c0c0;">
+                <div class="form-section">
+                    <div class="input-group">
+                        <label>Logo Principal</label>
+                        <input type="file" id="logo" name="logo" accept="image/*">
+                        <div class="preview-box"><img id="logo_preview" src="" alt="Logo"></div>
+                    </div>
+                    <div class="input-group">
+                        <label>Favicon</label>
+                        <input type="file" id="favicon" name="favicon" accept="image/x-icon,image/png">
+                        <div class="preview-box" style="min-height: 50px;"><img id="favicon_preview" src=""
+                                alt="Favicon" style="height: 32px;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div style="margin-top: 20px; text-align: right;">
+        <button type="submit" class="win95-button"
+            style="display: inline-block; width: 200px; font-weight: bold;">GRAVAR ALTERAÇÕES</button>
+    </div>
+</form>
+
+<script src="../../assets/js/components/AdminBranding.js"></script>

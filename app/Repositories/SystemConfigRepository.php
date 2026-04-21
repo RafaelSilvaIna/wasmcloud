@@ -18,7 +18,10 @@ class SystemConfigRepository {
         
         $mapped = [];
         foreach ($configs as $config) {
-            $mapped[$config['config_key']] = ($config['config_value'] === 'true');
+            $value = $config['config_value'];
+            if ($value === 'true') $mapped[$config['config_key']] = true;
+            elseif ($value === 'false') $mapped[$config['config_key']] = false;
+            else $mapped[$config['config_key']] = $value;
         }
         return $mapped;
     }
@@ -32,16 +35,13 @@ class SystemConfigRepository {
         $defaults = [
             ['allow_profile_photos_on_signup', 'true'],
             ['allow_coordinators_login', 'true'],
-            ['allow_students_login', 'true']
+            ['allow_students_login', 'true'],
+            ['system_setup_completed', 'false']
         ];
         
-        $this->db->beginTransaction();
-        $stmt = $this->db->prepare("INSERT INTO system_configs (config_key, config_value) VALUES (?, ?) ON CONFLICT DO NOTHING");
-        
         foreach ($defaults as $default) {
+            $stmt = $this->db->prepare("INSERT INTO system_configs (config_key, config_value) VALUES (?, ?) ON CONFLICT (config_key) DO NOTHING");
             $stmt->execute($default);
         }
-        
-        $this->db->commit();
     }
 }
