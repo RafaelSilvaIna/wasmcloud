@@ -8,6 +8,7 @@ use App\Controllers\Admin\LogViewerController;
 use App\Controllers\Admin\BrandingController;
 use App\Controllers\Admin\ThemeController;
 use App\Controllers\Public\ImageDeliveryController;
+use App\Controllers\Public\ProfileImageDeliveryController;
 use App\Controllers\Public\ThemeDeliveryController;
 use App\Middlewares\AdminAuthMiddleware;
 use App\Middlewares\MasterShieldMiddleware;
@@ -21,9 +22,15 @@ $router->add('GET', '/api/branding/info', [ImageDeliveryController::class, 'getB
 $router->add('GET', '/api/img/logo', [ImageDeliveryController::class, 'serveLogo']);
 $router->add('GET', '/api/img/favicon', [ImageDeliveryController::class, 'serveFavicon']);
 $router->add('GET', '/api/img/icon', [ImageDeliveryController::class, 'serveIcon']);
-$router->add('GET', '/api/public/theme', [ThemeDeliveryController::class, 'getThemeColors']);
 
-$router->add('POST', '/api/master/accounts/create', [AccountManagerController::class, 'createAccount'], [MasterShieldMiddleware::class]);
+$router->add('GET', '/api/public/theme', [ThemeDeliveryController::class, 'getThemeColors']);
+$router->add('GET', '/api/profile-img', [ProfileImageDeliveryController::class, 'serve']);
+
+$router->add('POST', '/api/master/accounts/create', [AccountManagerController::class, 'create'], [MasterShieldMiddleware::class]);
+$router->add('GET', '/api/master/accounts/list', [AccountManagerController::class, 'listAll'], [MasterShieldMiddleware::class]);
+$router->add('PUT', '/api/master/accounts/archive', [AccountManagerController::class, 'archive'], [MasterShieldMiddleware::class]);
+$router->add('PUT', '/api/master/accounts/block', [AccountManagerController::class, 'toggleBlock'], [MasterShieldMiddleware::class]);
+$router->add('PUT', '/api/master/accounts/password', [AccountManagerController::class, 'changePassword'], [MasterShieldMiddleware::class]);
 
 $router->add('GET', '/api/master/config/get', [SystemConfigController::class, 'getConfigs'], [MasterShieldMiddleware::class]);
 $router->add('PUT', '/api/master/config/update', [SystemConfigController::class, 'updateConfigs'], [MasterShieldMiddleware::class]);
@@ -31,7 +38,6 @@ $router->add('PUT', '/api/master/config/update', [SystemConfigController::class,
 $router->add('GET', '/api/master/logs/viewer', [LogViewerController::class, 'getExtendedLogs'], [MasterShieldMiddleware::class]);
 
 $router->add('POST', '/api/master/branding/update', [BrandingController::class, 'updateBranding'], [MasterShieldMiddleware::class]);
-
 $router->add('PUT', '/api/master/theme/update', [ThemeController::class, 'update'], [MasterShieldMiddleware::class]);
 
 $router->dispatch($_SERVER['REQUEST_URI'], $_SERVER['REQUEST_METHOD']);
