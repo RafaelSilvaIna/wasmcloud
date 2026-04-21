@@ -9,6 +9,7 @@ window.AdminSidebar = class {
                     <nav>
                         ${this.menuItem('Visão Geral', 'dashboard')}
                         ${this.menuItem('Identidade Visual', 'branding')}
+                        ${this.menuItem('Paleta de Cores', 'colors')}
                         ${this.menuItem('Gestão de Contas', 'accounts')}
                         ${this.menuItem('Configurações Globais', 'settings')}
                         ${this.menuItem('Auditoria e LGPD', 'audit')}

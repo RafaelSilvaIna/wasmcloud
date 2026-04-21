@@ -6,29 +6,29 @@ try {
     $pdo = new PDO($dsn, $config['username'], $config['password']);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-    $pdo->exec("
-        CREATE TABLE IF NOT EXISTS system_configs (
-            id SERIAL PRIMARY KEY,
-            config_key VARCHAR(255) UNIQUE NOT NULL,
-            config_value VARCHAR(50) NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );
-    ");
+    $sql = "
+    CREATE TABLE IF NOT EXISTS system_themes (
+        id SERIAL PRIMARY KEY,
+        primary_color VARCHAR(7) NOT NULL DEFAULT '#2563eb',
+        secondary_color VARCHAR(7) NOT NULL DEFAULT '#64748b',
+        background_color VARCHAR(7) NOT NULL DEFAULT '#f8fafc',
+        text_color VARCHAR(7) NOT NULL DEFAULT '#0f172a',
+        accent_color VARCHAR(7) NOT NULL DEFAULT '#10b981',
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );";
 
-    $defaults = [
-        ['allow_profile_photos_on_signup', 'true'],
-        ['allow_coordinators_login', 'true'],
-        ['allow_students_login', 'true'],
-        ['system_setup_completed', 'false']
-    ];
+    $pdo->exec($sql);
 
-    $stmt = $pdo->prepare("INSERT INTO system_configs (config_key, config_value) VALUES (?, ?) ON CONFLICT (config_key) DO NOTHING");
-    foreach ($defaults as $row) {
-        $stmt->execute($row);
+    $stmt = $pdo->query("SELECT COUNT(*) FROM system_themes");
+    if ($stmt->fetchColumn() == 0) {
+        $pdo->exec("INSERT INTO system_themes (primary_color, secondary_color, background_color, text_color, accent_color) 
+                    VALUES ('#2563eb', '#64748b', '#f8fafc', '#0f172a', '#10b981')");
+        echo "<h1>Tabela de Temas criada e configurada com sucesso!</h1>";
+    } else {
+        echo "<h1>A tabela de Temas ja existe.</h1>";
     }
 
-    echo "<h1>Database Fix: Sucesso!</h1><p>A tabela de configuracoes foi sincronizada. Apague este arquivo agora.</p>";
+    echo "<p><strong>AVISO:</strong> Elimine este ficheiro imediatamente por segurança.</p>";
 
 } catch (PDOException $e) {
     die("Erro: " . $e->getMessage());
