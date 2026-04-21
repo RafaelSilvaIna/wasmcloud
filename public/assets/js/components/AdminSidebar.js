@@ -8,9 +8,9 @@ window.AdminSidebar = class {
                 <div class="win95-content" style="background: #c0c0c0;">
                     <nav>
                         ${this.menuItem('Visão Geral', 'dashboard')}
+                        ${this.menuItem('Gestão de Contas', 'accounts')}
                         ${this.menuItem('Identidade Visual', 'branding')}
                         ${this.menuItem('Paleta de Cores', 'colors')}
-                        ${this.menuItem('Gestão de Contas', 'accounts')}
                         ${this.menuItem('Configurações Globais', 'settings')}
                         ${this.menuItem('Auditoria e LGPD', 'audit')}
                     </nav>
@@ -29,5 +29,5 @@ window.AdminSidebar = class {
 
 function logout() {
     localStorage.removeItem('sys_token');
-    window.location.replace('../../login.html');
+    window.location.replace('/auth');
 }

@@ -83,7 +83,7 @@ class AccountManagerController {
                 'name' => $acc['first_name'] . ' ' . $acc['last_name'],
                 'email' => $acc['email'],
                 'role' => $acc['role'],
-                'is_active' => $acc['is_active'],
+                'is_active' => filter_var($acc['is_active'], FILTER_VALIDATE_BOOLEAN),
                 'is_archived' => $acc['deleted_at'] !== null,
                 'last_login_at' => $acc['last_login_at'] ?? 'Nunca acedeu',
                 'cpf_masked' => SecurityVault::maskCpf($cpfRaw)
@@ -109,7 +109,7 @@ class AccountManagerController {
     public function toggleBlock() {
         $input = json_decode(file_get_contents('php://input'), true);
         if ($this->repo->toggleBlockStatus($input['role'], $input['id'], $input['status'])) {
-            $acao = $input['status'] ? 'Desbloqueou' : 'Bloqueou';
+            $acao = filter_var($input['status'], FILTER_VALIDATE_BOOLEAN) ? 'Desbloqueou' : 'Bloqueou';
             AuditLogger::log($_SERVER['MASTER_ID'], $_SERVER['MASTER_ROLE'], "{$acao} a conta ID {$input['id']} [{$input['role']}]");
             echo json_encode(['status' => 'success']);
             exit;
