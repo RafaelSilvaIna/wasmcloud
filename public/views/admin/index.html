@@ -13,9 +13,26 @@
 
     <div id="sidebar-container"></div>
     <main id="main-content" class="win95-window">
-        <div class="win95-titlebar">C:\SYSTEM\MASTER.EXE</div>
-        <div id="app-view" class="win95-content">Carregando kernel...</div>
+        <div class="win95-titlebar">System_Shell.exe</div>
+        <div id="app-view" class="win95-content">A inicializar componentes...</div>
     </main>
+
+    <div id="initWarningModal" class="win95-modal-overlay">
+        <div class="win95-window win95-modal">
+            <div class="win95-titlebar">Aviso de Segurança - LGPD</div>
+            <div class="win95-content" style="background: #c0c0c0; padding: 20px;">
+                <p><strong>ATENÇÃO:</strong> Primeiro acesso detetado.</p>
+                <p>Para garantir a conformidade com as políticas de proteção de dados, o sistema bloqueou acessos
+                    externos e carregou variáveis nulas.</p>
+                <p>Por favor, navegue até <strong>"Configurações Globais"</strong> e defina a matriz de permissões antes
+                    de continuar.</p>
+                <div style="text-align: right; margin-top: 20px;">
+                    <button class="win95-button" style="display: inline-block; width: 120px; font-weight: bold;"
+                        onclick="closeInitModal()">Prosseguir</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script src="../../assets/js/components/AdminSidebar.js"></script>
     <script>
@@ -25,17 +42,54 @@
             static async load(viewName) {
                 try {
                     const response = await fetch(`${viewName}.html`);
-                    if (!response.ok) throw new Error('Modulo inacessivel');
+                    if (!response.ok) throw new Error('Modulo protegido');
+
+                    document.querySelectorAll('.dynamic-script').forEach(s => s.remove());
+
                     const html = await response.text();
-                    document.getElementById('app-view').innerHTML = html;
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = html;
+
+                    const scripts = tempDiv.querySelectorAll('script');
+                    scripts.forEach(script => {
+                        const newScript = document.createElement('script');
+                        newScript.src = script.src;
+                        newScript.className = 'dynamic-script';
+                        document.body.appendChild(newScript);
+                        script.remove();
+                    });
+
+                    document.getElementById('app-view').innerHTML = tempDiv.innerHTML;
                 } catch (error) {
-                    document.getElementById('app-view').innerHTML = `<h3 style="color: red;">ERRO FATAL: Modulo protegido ou em desenvolvimento.</h3>`;
+                    document.getElementById('app-view').innerHTML = `<h3 style="color: red;">ERRO FATAL: Falha ao montar o componente.</h3>`;
                 }
             }
         }
 
         document.getElementById('sidebar-container').innerHTML = AdminSidebar.render();
         AppRouter.load('dashboard');
+
+        async function checkSystemStatus() {
+            try {
+                const token = localStorage.getItem('sys_token');
+                const response = await fetch('../../api/master/config/get', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+                if (data.status === 'success' && data.data.status === 'initialized') {
+                    document.getElementById('initWarningModal').style.display = 'flex';
+                }
+            } catch (e) {
+                console.error('Audit: Falha ao verificar integridade da base de dados.');
+            }
+        }
+
+        function closeInitModal() {
+            document.getElementById('initWarningModal').style.display = 'none';
+            AppRouter.load('settings');
+        }
+
+        checkSystemStatus();
     </script>
 
 </body>

@@ -55,6 +55,7 @@ body {
     display: block;
     text-decoration: none;
     margin-bottom: 5px;
+    text-align: center;
 }
 
 .win95-button:active {
@@ -72,4 +73,54 @@ body {
 #main-content {
     flex: 1;
     margin: 10px 10px 10px 0;
+}
+
+.win95-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.win95-modal {
+    width: 450px;
+    max-width: 90%;
+}
+
+.win95-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+.win95-table th,
+.win95-table td {
+    border: 1px solid #c0c0c0;
+    padding: 6px;
+    font-size: 12px;
+}
+
+.win95-table th {
+    background: #c0c0c0;
+    border-top: 1px solid #ffffff;
+    border-left: 1px solid #ffffff;
+    border-right: 1px solid #808080;
+    border-bottom: 1px solid #808080;
+}
+
+.win95-checkbox-group {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+    font-size: 13px;
+}
+
+.win95-checkbox-group input {
+    margin-right: 8px;
 }
