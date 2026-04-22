@@ -27,20 +27,19 @@ class SystemConfigService {
     }
 
     public function updateGlobalConfigs($inputData) {
-        $configs = $this->repository->getAll();
         $db = \App\Core\Database::getInstance();
         $db->beginTransaction();
 
         try {
             foreach ($inputData as $key => $value) {
                 $dbValue = $value === true ? 'true' : 'false';
-                $this->repository->update($key, $dbValue);
+                $this->repository->set($key, $dbValue);
             }
             
-            $this->repository->update('system_setup_completed', 'true');
+            $this->repository->set('system_setup_completed', 'true');
             
             $db->commit();
-            AuditLogger::log($_SERVER['MASTER_ID'], $_SERVER['MASTER_ROLE'], 'Configuracoes globais e status de setup atualizados');
+            AuditLogger::log($_SERVER['MASTER_ID'], $_SERVER['MASTER_ROLE'], 'Políticas globais de acesso atualizadas no Kernel');
             return true;
         } catch (\PDOException $e) {
             $db->rollBack();

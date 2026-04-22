@@ -3,6 +3,7 @@ namespace App\Controllers\Auth;
 
 use App\Core\Database;
 use App\Services\Auth\TokenService;
+use App\Repositories\SystemConfigRepository;
 use App\Services\AuditLogger;
 use PDO;
 
@@ -14,6 +15,13 @@ class AppAuthController {
 
         if (!$email || !$password) {
             self::abort(400, 'Credenciais ausentes.');
+        }
+
+        $configRepo = new SystemConfigRepository();
+        $globalConfigs = $configRepo->getAll();
+
+        if (isset($globalConfigs['allow_auth_routing']) && $globalConfigs['allow_auth_routing'] === false) {
+            self::abort(403, 'Acesso ao serviço de autenticação suspenso administrativamente.');
         }
 
         $db = Database::getInstance();
@@ -41,12 +49,20 @@ class AppAuthController {
             self::abort(401, 'Credenciais invalidas.');
         }
 
+        if ($role === 'coordinator' && (!isset($globalConfigs['allow_coordinators_login']) || $globalConfigs['allow_coordinators_login'] === false)) {
+            self::abort(403, 'Acesso externo para coordenadores está desativado pelo administrador.');
+        }
+
+        if ($role === 'student' && (!isset($globalConfigs['allow_students_login']) || $globalConfigs['allow_students_login'] === false)) {
+            self::abort(403, 'Acesso externo para alunos e familiares está desativado pelo administrador.');
+        }
+
         if ($user['deleted_at'] !== null) {
-            self::abort(403, 'Acesso negado: Conta arquivada e inoperante.');
+            self::abort(403, 'Conta inativa por arquivamento.');
         }
 
         if (!filter_var($user['is_active'], FILTER_VALIDATE_BOOLEAN)) {
-            self::abort(403, 'Acesso negado: Conta bloqueada por diretrizes administrativas.');
+            self::abort(403, 'Conta bloqueada por diretrizes de segurança.');
         }
 
         if ($tableName) {
@@ -55,7 +71,7 @@ class AppAuthController {
         }
 
         $token = TokenService::generateTemporaryToken($user['id'], $role);
-        AuditLogger::log($user['id'], $role, "Sessao iniciada com sucesso");
+        AuditLogger::log($user['id'], $role, "Sessao iniciada sob politicas globais ativas");
 
         echo json_encode(['status' => 'success', 'token' => $token, 'role' => $role]);
         exit;
@@ -71,7 +87,18 @@ class AppAuthController {
 
         $payload = TokenService::validateToken($matches[1]);
         if (!$payload) {
-            self::abort(401, 'Token invalido ou expirado.');
+            self::abort(401, 'Token expirado.');
+        }
+
+        $configRepo = new SystemConfigRepository();
+        $globalConfigs = $configRepo->getAll();
+
+        if ($payload['role'] === 'student' && (!isset($globalConfigs['allow_student_panel_access']) || $globalConfigs['allow_student_panel_access'] === false)) {
+            self::abort(403, 'Acesso ao painel do estudante suspenso globalmente.');
+        }
+
+        if ($payload['role'] === 'coordinator' && (!isset($globalConfigs['allow_coordinator_panel_access']) || $globalConfigs['allow_coordinator_panel_access'] === false)) {
+            self::abort(403, 'Acesso ao painel da coordenação suspenso globalmente.');
         }
 
         $db = Database::getInstance();
@@ -86,12 +113,8 @@ class AppAuthController {
         $stmt->execute([$id]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        if (!$row) {
-            self::abort(403, 'Sessao derrubada: Conta foi arquivada.');
-        }
-
-        if (!filter_var($row['is_active'], FILTER_VALIDATE_BOOLEAN)) {
-            self::abort(403, 'Sessao derrubada: Conta foi bloqueada.');
+        if (!$row || !filter_var($row['is_active'], FILTER_VALIDATE_BOOLEAN)) {
+            self::abort(403, 'Acesso revogado.');
         }
 
         echo json_encode(['status' => 'success']);

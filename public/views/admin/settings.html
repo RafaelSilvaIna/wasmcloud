@@ -1,34 +1,59 @@
-<h2 style="margin-top: 0;">Configurações Globais de Acesso</h2>
-<p>Defina as políticas de acesso. Estas alterações têm impacto imediato na arquitetura Zero Trust e são registadas na
-    auditoria.</p>
+<h2 style="margin-top: 0;">Diretrizes Globais do Sistema</h2>
+<p>Controle o tráfego e o acesso aos módulos da arquitetura. Desativar qualquer um destes interruptores de circuito
+    suspende imediatamente a funcionalidade correspondente para todos os utilizadores.</p>
 
-<div id="settingsAlert"
-    style="display: none; padding: 10px; margin-bottom: 15px; border: 1px solid #000; font-weight: bold;"></div>
-
-<div class="win95-window" style="width: 100%; max-width: 600px; margin-top: 20px;">
-    <div class="win95-titlebar">Politicas.exe</div>
-    <div class="win95-content" style="background: #c0c0c0;">
-        <form id="globalSettingsForm">
-            <div class="win95-checkbox-group">
-                <input type="checkbox" id="allow_profile_photos_on_signup">
-                <label for="allow_profile_photos_on_signup">Permitir fotografia de perfil no registo (Coordenação e
-                    Alunos)</label>
-            </div>
-            <div class="win95-checkbox-group">
-                <input type="checkbox" id="allow_coordinators_login">
-                <label for="allow_coordinators_login">Habilitar acesso externo para Coordenação Escolar</label>
-            </div>
-            <div class="win95-checkbox-group">
-                <input type="checkbox" id="allow_students_login">
-                <label for="allow_students_login">Habilitar acesso externo para Alunos e Familiares</label>
-            </div>
-
-            <div style="margin-top: 20px; border-top: 2px solid #808080; padding-top: 15px;">
-                <button type="submit" class="win95-button" style="width: 150px; font-weight: bold;">Aplicar
-                    Políticas</button>
-            </div>
-        </form>
-    </div>
+<div id="settingsAlert" class="status-alert"
+    style="display: none; padding: 10px; margin-bottom: 15px; border: 2px solid #000; font-weight: bold; font-size: 13px;">
 </div>
+
+<form id="globalSettingsForm">
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">
+
+        <div class="win95-window">
+            <div class="win95-titlebar">Roteamento e Autenticação Externa</div>
+            <div class="win95-content" style="background: #c0c0c0;">
+                <div class="win95-checkbox-group">
+                    <input type="checkbox" id="allow_auth_routing">
+                    <label for="allow_auth_routing">Permitir Acesso à Página de Autenticação (Login Global)</label>
+                </div>
+                <div class="win95-checkbox-group">
+                    <input type="checkbox" id="allow_coordinators_login">
+                    <label for="allow_coordinators_login">Permitir Login Externo: Coordenação Escolar</label>
+                </div>
+                <div class="win95-checkbox-group">
+                    <input type="checkbox" id="allow_students_login">
+                    <label for="allow_students_login">Permitir Login Externo: Alunos e Famílias</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="win95-window">
+            <div class="win95-titlebar">Acesso aos Painéis Internos e Funcionalidades</div>
+            <div class="win95-content" style="background: #c0c0c0;">
+                <div class="win95-checkbox-group">
+                    <input type="checkbox" id="allow_coordinator_panel_access">
+                    <label for="allow_coordinator_panel_access">Permitir Navegação no Painel de Coordenação</label>
+                </div>
+                <div class="win95-checkbox-group">
+                    <input type="checkbox" id="allow_student_panel_access">
+                    <label for="allow_student_panel_access">Permitir Navegação no Painel do Aluno</label>
+                </div>
+                <div class="win95-checkbox-group"
+                    style="margin-top: 15px; border-top: 1px solid #808080; padding-top: 10px;">
+                    <input type="checkbox" id="allow_profile_photos_on_signup">
+                    <label for="allow_profile_photos_on_signup">Habilitar Upload de Fotografia no Registo de
+                        Contas</label>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div style="margin-top: 20px; text-align: right; border-top: 2px solid #808080; padding-top: 15px;">
+        <button type="submit" class="win95-button"
+            style="display: inline-block; width: 280px; font-weight: bold; font-size: 14px; padding: 8px;">APLICAR
+            DIRETRIZES DE SEGURANÇA</button>
+    </div>
+</form>
 
 <script src="../../assets/js/components/AdminSettings.js"></script>
