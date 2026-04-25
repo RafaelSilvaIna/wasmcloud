@@ -1,19 +1,45 @@
+Options -Indexes -ExecCGI
 ServerSignature Off
-FileETag None
+DirectoryIndex index.php index.html
 
-RewriteEngine On
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-XSS-Protection "1; mode=block"
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+    Header set Referrer-Policy "strict-origin-when-cross-origin"
+    Header unset X-Powered-By
+</IfModule>
 
-# Bloqueio de Bots e Injeções
-RewriteCond %{HTTP_USER_AGENT} ^-?$ [OR]
-RewriteCond %{HTTP_USER_AGENT} (acunetix|binlar|casper|curl|java|libwww|nmap|perl|python|sqlmap|wget|bot|spider|crawl) [NC]
-RewriteRule ^.* - [F,L]
+<IfModule mod_rewrite.c>
+    RewriteEngine On
 
-# Rotas SPA - Entry Points
-RewriteRule ^auth$ public/views/auth/index.html [L]
-RewriteRule ^admin$ public/views/admin/index.html [L]
-RewriteRule ^coordinator$ public/views/coordinator/index.html [L]
-RewriteRule ^student$ public/views/student/index.html [L]
+    RewriteCond %{REQUEST_METHOD} ^(TRACE|TRACK|DEBUG)
+    RewriteRule .* - [F,L]
 
-# Redirecionamento Global para pasta Public (CSS, JS, Imagens, API)
-RewriteCond %{REQUEST_URI} !^/public/
-RewriteRule ^(.*)$ public/$1 [L]
+    RewriteCond %{QUERY_STRING} (eval\() [NC,OR]
+    RewriteCond %{QUERY_STRING} (127\.0\.0\.1) [NC,OR]
+    RewriteCond %{QUERY_STRING} \b(union|insert|cast|set|declare|drop|update|md5|benchmark)\b [NC,OR]
+    RewriteCond %{QUERY_STRING} \.\./\.\. [NC,OR]
+    RewriteCond %{QUERY_STRING} \b(etc/passwd)\b [NC]
+    RewriteRule .* - [F,L]
+
+    RewriteCond %{HTTP_USER_AGENT} (libwww-perl|wget|python|nikto|curl|scan|java|winhttp|clshttp|loader) [NC]
+    RewriteRule .* - [F,L]
+
+    RewriteRule ^(\.git|\.env|composer\.json|composer\.lock|package\.json|package-lock\.json) - [F,L]
+
+    RewriteRule ^(components|controllers|data|database|helpers|hooks|models|routes|services|utils)(/.*)?$ - [F,L]
+
+    RewriteRule ^$ pages/index.php [L]
+
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_URI} !^/pages/
+    RewriteCond %{REQUEST_URI} !^/assets/
+    RewriteRule ^(.*)$ pages/$1 [L]
+
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^pages/(.*)$ pages/index.php [QSA,L]
+</IfModule>
