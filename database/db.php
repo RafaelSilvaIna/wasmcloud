@@ -2,9 +2,7 @@
 ini_set('display_errors', 0);
 error_reporting(E_ERROR);
 
-$skipPublicSessionBootstrap = defined('ADMIN_SESSION_CONTEXT') && ADMIN_SESSION_CONTEXT === true;
-
-if (session_status() === PHP_SESSION_NONE && !defined('STREAM_PROXY_CONTEXT') && !$skipPublicSessionBootstrap) {
+if (session_status() === PHP_SESSION_NONE) {
     session_name("CINEVEO_SECURE_V2");
     ini_set('session.gc_maxlifetime', 2592000);
     session_set_cookie_params([
@@ -16,23 +14,31 @@ if (session_status() === PHP_SESSION_NONE && !defined('STREAM_PROXY_CONTEXT') &&
     session_start();
 }
 
-define('IMGBB_API_KEY', '2039ae608a9e563946472995aeb0e672');
-define('DOWNLOAD_SECRET', 'CineVEO_Secure_Download_2025_KEY');
+if (!isset($_SESSION['req_cnt'])) $_SESSION['req_cnt'] = 0;
+if (!isset($_SESSION['req_time'])) $_SESSION['req_time'] = time();
+
+if (time() - $_SESSION['req_time'] < 2) {
+    $_SESSION['req_cnt']++;
+    if ($_SESSION['req_cnt'] > 20) {
+        http_response_code(429);
+        exit;
+    }
+} else {
+    $_SESSION['req_cnt'] = 0;
+    $_SESSION['req_time'] = time();
+}
 
 $dbHost = '127.0.0.1';
 $dbCharset = 'utf8mb4';
-
-$dbNamePipo = 'pipocine';
-$dbUserPipoPrimary = 'pipocine';
-$dbUserPipoFallback = 'pipcine';
-$dbPassPipo = 'pipocine12mt';
 
 $dbNameCine = 'cineveo';
 $dbUserCine = 'cineveo';
 $dbPassCine = '986307236M';
 
-$dsnPipo = "mysql:host={$dbHost};dbname={$dbNamePipo};charset={$dbCharset}";
-$dsnCine = "mysql:host={$dbHost};dbname={$dbNameCine};charset={$dbCharset}";
+$dbNamePipo = 'pipocine';
+$dbUserPipoPrimary = 'pipocine';
+$dbUserPipoFallback = 'pipcine';
+$dbPassPipo = 'pipocine12mt';
 
 $options = [
     PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
@@ -41,96 +47,54 @@ $options = [
     PDO::ATTR_TIMEOUT => 5,
 ];
 
-$connectionError = null;
+try {
+    $pdoCineveo = new PDO("mysql:host={$dbHost};dbname={$dbNameCine};charset={$dbCharset}", $dbUserCine, $dbPassCine, $options);
+} catch (\PDOException $e) {
+    http_response_code(503);
+    exit;
+}
 
 try {
-    $pdoCineveo = new PDO($dsnCine, $dbUserCine, $dbPassCine, $options);
+    $pdo = new PDO("mysql:host={$dbHost};dbname={$dbNamePipo};charset={$dbCharset}", $dbUserPipoPrimary, $dbPassPipo, $options);
 } catch (\PDOException $e) {
-    $connectionError = 'Falha critica no banco central (Cineveo).';
-}
-
-if (!$connectionError) {
     try {
-        try {
-            $pdo = new PDO($dsnPipo, $dbUserPipoPrimary, $dbPassPipo, $options);
-        } catch (\PDOException $e) {
-            $pdo = new PDO($dsnPipo, $dbUserPipoFallback, $dbPassPipo, $options);
-        }
+        $pdo = new PDO("mysql:host={$dbHost};dbname={$dbNamePipo};charset={$dbCharset}", $dbUserPipoFallback, $dbPassPipo, $options);
     } catch (\PDOException $e) {
-        $connectionError = 'Falha no banco Pipocine. Verifique se o DB, o usuario e a senha estao criados corretamente no aaPanel.';
+        $pdo = null;
     }
 }
 
-if ($connectionError) {
-    $requestUri = $_SERVER['REQUEST_URI'] ?? '';
-    $isApiCall = (
-        strpos($requestUri, '/api/') === 0 ||
-        (isset($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false) ||
-        (isset($_GET['fetchMode'])) ||
-        (isset($_POST['ajaxAction']))
-    );
-
-    if ($isApiCall) {
-        header('Content-Type: application/json');
-        http_response_code(503);
-        echo json_encode([
-            'isAuthenticated' => false,
-            'user' => null,
-            'error' => $connectionError
-        ]);
-        exit;
-    } else {
-        http_response_code(503);
-        die('<h2 style="font-family:sans-serif;color:#c00;text-align:center;margin-top:50px;">' . $connectionError . '</h2>');
-    }
-}
-
-if (!defined('STREAM_PROXY_CONTEXT') && !$skipPublicSessionBootstrap) {
-    if (!isset($_SESSION['userId']) && isset($_COOKIE['remember_me'])) {
+if (!isset($_SESSION['user_id'])) {
+    if (isset($_COOKIE['remember_me'])) {
         try {
             $cookieParts = explode(':', $_COOKIE['remember_me'], 2);
-            $selector = $cookieParts[0] ?? null;
-            $token = $cookieParts[1] ?? null;
-
-            if ($selector && $token) {
-                $stmtAuth = $pdoCineveo->prepare("SELECT * FROM auth_tokens WHERE selector = ? AND expires_at > NOW()");
-                $stmtAuth->execute([$selector]);
-                $authToken = $stmtAuth->fetch();
-
-                if ($authToken && hash_equals($authToken['token_hash'], hash('sha256', $token))) {
-                    $stmtUser = $pdoCineveo->prepare("SELECT * FROM users WHERE id = ?");
-                    $stmtUser->execute([$authToken['user_id']]);
-                    $user = $stmtUser->fetch();
-
-                    if ($user) {
-                        $_SESSION['userId'] = $user['id'];
+            if (count($cookieParts) === 2) {
+                $stmt = $pdoCineveo->prepare("SELECT * FROM auth_tokens WHERE selector = ? AND expires_at > NOW()");
+                $stmt->execute([$cookieParts[0]]);
+                $tokenRow = $stmt->fetch();
+                
+                if ($tokenRow && hash_equals($tokenRow['token_hash'], hash('sha256', $cookieParts[1]))) {
+                    $uStmt = $pdoCineveo->prepare("SELECT id, username, full_name, name, profile_pic_url FROM users WHERE id = ?");
+                    $uStmt->execute([$tokenRow['user_id']]);
+                    if ($user = $uStmt->fetch()) {
+                        $_SESSION['user_id'] = $user['id'];
                         $_SESSION['username'] = $user['username'];
-                        $_SESSION['fullName'] = $user['full_name'];
-                        $_SESSION['profilePicUrl'] = $user['profile_pic_url'];
+                        $_SESSION['full_name'] = $user['full_name'] ?: $user['name'];
+                        $_SESSION['profile_pic_url'] = $user['profile_pic_url'];
                     }
                 }
             }
         } catch (Exception $e) {}
-    }
-
-    if (!isset($_SESSION['userId']) && isset($_COOKIE['cineveo_token'])) {
+    } elseif (isset($_COOKIE['cineveo_token'])) {
         try {
             $tokenHash = hash('sha256', $_COOKIE['cineveo_token']);
-            $stmtSess = $pdoCineveo->prepare(
-                "SELECT u.id, u.username, u.full_name, u.name, u.profile_pic_url
-                 FROM user_sessions s
-                 JOIN users u ON u.id = s.user_id
-                 WHERE s.token_hash = ? AND s.expires_at > NOW()
-                 LIMIT 1"
-            );
+            $stmtSess = $pdoCineveo->prepare("SELECT u.id, u.username, u.full_name, u.name, u.profile_pic_url FROM user_sessions s JOIN users u ON u.id = s.user_id WHERE s.token_hash = ? AND s.expires_at > NOW() LIMIT 1");
             $stmtSess->execute([$tokenHash]);
-            $sessionUser = $stmtSess->fetch();
-
-            if ($sessionUser) {
-                $_SESSION['userId'] = $sessionUser['id'];
+            if ($sessionUser = $stmtSess->fetch()) {
+                $_SESSION['user_id'] = $sessionUser['id'];
                 $_SESSION['username'] = $sessionUser['username'];
-                $_SESSION['fullName'] = $sessionUser['full_name'] ?: $sessionUser['name'];
-                $_SESSION['profilePicUrl'] = $sessionUser['profile_pic_url'];
+                $_SESSION['full_name'] = $sessionUser['full_name'] ?: $sessionUser['name'];
+                $_SESSION['profile_pic_url'] = $sessionUser['profile_pic_url'];
             }
         } catch (Exception $e) {}
     }

@@ -9,7 +9,7 @@ if (strpos($requestUri, '/api/') === 0) {
     require_once __DIR__ . '/../services/AuthService.php';
     require_once __DIR__ . '/../controllers/AuthController.php';
 
-    $authModel = new AuthModel($pdoCineveo);
+    $authModel = new AuthModel($pdoCineveo, $pdo);
     $authService = new AuthService($authModel);
     $authController = new AuthController($authService);
 

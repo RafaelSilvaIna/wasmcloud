@@ -8,6 +8,11 @@ if ($requestUri === '/' || $requestUri === '/home') {
     exit;
 }
 
+if ($requestUri === '/login') {
+    require_once __DIR__ . '/login.php';
+    exit;
+}
+
 http_response_code(404);
 echo "<h1>404 - Página não encontrada</h1>";
 exit;
