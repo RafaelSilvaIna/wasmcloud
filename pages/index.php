@@ -13,6 +13,11 @@ if ($requestUri === '/login') {
     exit;
 }
 
+if ($requestUri === '/select-profile') {
+    require_once __DIR__ . '/select-profile.php';
+    exit;
+}
+
 http_response_code(404);
 echo "<h1>404 - Página não encontrada</h1>";
 exit;
