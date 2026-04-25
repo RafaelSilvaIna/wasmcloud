@@ -12,68 +12,53 @@ if (isset($_SESSION['user_id'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PipoCine - Entrar</title>
+    <link rel="icon" type="image/png" href="/assets/img/favicon.png">
+    
     <link rel="stylesheet" href="/assets/css/style.css">
-    <style>
-        .login-wrapper {
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: linear-gradient(to bottom, rgba(10,12,16,0.8) 0%, var(--bg-base) 100%), url('https://image.tmdb.org/t/p/original/wPU78OPN4BYEgWYdX84A65WJw7.jpg') center/cover no-repeat;
-            padding: 20px;
-        }
-        .login-box {
-            background-color: rgba(18, 21, 28, 0.95);
-            backdrop-filter: blur(20px);
-            padding: 50px 40px;
-            border-radius: 16px;
-            border: 1px solid var(--border-subtle);
-            width: 100%;
-            max-width: 450px;
-            text-align: center;
-            box-shadow: var(--shadow-lg);
-        }
-        .login-logo {
-            height: 70px;
-            margin-bottom: 30px;
-        }
-        .cineveo-btn {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 15px;
-            width: 100%;
-            background-color: var(--color-secondary);
-            color: #fff;
-            padding: 16px;
-            border-radius: 12px;
-            font-size: 1.1rem;
-            font-weight: 700;
-            transition: all var(--transition-fast);
-            margin-top: 20px;
-        }
-        .cineveo-btn:hover {
-            transform: scale(1.02);
-            background-color: var(--color-secondary-hover);
-        }
-    </style>
+    <link rel="stylesheet" href="/assets/css/login.css">
 </head>
 <body>
-    <div class="login-wrapper">
-        <div class="login-box">
-            <img src="/assets/img/logo-pipocine.png" alt="PipoCine" class="login-logo">
-            <h2 style="color: var(--text-pure); margin-bottom: 10px;">Bem-vindo de volta!</h2>
-            <p style="color: var(--text-secondary); margin-bottom: 30px;">O PipoCine faz parte da rede Cineveo.</p>
-            
-            <a href="https://cineveo.com/login?redirect=https://pipocine.site/home" class="cineveo-btn">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
-                Entrar com Cineveo
-            </a>
-            
-            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 25px;">
-                Ao entrar, você concorda com os Termos de Serviço da plataforma.
-            </p>
+    <div class="login-container">
+        <div class="login-side-image">
+            <div class="hero-text-wrapper">
+                <h2>A melhor experiência<br>de cinema em casa.</h2>
+            </div>
+        </div>
+        
+        <div class="login-side-form">
+            <div class="form-box">
+                <div class="logo-box">
+                    <img src="/assets/img/logo-pipocine.png" alt="PipoCine Logo">
+                </div>
+                
+                <h1>Entrar</h1>
+                <p class="subtitle">Use suas credenciais Cineveo para entrar.</p>
+
+                <div id="error-alert" class="error-msg">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                    <span id="error-text"></span>
+                </div>
+
+                <form id="login-form">
+                    <div class="input-group">
+                        <input type="email" id="email" name="email" placeholder=" " required autocomplete="email">
+                        <label for="email">E-mail</label>
+                    </div>
+                    
+                    <div class="input-group">
+                        <input type="password" id="password" name="password" placeholder=" " required autocomplete="current-password">
+                        <label for="password">Senha</label>
+                    </div>
+                    
+                    <button type="submit" class="btn-submit" id="btn-submit">
+                        <span id="btn-text">Entrar na Plataforma</span>
+                        <span class="loader" id="btn-loader"></span>
+                    </button>
+                </form>
+            </div>
         </div>
     </div>
+
+    <script src="/assets/js/login.js"></script>
 </body>
 </html>
