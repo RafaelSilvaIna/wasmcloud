@@ -1,5 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     const header = document.getElementById('main-header');
+    const userMenuContainer = document.getElementById('user-menu-container');
     
     const handleScroll = () => {
         window.requestAnimationFrame(() => {
@@ -15,28 +16,36 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.addEventListener('scroll', handleScroll, { passive: true });
 
-    const userMenuContainer = document.getElementById('user-menu-container');
+    const fetchAuthStatus = async () => {
+        try {
+            const response = await fetch('/api/auth/status', {
+                headers: { 'Cache-Control': 'no-cache' }
+            });
 
-    fetch('/api/auth/status', {
-        headers: {
-            'Cache-Control': 'no-cache'
-        }
-    })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('401');
+            if (response.status === 500) {
+                throw new Error('Erro interno no servidor');
             }
-            return response.json();
-        })
-        .then(data => {
+
+            const data = await response.json();
+
             if (data.isAuthenticated && data.user) {
-                const avatarUrl = data.user.avatar || '/assets/img/default-avatar.png';
-                userMenuContainer.innerHTML = `<img src="${avatarUrl}" alt="${data.user.fullName}" class="user-avatar" title="${data.user.fullName}">`;
+                const avatar = data.user.avatar || '/assets/img/default-avatar.png';
+                userMenuContainer.innerHTML = `
+                    <div class="user-profile-wrapper">
+                        <img src="${avatar}" alt="${data.user.fullName}" class="user-avatar" title="${data.user.fullName}">
+                        <div class="user-badge">${data.user.plan === 'premium' ? '★' : ''}</div>
+                    </div>
+                `;
             } else {
                 userMenuContainer.innerHTML = `<a href="/login" class="btn-login">Entrar</a>`;
             }
-        })
-        .catch(() => {
+        } catch (err) {
             userMenuContainer.innerHTML = `<a href="/login" class="btn-login">Entrar</a>`;
-        });
+            if (typeof PipoNotification !== 'undefined') {
+                PipoNotification.error('Não foi possível sincronizar sua conta.');
+            }
+        }
+    };
+
+    fetchAuthStatus();
 });
