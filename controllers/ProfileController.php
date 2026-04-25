@@ -6,33 +6,35 @@ class ProfileController {
         $this->profileService = $profileService;
     }
 
-    public function checkUsername(): void {
-        header('Content-Type: application/json');
-        $username = $_GET['username'] ?? '';
-        echo json_encode(['available' => $this->profileService->isUsernameAvailable($username)]);
-    }
-
-    public function getAvatars(): void {
-        header('Content-Type: application/json');
-        $category = $_GET['category'] ?? 'adventurer';
-        echo json_encode(['avatars' => AvatarHelper::generateRandomAvatars($category)]);
-    }
-
-    public function list(): void {
-        header('Content-Type: application/json');
-        $model = new ProfileModel($GLOBALS['pdo']);
-        echo json_encode($model->listByUserId($_SESSION['user_id']));
-    }
-
     public function create(): void {
         header('Content-Type: application/json');
         $data = json_decode(file_get_contents('php://input'), true);
         echo json_encode($this->profileService->addNewProfile($data));
     }
 
-    public function select(): void {
+    public function startSession(): void {
         header('Content-Type: application/json');
         $data = json_decode(file_get_contents('php://input'), true);
-        echo json_encode($this->profileService->selectProfile($data['id'], $data['pin'] ?? null));
+        $profileId = $data['profile_id'] ?? ($_SESSION['profile_id'] ?? 0);
+        echo json_encode($this->profileService->startWatching((int)$profileId));
+    }
+
+    public function heartbeat(): void {
+        header('Content-Type: application/json');
+        if (isset($_SESSION['profile_id'])) {
+            $model = new ProfileModel($GLOBALS['pdo']);
+            $model->updateWatchingStatus((int)$_SESSION['profile_id'], true, session_id());
+            echo json_encode(['success' => true]);
+        } else {
+            echo json_encode(['success' => false]);
+        }
+    }
+
+    public function stopSession(): void {
+        header('Content-Type: application/json');
+        if (isset($_SESSION['profile_id'])) {
+            $this->profileService->stopWatching((int)$_SESSION['profile_id']);
+        }
+        echo json_encode(['success' => true]);
     }
 }

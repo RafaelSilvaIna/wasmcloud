@@ -1,17 +1,23 @@
 <?php
 class ProfileService {
     private $profileModel;
+    private $authModel;
 
-    public function __construct(ProfileModel $profileModel) {
+    public function __construct(ProfileModel $profileModel, AuthModel $authModel) {
         $this->profileModel = $profileModel;
-    }
-
-    public function isUsernameAvailable(string $username): bool {
-        if (strlen($username) < 3) return false;
-        return !$this->profileModel->checkUsernameExists($username);
+        $this->authModel = $authModel;
     }
 
     public function addNewProfile(array $data): array {
+        $userCineveo = $this->authModel->getUserData((int)$_SESSION['user_id']);
+        $currentProfilesCount = $this->profileModel->countByUserId((int)$_SESSION['user_id']);
+        
+        $limit = ($userCineveo['plan_type'] === 'premium') ? 8 : 2;
+
+        if ($currentProfilesCount >= $limit) {
+            return ['success' => false, 'message' => "Limite de perfis atingido para seu plano ($limit)."];
+        }
+
         $pinHash = !empty($data['pin']) ? password_hash($data['pin'], PASSWORD_ARGON2ID) : null;
         
         $payload = [
@@ -29,24 +35,24 @@ class ProfileService {
         return ['success' => false, 'message' => 'Erro ao criar perfil.'];
     }
 
-    public function selectProfile(int $profileId, ?string $pin = null): array {
-        $profile = $this->profileModel->findById($profileId);
+    public function startWatching(int $profileId): array {
+        $session = $this->profileModel->checkActiveSession($profileId);
+        $now = new DateTime();
         
-        if (!$profile || $profile['user_id'] != $_SESSION['user_id']) {
-            return ['success' => false, 'message' => 'Perfil inválido.'];
-        }
+        if ($session['is_watching']) {
+            $lastActive = new DateTime($session['last_active_at']);
+            $diff = $now->getTimestamp() - $lastActive->getTimestamp();
 
-        if ($profile['pin_hash']) {
-            if (!$pin || !password_verify($pin, $profile['pin_hash'])) {
-                return ['success' => false, 'requires_pin' => true, 'message' => 'PIN incorreto.'];
+            if ($diff < 60 && $session['current_session_id'] !== session_id()) {
+                return ['success' => false, 'message' => 'Este perfil já está sendo usado em outro dispositivo.'];
             }
         }
 
-        $_SESSION['profile_id'] = $profile['id'];
-        $_SESSION['profile_name'] = $profile['profile_name'];
-        $_SESSION['profile_image'] = $profile['profile_image'];
-        $_SESSION['is_kids'] = (bool)$profile['is_kids'];
-
+        $this->profileModel->updateWatchingStatus($profileId, true, session_id());
         return ['success' => true];
+    }
+
+    public function stopWatching(int $profileId): void {
+        $this->profileModel->updateWatchingStatus($profileId, false, null);
     }
 }

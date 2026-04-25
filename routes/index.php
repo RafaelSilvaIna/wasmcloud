@@ -28,12 +28,14 @@ if (strpos($requestUri, '/api/') === 0) {
 
     if (strpos($requestUri, '/api/profiles/') === 0) {
         require_once __DIR__ . '/../helpers/AvatarHelper.php';
+        require_once __DIR__ . '/../models/AuthModel.php';
         require_once __DIR__ . '/../models/ProfileModel.php';
         require_once __DIR__ . '/../services/ProfileService.php';
         require_once __DIR__ . '/../controllers/ProfileController.php';
 
+        $authModel = new AuthModel($pdoCineveo);
         $profileModel = new ProfileModel($pdo);
-        $profileService = new ProfileService($profileModel);
+        $profileService = new ProfileService($profileModel, $authModel);
         $profileController = new ProfileController($profileService);
 
         if ($requestUri === '/api/profiles/list' && $requestMethod === 'GET') {
@@ -50,6 +52,15 @@ if (strpos($requestUri, '/api/') === 0) {
         }
         if ($requestUri === '/api/profiles/select' && $requestMethod === 'POST') {
             $profileController->select();
+        }
+        if ($requestUri === '/api/profiles/start-session' && $requestMethod === 'POST') {
+            $profileController->startSession();
+        }
+        if ($requestUri === '/api/profiles/heartbeat' && $requestMethod === 'POST') {
+            $profileController->heartbeat();
+        }
+        if ($requestUri === '/api/profiles/stop-session' && $requestMethod === 'POST') {
+            $profileController->stopSession();
         }
     }
 
