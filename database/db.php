@@ -19,11 +19,12 @@ if (session_status() === PHP_SESSION_NONE && !defined('STREAM_PROXY_CONTEXT') &&
 define('IMGBB_API_KEY', '2039ae608a9e563946472995aeb0e672');
 define('DOWNLOAD_SECRET', 'CineVEO_Secure_Download_2025_KEY');
 
-$dbHost = 'localhost';
+$dbHost = '127.0.0.1';
 $dbCharset = 'utf8mb4';
 
 $dbNamePipo = 'pipocine';
-$dbUserPipo = 'pipcine';
+$dbUserPipoPrimary = 'pipocine';
+$dbUserPipoFallback = 'pipcine';
 $dbPassPipo = 'pipocine12mt';
 
 $dbNameCine = 'cineveo';
@@ -40,12 +41,31 @@ $options = [
     PDO::ATTR_TIMEOUT => 5,
 ];
 
+$connectionError = null;
+
 try {
-    $pdo = new PDO($dsnPipo, $dbUserPipo, $dbPassPipo, $options);
     $pdoCineveo = new PDO($dsnCine, $dbUserCine, $dbPassCine, $options);
 } catch (\PDOException $e) {
+    $connectionError = 'Falha critica no banco central (Cineveo).';
+}
+
+if (!$connectionError) {
+    try {
+        try {
+            $pdo = new PDO($dsnPipo, $dbUserPipoPrimary, $dbPassPipo, $options);
+        } catch (\PDOException $e) {
+            $pdo = new PDO($dsnPipo, $dbUserPipoFallback, $dbPassPipo, $options);
+        }
+    } catch (\PDOException $e) {
+        $connectionError = 'Falha no banco Pipocine. Verifique se o DB, o usuario e a senha estao criados corretamente no aaPanel.';
+    }
+}
+
+if ($connectionError) {
+    $requestUri = $_SERVER['REQUEST_URI'] ?? '';
     $isApiCall = (
-        (isset($_SERVER['SCRIPT_FILENAME']) && strpos($_SERVER['SCRIPT_FILENAME'], DIRECTORY_SEPARATOR . 'api' . DIRECTORY_SEPARATOR) !== false) ||
+        strpos($requestUri, '/api/') === 0 ||
+        (isset($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false) ||
         (isset($_GET['fetchMode'])) ||
         (isset($_POST['ajaxAction']))
     );
@@ -53,11 +73,15 @@ try {
     if ($isApiCall) {
         header('Content-Type: application/json');
         http_response_code(503);
-        echo json_encode(['success' => false, 'message' => 'Service Unavailable']);
+        echo json_encode([
+            'isAuthenticated' => false,
+            'user' => null,
+            'error' => $connectionError
+        ]);
         exit;
     } else {
         http_response_code(503);
-        die('<h2 style="font-family:sans-serif;color:#c00;text-align:center;margin-top:50px;">Erro de Sistema</h2>');
+        die('<h2 style="font-family:sans-serif;color:#c00;text-align:center;margin-top:50px;">' . $connectionError . '</h2>');
     }
 }
 
