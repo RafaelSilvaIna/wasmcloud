@@ -59,11 +59,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 showError(result.message || 'Credenciais inválidas.');
                 btnSubmit.classList.remove('loading');
                 btnSubmit.disabled = false;
+                btnText.innerText = 'Entrar na Plataforma';
             }
         } catch (err) {
             showError('Servidor indisponível no momento.');
             btnSubmit.classList.remove('loading');
             btnSubmit.disabled = false;
+            btnText.innerText = 'Entrar na Plataforma';
         }
     });
 
