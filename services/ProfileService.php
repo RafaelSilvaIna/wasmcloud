@@ -8,6 +8,37 @@ class ProfileService {
         $this->authModel = $authModel;
     }
 
+    public function getProfilesForUser(): array {
+        if (!isset($_SESSION['user_id'])) return [];
+        return $this->profileModel->listByUserId((int)$_SESSION['user_id']);
+    }
+
+    public function isUsernameAvailable(string $username): array {
+        $username = strtolower(preg_replace('/[^a-zA-Z0-9_]/', '', $username));
+        if (strlen($username) < 3) return ['available' => false];
+        $exists = $this->profileModel->findByUsername($username);
+        return ['available' => $exists === null];
+    }
+
+    public function selectProfile(int $profileId, ?string $pin): array {
+        if (!isset($_SESSION['user_id'])) {
+            return ['success' => false, 'message' => 'Não autenticado.'];
+        }
+        $profile = $this->profileModel->findById($profileId);
+        if (!$profile || (int)$profile['user_id'] !== (int)$_SESSION['user_id']) {
+            return ['success' => false, 'message' => 'Perfil não encontrado.'];
+        }
+        if (!empty($profile['pin_hash'])) {
+            if (empty($pin) || !password_verify($pin, $profile['pin_hash'])) {
+                return ['success' => false, 'message' => 'PIN incorreto.'];
+            }
+        }
+        $_SESSION['profile_id']    = $profile['id'];
+        $_SESSION['profile_name']  = $profile['profile_name'];
+        $_SESSION['profile_image'] = $profile['profile_image'];
+        return ['success' => true];
+    }
+
     public function addNewProfile(array $data): array {
         $userCineveo = $this->authModel->getUserData((int)$_SESSION['user_id']);
         $currentProfilesCount = $this->profileModel->countByUserId((int)$_SESSION['user_id']);
@@ -21,12 +52,12 @@ class ProfileService {
         $pinHash = !empty($data['pin']) ? password_hash($data['pin'], PASSWORD_ARGON2ID) : null;
         
         $payload = [
-            'user_id' => $_SESSION['user_id'],
-            'profile_name' => strip_tags($data['name']),
-            'username' => strtolower(preg_replace('/[^a-zA-Z0-9_]/', '', $data['username'])),
-            'pin_hash' => $pinHash,
+            'user_id'       => $_SESSION['user_id'],
+            'profile_name'  => strip_tags($data['name']),
+            'username'      => strtolower(preg_replace('/[^a-zA-Z0-9_]/', '', $data['username'])),
+            'pin_hash'      => $pinHash,
             'profile_image' => $data['image'],
-            'is_kids' => $data['type'] === 'kids' ? 1 : 0
+            'is_kids'       => $data['type'] === 'kids' ? 1 : 0
         ];
 
         if ($this->profileModel->create($payload)) {
