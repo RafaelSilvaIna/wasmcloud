@@ -1,0 +1,149 @@
+#pipo-notification-root {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    pointer-events: none;
+}
+
+.pipo-toast {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background-color: rgba(18, 21, 28, 0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 16px 20px;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    min-width: 300px;
+    max-width: 400px;
+    pointer-events: auto;
+    transform: translateX(120%);
+    opacity: 0;
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.4s ease;
+}
+
+.pipo-toast.show {
+    transform: translateX(0);
+    opacity: 1;
+}
+
+.pipo-toast.hide {
+    transform: translateX(120%);
+    opacity: 0;
+}
+
+.toast-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+}
+
+.toast-icon svg {
+    width: 100%;
+    height: 100%;
+}
+
+.toast-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.toast-message {
+    color: var(--text-pure);
+    font-size: 0.95rem;
+    font-weight: 500;
+    line-height: 1.4;
+}
+
+.toast-close {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color var(--transition-fast);
+}
+
+.toast-close:hover {
+    color: var(--text-pure);
+}
+
+.pipo-toast.success {
+    border-left: 4px solid var(--status-success);
+}
+
+.pipo-toast.success .toast-icon {
+    color: var(--status-success);
+}
+
+.pipo-toast.error {
+    border-left: 4px solid var(--status-error);
+}
+
+.pipo-toast.error .toast-icon {
+    color: var(--status-error);
+}
+
+.pipo-toast.warning {
+    border-left: 4px solid var(--status-warning);
+}
+
+.pipo-toast.warning .toast-icon {
+    color: var(--status-warning);
+}
+
+.pipo-toast.info {
+    border-left: 4px solid var(--status-info);
+}
+
+.pipo-toast.info .toast-icon {
+    color: var(--status-info);
+}
+
+body.light-mode .pipo-toast {
+    background-color: rgba(255, 255, 255, 0.9);
+    border: 1px solid var(--border-subtle);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+body.light-mode .toast-message {
+    color: var(--text-primary);
+}
+
+@media (max-width: 768px) {
+    #pipo-notification-root {
+        bottom: 100px;
+        left: 50%;
+        right: auto;
+        transform: translateX(-50%);
+        width: 90%;
+        align-items: center;
+    }
+
+    .pipo-toast {
+        width: 100%;
+        min-width: unset;
+        transform: translateY(100px);
+    }
+
+    .pipo-toast.show {
+        transform: translateY(0);
+    }
+
+    .pipo-toast.hide {
+        transform: translateY(100px);
+    }
+}
