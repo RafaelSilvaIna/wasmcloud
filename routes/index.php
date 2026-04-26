@@ -64,10 +64,20 @@ if (strpos($requestUri, '/api/') === 0) {
         if ($requestUri === '/api/profiles/stop-session' && $requestMethod === 'POST') {
             $profileController->stopSession(); exit;
         }
+        // NOVA ROTA API: Atualizar o Perfil
+        if ($requestUri === '/api/profiles/update' && $requestMethod === 'POST') {
+            $profileController->update(); exit;
+        }
     }
 
     header('Content-Type: application/json');
     http_response_code(404);
     echo json_encode(['error' => 'Endpoint não encontrado']);
+    exit;
+}
+
+// NOVA ROTA FRONT-END: Página de Gerenciar Perfis (Carrega o HTML)
+if ($requestUri === '/manage-profiles') {
+    require_once __DIR__ . '/../pages/manage-profiles.php';
     exit;
 }

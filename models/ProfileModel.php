@@ -53,4 +53,10 @@ class ProfileModel {
         $stmt->execute([$profileId]);
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
+
+    // NOVA FUNÇÃO: Atualiza apenas o nome e o avatar do perfil com segurança
+    public function updateProfile(int $id, int $userId, string $name, string $image): bool {
+        $stmt = $this->db->prepare("UPDATE profiles SET profile_name = ?, profile_image = ? WHERE id = ? AND user_id = ?");
+        return $stmt->execute([$name, $image, $id, $userId]);
+    }
 }

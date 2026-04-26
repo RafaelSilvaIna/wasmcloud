@@ -86,4 +86,30 @@ class ProfileService {
     public function stopWatching(int $profileId): void {
         $this->profileModel->updateWatchingStatus($profileId, false, null);
     }
+
+    // NOVA FUNÇÃO: Processa a edição de perfil
+    public function updateProfile(array $data): array {
+        if (!isset($_SESSION['user_id'])) {
+            return ['success' => false, 'message' => 'Não autenticado.'];
+        }
+        
+        $id = (int)($data['id'] ?? 0);
+        $name = strip_tags(trim($data['name'] ?? ''));
+        $image = $data['image'] ?? '';
+
+        if (empty($name)) {
+            return ['success' => false, 'message' => 'O nome do perfil não pode estar vazio.'];
+        }
+
+        if ($this->profileModel->updateProfile($id, $_SESSION['user_id'], $name, $image)) {
+            // Se o perfil que foi atualizado for o que está atualmente selecionado na sessão, atualiza os dados visuais na hora
+            if (isset($_SESSION['profile_id']) && $_SESSION['profile_id'] == $id) {
+                $_SESSION['profile_name'] = $name;
+                $_SESSION['profile_image'] = $image;
+            }
+            return ['success' => true];
+        }
+        
+        return ['success' => false, 'message' => 'Erro ao atualizar o perfil.'];
+    }
 }

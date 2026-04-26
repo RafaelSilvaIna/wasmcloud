@@ -76,7 +76,6 @@
     overflow: hidden;
 }
 
-/* Subtle noise texture overlay */
 .profiles-wrapper::before {
     content: '';
     position: fixed;
@@ -88,7 +87,7 @@
 }
 
 /* ============================================================
-   LOGO
+   LOGO E TITULO
    ============================================================ */
 .logo-container {
     position: absolute;
@@ -103,9 +102,6 @@
     display: block;
 }
 
-/* ============================================================
-   HEADING
-   ============================================================ */
 .main-title {
     position: relative;
     z-index: 1;
@@ -120,7 +116,7 @@
 }
 
 /* ============================================================
-   PROFILES ROOT
+   GRID DE PERFIS
    ============================================================ */
 #pipo-profiles-root {
     position: relative;
@@ -131,9 +127,6 @@
     animation: profileFadeUp 0.7s var(--profile-ease-out) 0.15s both;
 }
 
-/* ============================================================
-   GRID
-   ============================================================ */
 .profiles-grid {
     display: flex;
     flex-wrap: wrap;
@@ -142,9 +135,6 @@
     max-width: min(1100px, 92vw);
 }
 
-/* ============================================================
-   PROFILE ITEM
-   ============================================================ */
 .profile-item {
     display: flex;
     flex-direction: column;
@@ -175,9 +165,6 @@
     transition-duration: 0.1s;
 }
 
-/* ============================================================
-   AVATAR WRAPPER
-   ============================================================ */
 .avatar-wrapper {
     width: var(--profile-card-size);
     height: var(--profile-card-size);
@@ -185,22 +172,14 @@
     position: relative;
     overflow: hidden;
     border: 3px solid var(--profile-border-default);
-    transition: border-color 0.3s var(--profile-ease-in-out),
-        box-shadow 0.3s var(--profile-ease-in-out);
-    box-shadow:
-        0 8px 24px rgba(0, 0, 0, 0.4),
-        0 2px 8px rgba(0, 0, 0, 0.3),
-        inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    transition: border-color 0.3s var(--profile-ease-in-out), box-shadow 0.3s var(--profile-ease-in-out);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.06);
     background-color: var(--profile-bg-surface);
 }
 
 .profile-item:hover .avatar-wrapper {
     border-color: var(--profile-primary);
-    box-shadow:
-        0 16px 40px var(--profile-primary-glow),
-        0 6px 16px rgba(0, 0, 0, 0.4),
-        0 0 0 1px rgba(229, 9, 31, 0.2),
-        inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    box-shadow: 0 16px 40px var(--profile-primary-glow), 0 6px 16px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(229, 9, 31, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .avatar-img {
@@ -215,42 +194,15 @@
     transform: scale(1.05);
 }
 
-/* Kids variant */
 .profile-item.kids .avatar-wrapper {
     border-color: var(--profile-kids);
-    box-shadow:
-        0 8px 24px rgba(0, 0, 0, 0.4),
-        0 0 0 1px rgba(56, 189, 248, 0.15);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(56, 189, 248, 0.15);
 }
 
 .profile-item:hover.kids .avatar-wrapper {
-    box-shadow:
-        0 16px 40px var(--profile-kids-glow),
-        0 6px 16px rgba(0, 0, 0, 0.4),
-        0 0 0 1px rgba(56, 189, 248, 0.3);
+    box-shadow: 0 16px 40px var(--profile-kids-glow), 0 6px 16px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(56, 189, 248, 0.3);
 }
 
-/* Lock variant */
-.profile-item.lock .avatar-wrapper::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background-color: rgba(0, 0, 0, 0.65);
-    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>');
-    background-repeat: no-repeat;
-    background-position: center;
-    opacity: 0;
-    transition: opacity 0.25s var(--profile-ease-in-out);
-    backdrop-filter: blur(2px);
-}
-
-.profile-item:hover.lock .avatar-wrapper::after {
-    opacity: 1;
-}
-
-/* ============================================================
-   PROFILE NAME
-   ============================================================ */
 .profile-name {
     color: var(--profile-text-muted);
     font-size: clamp(0.875rem, 1.5vw, 1.1rem);
@@ -268,9 +220,7 @@
     color: var(--profile-text-pure);
 }
 
-/* ============================================================
-   ADD PROFILE BUTTON
-   ============================================================ */
+/* BOTAO ADICIONAR PERFIL */
 .add-profile-btn {
     justify-content: center;
 }
@@ -285,10 +235,7 @@
     background-color: var(--profile-bg-glass);
     border: 2px dashed rgba(255, 255, 255, 0.15);
     color: var(--profile-text-subtle);
-    transition: background-color 0.3s var(--profile-ease-in-out),
-        border-color 0.3s var(--profile-ease-in-out),
-        color 0.3s var(--profile-ease-in-out),
-        box-shadow 0.3s var(--profile-ease-in-out);
+    transition: background-color 0.3s var(--profile-ease-in-out), border-color 0.3s var(--profile-ease-in-out), color 0.3s var(--profile-ease-in-out), box-shadow 0.3s var(--profile-ease-in-out);
 }
 
 .add-profile-btn:hover .add-icon-wrapper {
@@ -299,7 +246,7 @@
 }
 
 /* ============================================================
-   MODAL BACKDROP
+   MODAIS (Fundo e Caixa)
    ============================================================ */
 .profile-modal,
 .avatar-modal {
@@ -316,8 +263,7 @@
     overflow: hidden;
     opacity: 0;
     visibility: hidden;
-    transition: opacity 0.3s var(--profile-ease-in-out),
-        visibility 0.3s var(--profile-ease-in-out);
+    transition: opacity 0.3s var(--profile-ease-in-out), visibility 0.3s var(--profile-ease-in-out);
 }
 
 .profile-modal.open,
@@ -326,9 +272,6 @@
     visibility: visible;
 }
 
-/* ============================================================
-   MODAL CONTENT
-   ============================================================ */
 .modal-content {
     background: var(--profile-bg-elevated);
     border: 1px solid var(--profile-border-subtle);
@@ -338,10 +281,7 @@
     padding: 24px 28px;
     transform: translateY(12px) scale(0.97);
     transition: transform 0.35s var(--profile-ease-out);
-    box-shadow:
-        0 32px 80px rgba(0, 0, 0, 0.7),
-        0 8px 24px rgba(0, 0, 0, 0.4),
-        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    box-shadow: 0 32px 80px rgba(0, 0, 0, 0.7), 0 8px 24px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
     overflow: hidden;
 }
 
@@ -350,7 +290,6 @@
     transform: translateY(0) scale(1);
 }
 
-/* Wide variant */
 .modal-content--wide {
     max-width: 740px;
     display: flex;
@@ -386,9 +325,6 @@
     margin: 0;
 }
 
-/* ============================================================
-   MODAL HEADER
-   ============================================================ */
 .modal-header {
     display: flex;
     justify-content: space-between;
@@ -402,6 +338,14 @@
     font-size: 1.2rem;
     font-weight: 700;
     letter-spacing: -0.02em;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.modal-header h2 i {
+    color: var(--profile-primary);
+    flex-shrink: 0;
 }
 
 .modal-close {
@@ -427,7 +371,7 @@
 }
 
 /* ============================================================
-   MODAL FORM
+   FORMULÁRIO E INPUTS
    ============================================================ */
 .modal-form {
     display: flex;
@@ -435,7 +379,6 @@
     gap: 12px;
 }
 
-/* Avatar picker trigger inside modal */
 .avatar-picker-trigger {
     align-self: center;
     position: relative;
@@ -476,19 +419,44 @@
     transform: scale(1.1);
 }
 
-/* ============================================================
-   INPUT GROUP
-   ============================================================ */
 .input-group label {
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 6px;
     color: var(--profile-text-muted);
     margin-bottom: 5px;
     font-size: 0.75rem;
     font-weight: 600;
     letter-spacing: 0.06em;
     text-transform: uppercase;
+}
+
+.input-group label i {
+    opacity: 0.6;
+    flex-shrink: 0;
+}
+
+.input-with-icon {
+    position: relative;
+}
+
+.input-with-icon .input-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--profile-text-subtle);
+    pointer-events: none;
+    flex-shrink: 0;
+    transition: color 0.25s;
+}
+
+.input-with-icon input {
+    padding-left: 42px !important;
+}
+
+.input-with-icon:focus-within .input-icon {
+    color: var(--profile-primary);
 }
 
 .input-group input,
@@ -523,14 +491,6 @@
     cursor: not-allowed;
 }
 
-.input-group select option {
-    background-color: var(--profile-bg-elevated);
-    color: var(--profile-text-pure);
-}
-
-/* ============================================================
-   USERNAME STATUS
-   ============================================================ */
 .username-check-wrapper {
     position: relative;
 }
@@ -567,188 +527,7 @@
 }
 
 /* ============================================================
-   PIN TOGGLE
-   ============================================================ */
-.pin-toggle-wrapper {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid var(--profile-border-subtle);
-    padding: 11px 14px;
-    border-radius: 10px;
-    gap: 12px;
-}
-
-.pin-toggle-wrapper label,
-.pin-label {
-    margin: 0;
-    color: var(--profile-text-pure);
-    font-weight: 500;
-    font-size: 0.9rem;
-}
-
-.pin-label {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-/* Toggle switch */
-.pipo-switch {
-    position: relative;
-    display: inline-block;
-    width: 48px;
-    height: 26px;
-    flex-shrink: 0;
-}
-
-.pipo-switch input {
-    opacity: 0;
-    width: 0;
-    height: 0;
-}
-
-.pipo-slider {
-    position: absolute;
-    cursor: pointer;
-    inset: 0;
-    background-color: rgba(255, 255, 255, 0.1);
-    transition: background-color 0.3s;
-    border-radius: 99px;
-}
-
-.pipo-slider::before {
-    content: '';
-    position: absolute;
-    height: 18px;
-    width: 18px;
-    left: 4px;
-    bottom: 4px;
-    background-color: white;
-    transition: transform 0.3s var(--profile-ease-spring);
-    border-radius: 50%;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
-}
-
-.pipo-switch input:checked+.pipo-slider {
-    background-color: var(--profile-primary);
-}
-
-.pipo-switch input:checked+.pipo-slider::before {
-    transform: translateX(22px);
-}
-
-/* ============================================================
-   PIN INPUT BOX
-   ============================================================ */
-.pin-input-box {
-    display: none;
-}
-
-.pin-input-box.show {
-    display: block;
-    animation: profileFadeUp 0.3s var(--profile-ease-out) both;
-}
-
-.pin-section {
-    background: rgba(255, 255, 255, 0.02);
-    border: 1px solid var(--profile-border-subtle);
-    border-radius: 12px;
-    padding: 12px;
-    margin-top: 0;
-}
-
-/* ============================================================
-   PIN NUMPAD
-   ============================================================ */
-.pin-dots-wrapper {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    margin-top: 14px;
-}
-
-.pin-dots-label {
-    color: var(--profile-text-muted);
-    font-size: 0.78rem;
-    margin-bottom: 10px;
-    letter-spacing: 0.03em;
-}
-
-.pin-dots {
-    display: flex;
-    gap: 12px;
-    justify-content: center;
-    margin-bottom: 16px;
-}
-
-.pin-dot {
-    width: 11px;
-    height: 11px;
-    border-radius: 50%;
-    border: 2px solid rgba(255, 255, 255, 0.18);
-    transition: background-color 0.2s var(--profile-ease-spring),
-        border-color 0.2s var(--profile-ease-spring),
-        transform 0.2s var(--profile-ease-spring);
-}
-
-.pin-dot.filled {
-    background-color: var(--profile-text-pure);
-    border-color: var(--profile-text-pure);
-    transform: scale(1.15);
-}
-
-.pin-numpad {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
-    max-width: 200px;
-    margin: 0 auto;
-}
-
-.pin-key {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid var(--profile-border-default);
-    color: var(--profile-text-pure);
-    font-size: 1rem;
-    font-weight: 600;
-    width: 52px;
-    height: 52px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: background-color 0.15s, transform 0.15s, box-shadow 0.15s;
-    -webkit-tap-highlight-color: transparent;
-    user-select: none;
-}
-
-.pin-key:hover:not(.pin-key--empty) {
-    background: rgba(255, 255, 255, 0.12);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    transform: scale(1.06);
-}
-
-.pin-key:active:not(.pin-key--empty) {
-    transform: scale(0.92);
-    background: rgba(255, 255, 255, 0.18);
-}
-
-.pin-key--empty {
-    background: transparent;
-    border: none;
-    cursor: default;
-}
-
-.pin-key--del {
-    color: var(--profile-error);
-    font-size: 0.9rem;
-}
-
-/* ============================================================
-   AVATAR MODAL
+   AVATARES MODAL
    ============================================================ */
 .avatar-modal .modal-content {
     max-width: 600px;
@@ -769,6 +548,9 @@
 }
 
 .category-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
     background: var(--profile-bg-glass);
     border: 1px solid var(--profile-border-subtle);
     color: var(--profile-text-muted);
@@ -819,7 +601,7 @@
 }
 
 /* ============================================================
-   BOTTOM ACTION MENU (mobile sheet)
+   MENU INFERIOR (Mobile) & OVERLAY
    ============================================================ */
 .profile-action-menu {
     position: fixed;
@@ -843,7 +625,6 @@
     visibility: visible;
 }
 
-/* Drag handle */
 .profile-action-menu::before {
     content: '';
     display: block;
@@ -895,6 +676,11 @@
     transition: background-color 0.15s;
 }
 
+.menu-item i {
+    flex-shrink: 0;
+    opacity: 0.85;
+}
+
 .menu-item:hover {
     background-color: var(--profile-bg-glass);
 }
@@ -907,9 +693,10 @@
     color: var(--profile-error);
 }
 
-/* ============================================================
-   OVERLAY
-   ============================================================ */
+.menu-item.delete i {
+    opacity: 1;
+}
+
 .press-overlay {
     position: fixed;
     inset: 0;
@@ -926,7 +713,7 @@
 }
 
 /* ============================================================
-   ACCOUNT TYPE
+   TIPO DE CONTA E BOTOES
    ============================================================ */
 .account-type-picker {
     display: flex;
@@ -963,6 +750,34 @@
     box-shadow: 0 0 0 3px var(--profile-primary-glow);
 }
 
+.type-icon-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 9px;
+    background: rgba(229, 9, 31, 0.12);
+    color: var(--profile-primary);
+    margin-bottom: 1px;
+    transition: background-color 0.2s, transform 0.2s var(--profile-ease-spring);
+}
+
+.type-icon-wrap--kids {
+    background: rgba(56, 189, 248, 0.12);
+    color: var(--profile-kids);
+}
+
+.account-type-btn.active .type-icon-wrap {
+    background: rgba(229, 9, 31, 0.2);
+    transform: scale(1.08);
+}
+
+.account-type-btn.active.kids .type-icon-wrap,
+[data-type="kids"].account-type-btn.active .type-icon-wrap {
+    background: rgba(56, 189, 248, 0.2);
+}
+
 .account-type-info-btn {
     display: flex;
     align-items: center;
@@ -981,9 +796,6 @@
     background: var(--profile-bg-glass-hover);
 }
 
-/* ============================================================
-   MODAL ACTIONS
-   ============================================================ */
 .modal-actions {
     display: flex;
     gap: 8px;
@@ -992,6 +804,10 @@
 
 .btn-primary,
 .btn-ghost {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
     padding: 11px 18px;
     border-radius: 10px;
     font-weight: 600;
@@ -1001,6 +817,11 @@
     flex: 1;
     transition: background-color 0.2s, transform 0.15s, box-shadow 0.2s;
     -webkit-tap-highlight-color: transparent;
+}
+
+.btn-primary i,
+.btn-ghost i {
+    flex-shrink: 0;
 }
 
 .btn-primary {
@@ -1034,9 +855,6 @@
     transform: scale(0.97);
 }
 
-/* ============================================================
-   ACCOUNT TYPE CARDS (info modal)
-   ============================================================ */
 .account-type-cards {
     display: flex;
     flex-direction: column;
@@ -1058,10 +876,21 @@
     transform: translateY(-2px);
 }
 
-.atc-icon {
-    font-size: 2.25rem;
-    margin-bottom: 10px;
-    display: block;
+.atc-icon-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    border-radius: 16px;
+    background: rgba(229, 9, 31, 0.12);
+    color: var(--profile-primary);
+    margin-bottom: 14px;
+}
+
+.atc-icon-wrap--kids {
+    background: rgba(56, 189, 248, 0.12);
+    color: var(--profile-kids);
 }
 
 .account-type-card h3 {
@@ -1072,6 +901,9 @@
 }
 
 .atc-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
     position: absolute;
     top: 18px;
     right: 18px;
@@ -1104,11 +936,21 @@
 }
 
 .atc-features li {
-    margin-bottom: 7px;
     display: flex;
     align-items: flex-start;
     gap: 8px;
+    margin-bottom: 7px;
     line-height: 1.5;
+}
+
+.atc-check {
+    color: var(--profile-success);
+    flex-shrink: 0;
+}
+
+.atc-lock {
+    color: var(--profile-text-subtle);
+    flex-shrink: 0;
 }
 
 .atc-select-btn {
@@ -1125,23 +967,9 @@
     box-shadow: 0 6px 20px var(--profile-kids-glow);
 }
 
-/* ============================================================
-   PIN ACCESS SCREEN
-   ============================================================ */
-.pin-access-header {
-    text-align: center;
-    margin-bottom: 28px;
-}
-
-.pin-access-lock {
-    font-size: 2.75rem;
-    margin-bottom: 8px;
-    display: block;
-    animation: profilePulse 2s var(--profile-ease-in-out) infinite;
-}
 
 /* ============================================================
-   ANIMATIONS
+   ANIMAÇÕES E RESPONSIVIDADE
    ============================================================ */
 @keyframes profileFadeDown {
     from {
@@ -1177,23 +1005,6 @@
     }
 }
 
-@keyframes profilePulse {
-
-    0%,
-    100% {
-        transform: scale(1);
-        opacity: 0.9;
-    }
-
-    50% {
-        transform: scale(1.06);
-        opacity: 1;
-    }
-}
-
-/* ============================================================
-   RESPONSIVE — Tablet (≤ 768px)
-   ============================================================ */
 @media (max-width: 768px) {
     :root {
         --profile-card-size: var(--profile-card-size-mob);
@@ -1244,9 +1055,6 @@
     }
 }
 
-/* ============================================================
-   RESPONSIVE — Small mobile (≤ 480px)
-   ============================================================ */
 @media (max-width: 480px) {
     .profiles-grid {
         gap: 16px;
@@ -1255,22 +1063,6 @@
     .modal-content {
         padding: 20px 16px;
         border-radius: 18px;
-    }
-
-    .pin-numpad {
-        gap: 10px;
-        max-width: 210px;
-    }
-
-    .pin-key {
-        width: 54px;
-        height: 54px;
-        font-size: 1.05rem;
-    }
-
-    .pin-dot {
-        width: 12px;
-        height: 12px;
     }
 
     .modal-actions {
@@ -1287,224 +1079,13 @@
     }
 }
 
-/* ============================================================
-   INPUT COM ÍCONE
-   ============================================================ */
-.input-group label {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.input-group label i {
-    opacity: 0.6;
-    flex-shrink: 0;
-}
-
-.input-with-icon {
-    position: relative;
-}
-
-.input-with-icon .input-icon {
-    position: absolute;
-    left: 14px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: var(--profile-text-subtle);
-    pointer-events: none;
-    flex-shrink: 0;
-    transition: color 0.25s;
-}
-
-.input-with-icon input {
-    padding-left: 42px !important;
-}
-
-.input-with-icon:focus-within .input-icon {
-    color: var(--profile-primary);
-}
-
-/* ============================================================
-   BOTÕES COM ÍCONE
-   ============================================================ */
-.btn-primary,
-.btn-ghost {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-}
-
-.btn-primary i,
-.btn-ghost i {
-    flex-shrink: 0;
-}
-
-/* ============================================================
-   ACCOUNT TYPE — ícone wrapper
-   ============================================================ */
-.type-icon-wrap {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    border-radius: 9px;
-    background: rgba(229, 9, 31, 0.12);
-    color: var(--profile-primary);
-    margin-bottom: 1px;
-    transition: background-color 0.2s, transform 0.2s var(--profile-ease-spring);
-}
-
-.type-icon-wrap--kids {
-    background: rgba(56, 189, 248, 0.12);
-    color: var(--profile-kids);
-}
-
-.account-type-btn.active .type-icon-wrap {
-    background: rgba(229, 9, 31, 0.2);
-    transform: scale(1.08);
-}
-
-.account-type-btn.active.kids .type-icon-wrap,
-[data-type="kids"].account-type-btn.active .type-icon-wrap {
-    background: rgba(56, 189, 248, 0.2);
-}
-
-/* ============================================================
-   ACCOUNT TYPE CARDS — ícone e features modernizados
-   ============================================================ */
-.atc-icon-wrap {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 56px;
-    height: 56px;
-    border-radius: 16px;
-    background: rgba(229, 9, 31, 0.12);
-    color: var(--profile-primary);
-    margin-bottom: 14px;
-}
-
-.atc-icon-wrap--kids {
-    background: rgba(56, 189, 248, 0.12);
-    color: var(--profile-kids);
-}
-
-.atc-features li {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.atc-check {
-    color: var(--profile-success);
-    flex-shrink: 0;
-}
-
-.atc-lock {
-    color: var(--profile-text-subtle);
-    flex-shrink: 0;
-}
-
-.atc-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-}
-
-/* ============================================================
-   AVATAR CATEGORIES — ícones nos botões
-   ============================================================ */
-.category-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-}
-
-/* ============================================================
-   MENU ITEM — espaçamento com ícone
-   ============================================================ */
-.menu-item {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-}
-
-.menu-item i {
-    flex-shrink: 0;
-    opacity: 0.85;
-}
-
-.menu-item.delete i {
-    opacity: 1;
-}
-
-/* ============================================================
-   PIN ACCESS — ícone central
-   ============================================================ */
-.pin-access-lock {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 72px;
-    height: 72px;
-    border-radius: 50%;
-    background: rgba(229, 9, 31, 0.1);
-    border: 1px solid rgba(229, 9, 31, 0.2);
-    color: var(--profile-primary);
-    margin: 0 auto 16px;
-    animation: profilePulse 2.5s var(--profile-ease-in-out) infinite;
-}
-
-/* PIN dots label com ícone */
-.pin-dots-label {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-}
-
-/* Modal header com ícone */
-.modal-header h2 {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.modal-header h2 i {
-    color: var(--profile-primary);
-    flex-shrink: 0;
-}
-
-/* ============================================================
-   PIN DEL — ícone Lucide no lugar do ⌫
-   ============================================================ */
-.pin-key--del {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-/* ============================================================
-   BTN CANCEL PIN — full width com flex
-   ============================================================ */
-#btn-cancel-pin {
-    margin-top: 16px;
-    width: 100%;
-}
-
-/* ============================================================
-   REDUCED MOTION
-   ============================================================ */
 @media (prefers-reduced-motion: reduce) {
 
     .profile-item,
     .avatar-img,
     .avatar-wrapper,
     .btn-primary,
-    .btn-ghost,
-    .pin-key {
+    .btn-ghost {
         transition: none !important;
         animation: none !important;
         transform: none !important;

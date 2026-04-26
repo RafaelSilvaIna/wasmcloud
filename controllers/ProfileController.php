@@ -82,4 +82,11 @@ class ProfileController {
         }
         echo json_encode(['success' => true]);
     }
+
+    // NOVA FUNÇÃO: Rota de receção dos dados para atualização
+    public function update(): void {
+        header('Content-Type: application/json');
+        $data = json_decode(file_get_contents('php://input'), true);
+        echo json_encode($this->profileService->updateProfile($data));
+    }
 }

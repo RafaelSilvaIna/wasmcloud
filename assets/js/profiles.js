@@ -2,14 +2,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // ── Elementos ─────────────────────────────────────────────────────────
     const grid             = document.getElementById('profiles-grid');
     const modalForm        = document.getElementById('pipo-profile-modal');
-    const modalPin         = document.getElementById('pipo-pin-modal');
     const modalAvatars     = document.getElementById('pipo-avatar-modal');
     const modalAccountType = document.getElementById('pipo-account-type-modal');
     const actionMenu       = document.getElementById('pipo-profile-action-menu');
     const pressOverlay     = document.getElementById('pipo-press-overlay');
 
     let currentProfiles        = [];
-    let selectedProfileForPin  = null;
     let pressTimer;
     let actionProfileData      = null;
 
@@ -24,24 +22,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (m === modalForm) {
             const form = document.getElementById('profile-form');
             if (form) form.reset();
-            const pinBox = document.getElementById('pin-input-box');
-            if (pinBox) pinBox.classList.remove('show');
             const uStatus = document.getElementById('username-status');
             if (uStatus) uStatus.innerText = '';
             const uInput = document.getElementById('username');
             if (uInput) uInput.removeAttribute('readonly');
             const avatarImg = document.getElementById('current-avatar-img');
             if (avatarImg) avatarImg.src = 'https://api.dicebear.com/7.x/adventurer/svg?seed=Pipo';
-            const pinInput = document.getElementById('pin_input');
-            if (pinInput) pinInput.value = '';
-            updateDots('pin-dots', 0);
             selectAccountType('standard');
-        }
-
-        if (m === modalPin) {
-            const accessPin = document.getElementById('access-pin-input');
-            if (accessPin) accessPin.value = '';
-            updateDots('access-pin-dots', 0);
         }
     };
 
@@ -60,10 +47,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const renderProfiles = () => {
         grid.innerHTML = '';
         currentProfiles.forEach(p => {
-            const isLock = p.has_pin  ? 'lock' : '';
             const isKids = p.is_kids  ? 'kids' : '';
             grid.innerHTML += `
-                <div class="profile-item ${isLock} ${isKids}" data-id="${p.id}" data-name="${p.profile_name}" data-img="${p.profile_image}" data-pin="${p.has_pin}">
+                <div class="profile-item ${isKids}" data-id="${p.id}" data-name="${p.profile_name}" data-img="${p.profile_image}">
                     <div class="avatar-wrapper">
                         <img src="${p.profile_image}" alt="${p.profile_name}" class="avatar-img">
                     </div>
@@ -103,8 +89,7 @@ document.addEventListener('DOMContentLoaded', () => {
             actionProfileData = {
                 id:     item.dataset.id,
                 name:   item.dataset.name,
-                image:  item.dataset.img,
-                hasPin: item.dataset.pin === '1'
+                image:  item.dataset.img
             };
             openActionMenu();
         }, 600);
@@ -125,22 +110,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const id     = item.dataset.id;
         const name   = item.dataset.name;
         const img    = item.dataset.img;
-        const hasPin = item.dataset.pin === '1';
-
-        if (hasPin) {
-            selectedProfileForPin = { id, name, img };
-            openModal(modalPin);
-        } else {
-            executeSelectProfile(id, name, img, null);
-        }
+        executeSelectProfile(id, name, img);
     };
 
-    const executeSelectProfile = async (id, name, img, pin) => {
+    const executeSelectProfile = async (id, name, img) => {
         try {
             const res  = await fetch('/api/profiles/select', {
                 method:  'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body:    JSON.stringify({ id, pin })
+                body:    JSON.stringify({ id, pin: null })
             });
             const data = await res.json();
 
@@ -150,60 +128,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 setTimeout(() => window.location.href = '/home', 1500);
             } else {
                 if (typeof PipoNotification !== 'undefined') PipoNotification.error(data.message || 'Erro ao acessar.');
-                const accessPin = document.getElementById('access-pin-input');
-                if (pin && accessPin) {
-                    accessPin.value = '';
-                    updateDots('access-pin-dots', 0);
-                }
             }
         } catch (err) {}
     };
-
-    // ── Teclado PIN ───────────────────────────────────────────────────────
-    const updateDots = (containerId, length) => {
-        const dots = document.querySelectorAll(`#${containerId} .pin-dot`);
-        dots.forEach((dot, i) => {
-            if (i < length) dot.classList.add('filled');
-            else dot.classList.remove('filled');
-        });
-    };
-
-    const setupNumpad = (numpadSelector, inputId, dotsId, autoSubmit = false) => {
-        const numpad = document.querySelector(numpadSelector);
-        if (!numpad) return;
-
-        numpad.addEventListener('click', (e) => {
-            const key = e.target.closest('.pin-key');
-            if (!key || key.classList.contains('pin-key--empty')) return;
-
-            const input = document.getElementById(inputId);
-            if (!input) return;
-
-            let val = input.value || '';
-
-            if (key.classList.contains('pin-key--del')) {
-                val = val.slice(0, -1);
-            } else {
-                const digit = key.dataset.digit;
-                if (digit !== undefined && val.length < 4) val += digit;
-            }
-
-            input.value = val;
-            updateDots(dotsId, val.length);
-
-            if (autoSubmit && val.length === 4 && selectedProfileForPin) {
-                executeSelectProfile(
-                    selectedProfileForPin.id,
-                    selectedProfileForPin.name,
-                    selectedProfileForPin.img,
-                    val
-                );
-            }
-        });
-    };
-
-    setupNumpad('#pin-numpad',              'pin_input',        'pin-dots',        false);
-    setupNumpad('#pipo-pin-modal .pin-numpad', 'access-pin-input', 'access-pin-dots', true);
 
     // ── Formulário de criação/edição ──────────────────────────────────────
     const profileForm = document.getElementById('profile-form');
@@ -244,7 +171,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (usernameInput) {
         usernameInput.addEventListener('input', (e) => {
-            // Remove caracteres não permitidos em tempo real
             const clean = e.target.value.replace(/[^a-zA-Z0-9_]/g, '');
             if (clean !== e.target.value) e.target.value = clean;
 
@@ -277,26 +203,11 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // ── Toggle PIN ────────────────────────────────────────────────────────
-    const pinToggle = document.getElementById('pin-toggle');
-    if (pinToggle) {
-        pinToggle.addEventListener('change', function () {
-            const pinBox  = document.getElementById('pin-input-box');
-            const pinInpt = document.getElementById('pin_input');
-            if (pinBox)  pinBox.classList.toggle('show', this.checked);
-            if (pinInpt) {
-                if (this.checked) pinInpt.setAttribute('required', 'true');
-                else pinInpt.removeAttribute('required');
-            }
-        });
-    }
-
     // ── Botões fechar modal ───────────────────────────────────────────────
     document.querySelectorAll('.modal-close, .pipo-modal-cancel').forEach(b => {
         b.addEventListener('click', () => {
             closeModal(modalForm);
             closeModal(modalAvatars);
-            closeModal(modalPin);
             closeModal(modalAccountType);
         });
     });
