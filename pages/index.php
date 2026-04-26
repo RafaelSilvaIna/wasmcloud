@@ -18,6 +18,12 @@ if ($requestUri === '/select-profile') {
     exit;
 }
 
+// NOVA ROTA: Direciona para a página de gerenciamento de perfis
+if ($requestUri === '/manage-profiles') {
+    require_once __DIR__ . '/manage-profiles.php';
+    exit;
+}
+
 http_response_code(404);
 echo "<h1>404 - Página não encontrada</h1>";
 exit;
