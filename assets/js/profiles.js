@@ -2,12 +2,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // ── Elementos ─────────────────────────────────────────────────────────
     const grid             = document.getElementById('profiles-grid');
     const modalForm        = document.getElementById('pipo-profile-modal');
+    const modalPin         = document.getElementById('pipo-pin-modal');
     const modalAvatars     = document.getElementById('pipo-avatar-modal');
     const modalAccountType = document.getElementById('pipo-account-type-modal');
     const actionMenu       = document.getElementById('pipo-profile-action-menu');
     const pressOverlay     = document.getElementById('pipo-press-overlay');
 
     let currentProfiles        = [];
+    let selectedProfileForPin  = null;
     let pressTimer;
     let actionProfileData      = null;
 
@@ -22,13 +24,24 @@ document.addEventListener('DOMContentLoaded', () => {
         if (m === modalForm) {
             const form = document.getElementById('profile-form');
             if (form) form.reset();
+            const pinBox = document.getElementById('pin-input-box');
+            if (pinBox) pinBox.classList.remove('show');
             const uStatus = document.getElementById('username-status');
             if (uStatus) uStatus.innerText = '';
             const uInput = document.getElementById('username');
             if (uInput) uInput.removeAttribute('readonly');
             const avatarImg = document.getElementById('current-avatar-img');
             if (avatarImg) avatarImg.src = 'https://api.dicebear.com/7.x/adventurer/svg?seed=Pipo';
+            const pinInput = document.getElementById('pin_input');
+            if (pinInput) pinInput.value = '';
+            updateDots('pin-dots', 0);
             selectAccountType('standard');
+        }
+
+        if (m === modalPin) {
+            const accessPin = document.getElementById('access-pin-input');
+            if (accessPin) accessPin.value = '';
+            updateDots('access-pin-dots', 0);
         }
     };
 
@@ -45,11 +58,13 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const renderProfiles = () => {
+        if (!grid) return;
         grid.innerHTML = '';
         currentProfiles.forEach(p => {
+            const isLock = p.has_pin  ? 'lock' : '';
             const isKids = p.is_kids  ? 'kids' : '';
             grid.innerHTML += `
-                <div class="profile-item ${isKids}" data-id="${p.id}" data-name="${p.profile_name}" data-img="${p.profile_image}">
+                <div class="profile-item ${isLock} ${isKids}" data-id="${p.id}" data-name="${p.profile_name}" data-img="${p.profile_image}" data-pin="${p.has_pin}">
                     <div class="avatar-wrapper">
                         <img src="${p.profile_image}" alt="${p.profile_name}" class="avatar-img">
                     </div>
@@ -69,68 +84,137 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // ── Cliques na grid ───────────────────────────────────────────────────
-    grid.addEventListener('click', (e) => {
-        const addBtn = e.target.closest('.add-profile-btn');
-        if (addBtn) {
-            const title = document.getElementById('modal-title');
-            if (title) title.innerText = 'Criar Novo Perfil';
-            openModal(modalForm);
-            return;
-        }
+    if (grid) {
+        grid.addEventListener('click', (e) => {
+            const addBtn = e.target.closest('.add-profile-btn');
+            if (addBtn) {
+                const title = document.getElementById('modal-title');
+                if (title) title.innerText = 'Criar Novo Perfil';
+                openModal(modalForm);
+                return;
+            }
 
-        const item = e.target.closest('.profile-item');
-        if (item && !isMobile()) handleProfileSelection(item);
-    });
+            const item = e.target.closest('.profile-item');
+            if (item && !isMobile()) handleProfileSelection(item);
+        });
 
-    grid.addEventListener('touchstart', (e) => {
-        const item = e.target.closest('.profile-item:not(.add-profile-btn)');
-        if (!item || !isMobile()) return;
-        pressTimer = setTimeout(() => {
-            actionProfileData = {
-                id:     item.dataset.id,
-                name:   item.dataset.name,
-                image:  item.dataset.img
-            };
-            openActionMenu();
-        }, 600);
-    });
+        grid.addEventListener('touchstart', (e) => {
+            const item = e.target.closest('.profile-item:not(.add-profile-btn)');
+            if (!item || !isMobile()) return;
+            pressTimer = setTimeout(() => {
+                actionProfileData = {
+                    id:     item.dataset.id,
+                    name:   item.dataset.name,
+                    image:  item.dataset.img,
+                    hasPin: item.dataset.pin === '1' || item.dataset.pin === 'true'
+                };
+                openActionMenu();
+            }, 600);
+        });
 
-    grid.addEventListener('touchend', (e) => {
-        clearTimeout(pressTimer);
-        const item = e.target.closest('.profile-item:not(.add-profile-btn)');
-        if (item && isMobile() && !actionMenu.classList.contains('open')) {
-            handleProfileSelection(item);
-        }
-    });
+        grid.addEventListener('touchend', (e) => {
+            clearTimeout(pressTimer);
+            const item = e.target.closest('.profile-item:not(.add-profile-btn)');
+            // CORREÇÃO: Verificamos se o menu existe antes de checar as classes
+            const isMenuOpen = actionMenu ? actionMenu.classList.contains('open') : false;
+            
+            if (item && isMobile() && !isMenuOpen) {
+                handleProfileSelection(item);
+            }
+        });
 
-    grid.addEventListener('touchmove', () => clearTimeout(pressTimer));
+        grid.addEventListener('touchmove', () => clearTimeout(pressTimer));
+    }
 
     // ── Seleção de perfil ─────────────────────────────────────────────────
     const handleProfileSelection = (item) => {
         const id     = item.dataset.id;
         const name   = item.dataset.name;
         const img    = item.dataset.img;
-        executeSelectProfile(id, name, img);
+        const hasPin = item.dataset.pin === '1' || item.dataset.pin === 'true';
+
+        if (hasPin) {
+            selectedProfileForPin = { id, name, img };
+            openModal(modalPin);
+        } else {
+            executeSelectProfile(id, name, img, null);
+        }
     };
 
-    const executeSelectProfile = async (id, name, img) => {
+    const executeSelectProfile = async (id, name, img, pin) => {
         try {
             const res  = await fetch('/api/profiles/select', {
                 method:  'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body:    JSON.stringify({ id, pin: null })
+                body:    JSON.stringify({ id, pin })
             });
             const data = await res.json();
 
             if (data.success) {
                 localStorage.setItem('pipo_current_profile', JSON.stringify({ id, name, img }));
                 if (typeof PipoNotification !== 'undefined') PipoNotification.success(`Bem-vindo de volta, ${name}!`, 3000);
-                setTimeout(() => window.location.href = '/home', 1500);
+                setTimeout(() => window.location.href = '/home', 1000);
             } else {
                 if (typeof PipoNotification !== 'undefined') PipoNotification.error(data.message || 'Erro ao acessar.');
+                const accessPin = document.getElementById('access-pin-input');
+                if (pin && accessPin) {
+                    accessPin.value = '';
+                    updateDots('access-pin-dots', 0);
+                    const dotsWrap = document.getElementById('access-pin-dots');
+                    if(dotsWrap) {
+                        dotsWrap.classList.add('shake');
+                        setTimeout(() => dotsWrap.classList.remove('shake'), 500);
+                    }
+                }
             }
         } catch (err) {}
     };
+
+    // ── Teclado PIN ───────────────────────────────────────────────────────
+    const updateDots = (containerId, length) => {
+        const dots = document.querySelectorAll(`#${containerId} .pin-dot`);
+        dots.forEach((dot, i) => {
+            if (i < length) dot.classList.add('filled');
+            else dot.classList.remove('filled');
+        });
+    };
+
+    const setupNumpad = (numpadSelector, inputId, dotsId, autoSubmit = false) => {
+        const numpad = document.querySelector(numpadSelector);
+        if (!numpad) return;
+
+        numpad.addEventListener('click', (e) => {
+            const key = e.target.closest('.pin-key');
+            if (!key || key.classList.contains('pin-key--empty')) return;
+
+            const input = document.getElementById(inputId);
+            if (!input) return;
+
+            let val = input.value || '';
+
+            if (key.classList.contains('pin-key--del')) {
+                val = val.slice(0, -1);
+            } else {
+                const digit = key.dataset.digit;
+                if (digit !== undefined && val.length < 4) val += digit;
+            }
+
+            input.value = val;
+            updateDots(dotsId, val.length);
+
+            if (autoSubmit && val.length === 4 && selectedProfileForPin) {
+                executeSelectProfile(
+                    selectedProfileForPin.id,
+                    selectedProfileForPin.name,
+                    selectedProfileForPin.img,
+                    val
+                );
+            }
+        });
+    };
+
+    setupNumpad('#pin-numpad', 'pin_input', 'pin-dots', false);
+    setupNumpad('#pipo-pin-modal .pin-numpad', 'access-pin-input', 'access-pin-dots', true);
 
     // ── Formulário de criação/edição ──────────────────────────────────────
     const profileForm = document.getElementById('profile-form');
@@ -142,6 +226,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const formData = new FormData(e.target);
             const payload  = Object.fromEntries(formData.entries());
+            
+            const isPinEnabled = document.getElementById('pin-toggle')?.checked;
+            if (!isPinEnabled) {
+                payload.pin = ''; 
+            } else if (payload.pin && payload.pin.length < 4) {
+                if (typeof PipoNotification !== 'undefined') PipoNotification.warning('O PIN deve conter 4 dígitos.');
+                if (btn) { btn.innerText = 'Salvar Perfil'; btn.disabled = false; }
+                return;
+            }
 
             try {
                 const res  = await fetch('/api/profiles/create', {
@@ -203,11 +296,21 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // ── Toggle PIN ────────────────────────────────────────────────────────
+    const pinToggle = document.getElementById('pin-toggle');
+    if (pinToggle) {
+        pinToggle.addEventListener('change', function () {
+            const pinBox  = document.getElementById('pin-input-box');
+            if (pinBox)  pinBox.classList.toggle('show', this.checked);
+        });
+    }
+
     // ── Botões fechar modal ───────────────────────────────────────────────
-    document.querySelectorAll('.modal-close, .pipo-modal-cancel').forEach(b => {
+    document.querySelectorAll('.modal-close, .pipo-modal-cancel, #btn-cancel-pin').forEach(b => {
         b.addEventListener('click', () => {
             closeModal(modalForm);
             closeModal(modalAvatars);
+            closeModal(modalPin);
             closeModal(modalAccountType);
         });
     });
@@ -228,11 +331,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnTypeInfo = document.getElementById('btn-type-info');
     if (btnTypeInfo) {
         btnTypeInfo.addEventListener('click', () => openModal(modalAccountType));
-    }
-
-    const closeAccountTypeModal = document.getElementById('close-account-type-modal');
-    if (closeAccountTypeModal) {
-        closeAccountTypeModal.addEventListener('click', () => closeModal(modalAccountType));
     }
 
     document.querySelectorAll('.atc-select-btn').forEach(btn => {
@@ -266,7 +364,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (btnEdit) {
         btnEdit.addEventListener('click', () => {
             closeActionMenu();
-            if (typeof PipoNotification !== 'undefined') PipoNotification.info('Edição avançada em breve nas configurações.');
+            window.location.href = '/manage-profiles'; // Redireciona para gerir perfis se quiser editar via mobile
         });
     }
 

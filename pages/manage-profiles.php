@@ -43,6 +43,22 @@ if (!isset($_SESSION['user_id'])) {
         }
 
         /* ============================================================
+           LOADING GLOBAL (Ecrã de Carregamento)
+           ============================================================ */
+        .global-page-loader {
+            position: fixed; inset: 0; background-color: var(--profile-bg-base);
+            z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+        }
+        .global-page-loader.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+        .pipo-spinner {
+            width: 45px; height: 45px; border: 4px solid rgba(255, 255, 255, 0.1);
+            border-top-color: var(--profile-accent); border-radius: 50%;
+            animation: spin 0.8s ease-in-out infinite;
+        }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        /* ============================================================
            PÁGINA PRINCIPAL E GRELHA
            ============================================================ */
         .profiles-wrapper {
@@ -143,6 +159,10 @@ if (!isset($_SESSION['user_id'])) {
 </head>
 <body>
 
+<div id="global-page-loader" class="global-page-loader">
+    <div class="pipo-spinner"></div>
+</div>
+
 <div class="profiles-wrapper">
     <h1 class="main-title">Gerenciar Perfis</h1>
 
@@ -211,6 +231,37 @@ if (!isset($_SESSION['user_id'])) {
 <script>
     document.addEventListener('DOMContentLoaded', () => { 
         if (typeof lucide !== 'undefined') lucide.createIcons(); 
+
+        // LÓGICA DO LOADING GLOBAL:
+        const pageLoader = document.getElementById('global-page-loader');
+        const grid = document.getElementById('profiles-grid');
+        
+        // 1. Fallback de Segurança: Remove o loading à força após 5s se a API der erro
+        const fallbackTimer = setTimeout(() => {
+            if (pageLoader) pageLoader.classList.add('hidden');
+        }, 5000);
+
+        // 2. Observer Mágico: Escuta o exato momento em que o Javascript ("manage-profiles.js") 
+        // insere os perfis dentro da '#profiles-grid' e então esconde o loader.
+        if (grid) {
+            const observer = new MutationObserver((mutations) => {
+                for (let mut of mutations) {
+                    // Quando novos elementos (os perfis) são adicionados ao grid...
+                    if (mut.addedNodes.length > 0 || mut.removedNodes.length > 0) {
+                        clearTimeout(fallbackTimer);
+                        if (pageLoader) {
+                            pageLoader.classList.add('hidden');
+                            // Remove o elemento do HTML após a animação de fade (500ms)
+                            setTimeout(() => pageLoader.remove(), 500); 
+                        }
+                        observer.disconnect(); // Para de observar para economizar memória
+                    }
+                }
+            });
+            
+            // Inicia a observação no container
+            observer.observe(grid, { childList: true });
+        }
     });
 </script>
 </body>

@@ -18,7 +18,7 @@ if ($requestUri === '/select-profile') {
     exit;
 }
 
-// NOVA ROTA: Direciona para a página de gerenciamento de perfis
+// NOVA ROTA: Impede o recarregamento e direciona para a página correta
 if ($requestUri === '/manage-profiles') {
     require_once __DIR__ . '/manage-profiles.php';
     exit;

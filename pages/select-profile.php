@@ -11,275 +11,386 @@ if (!isset($_SESSION['user_id'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#000000">
+    <meta name="theme-color" content="#0a0c10">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>PipoCine — Quem está assistindo?</title>
     <link rel="icon" type="image/png" href="/assets/img/favicon.png">
-    
     <link rel="stylesheet" href="/assets/css/style.css">
     <link rel="stylesheet" href="/assets/css/notification.css">
-    
+    <link rel="stylesheet" href="/assets/css/profiles.css">
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" defer></script>
-
-    <style>
-        /* ============================================================
-           PROFILES — Design System Minimalista & Escuro
-           ============================================================ */
-        :root {
-            --profile-bg-base: #000000;
-            --profile-bg-modal: #0a0a0c;
-            --profile-bg-input: #1c1c1e;
-            --profile-text-pure: #ffffff;
-            --profile-text-muted: #8e8e93;
-            --profile-accent: #0a7aff; /* Azul estilo iOS */
-            --profile-success: #34c759;
-            --profile-error: #ff3b30;
-            --profile-card-size: 130px;
-        }
-
-        body { 
-            background-color: var(--profile-bg-base); 
-            margin: 0; 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
-        }
-
-        /* ============================================================
-           PÁGINA PRINCIPAL E GRELHA
-           ============================================================ */
-        .profiles-wrapper {
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            min-height: 100vh; padding: 40px 20px; box-sizing: border-box;
-        }
-
-        .main-title { 
-            color: var(--profile-text-pure); font-size: clamp(2rem, 5vw, 2.5rem); 
-            font-weight: 700; margin-bottom: 50px; text-align: center; 
-        }
-
-        #pipo-profiles-root { width: 100%; display: flex; justify-content: center; margin-bottom: 40px; }
-        .profiles-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 30px; max-width: 800px; }
-
-        .profile-item { display: flex; flex-direction: column; align-items: center; gap: 12px; cursor: pointer; transition: transform 0.2s; }
-        .profile-item:hover { transform: scale(1.05); }
-
-        .avatar-wrapper { width: var(--profile-card-size); height: var(--profile-card-size); border-radius: 50%; overflow: hidden; background-color: #222; }
-        .avatar-img { width: 100%; height: 100%; object-fit: cover; }
-        .profile-name { color: var(--profile-text-pure); font-size: 1.1rem; font-weight: 500; text-align: center; }
-
-        /* Botão Adicionar na Grelha (Círculo com Borda) */
-        .add-profile-btn { justify-content: flex-start; }
-        .add-icon-wrapper {
-            width: var(--profile-card-size); height: var(--profile-card-size); border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            background-color: transparent; border: 2px solid var(--profile-accent);
-            color: var(--profile-accent); transition: background-color 0.2s;
-        }
-        .add-profile-btn:hover .add-icon-wrapper { background-color: rgba(10, 122, 255, 0.1); }
-
-        /* Botão Gerenciar Perfis */
-        .manage-profiles-container { display: flex; justify-content: center; width: 100%; }
-        .btn-manage {
-            background: transparent; border: 1px solid rgba(255, 255, 255, 0.3); color: var(--profile-text-muted);
-            padding: 10px 20px; border-radius: 6px; font-size: 0.95rem; cursor: pointer; transition: all 0.2s;
-        }
-        .btn-manage:hover { border-color: var(--profile-text-pure); color: var(--profile-text-pure); }
-
-        /* ============================================================
-           MODAL DARK MINIMALISTA (Para Criação/Edição e Avatar)
-           ============================================================ */
-        .profile-modal, .avatar-modal {
-            position: fixed; inset: 0; background-color: rgba(0, 0, 0, 0.90); backdrop-filter: blur(5px);
-            z-index: 2000; display: flex; align-items: center; justify-content: center;
-            opacity: 0; visibility: hidden; transition: opacity 0.3s; padding: 20px;
-        }
-        .profile-modal.open, .avatar-modal.open { opacity: 1; visibility: visible; }
-
-        .modal-content-dark {
-            background: var(--profile-bg-modal); width: 100%; max-width: 500px;
-            border-radius: 20px; padding: 30px 24px; box-sizing: border-box; display: flex; flex-direction: column;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.8); border: 1px solid rgba(255,255,255,0.05);
-        }
-
-        /* Header */
-        .modal-header-dark { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
-        .btn-cancel-dark { background: transparent; border: none; color: var(--profile-text-pure); font-size: 1rem; cursor: pointer; padding: 0; opacity: 0.8; }
-        .btn-cancel-dark:hover { opacity: 1; }
-        .title-dark { color: var(--profile-text-pure); font-size: 1.25rem; font-weight: 600; margin: 0; text-align: center; }
-
-        /* Avatar Selection */
-        .avatar-section-dark { display: flex; flex-direction: column; align-items: center; gap: 12px; margin-bottom: 30px; cursor: pointer; }
-        .avatar-circle-dark { 
-            width: 120px; height: 120px; border-radius: 50%; overflow: hidden; 
-            background-color: var(--profile-bg-input); border: 2px solid transparent; transition: border-color 0.2s;
-        }
-        .avatar-circle-dark img { width: 100%; height: 100%; object-fit: cover; }
-        .avatar-section-dark:hover .avatar-circle-dark { border-color: rgba(255,255,255,0.3); }
-        .avatar-hint-dark { color: var(--profile-text-muted); font-size: 0.9rem; }
-
-        /* Inputs */
-        .inputs-container-dark { display: flex; flex-direction: column; gap: 16px; margin-bottom: 30px; }
-        .input-group-dark { position: relative; width: 100%; }
-        .input-dark {
-            width: 100%; background-color: var(--profile-bg-input); border: 1px solid transparent;
-            padding: 16px; border-radius: 12px; color: var(--profile-text-pure); font-size: 1rem; box-sizing: border-box;
-        }
-        .input-dark::placeholder { color: var(--profile-text-muted); }
-        .input-dark:focus { outline: none; border-color: rgba(255,255,255,0.2); background-color: rgba(255,255,255,0.05); }
-
-        /* Validação do Username */
-        .username-status-dark { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); font-size: 0.75rem; font-weight: bold; text-transform: uppercase; }
-        .username-status-dark.available { color: var(--profile-success); }
-        .username-status-dark.taken { color: var(--profile-error); }
-        .username-status-dark.loading { color: var(--profile-text-muted); }
-
-        /* Toggle Row */
-        .toggle-row-dark {
-            display: flex; justify-content: space-between; align-items: center;
-            background-color: var(--profile-bg-input); padding: 16px; border-radius: 12px;
-        }
-        .toggle-texts-dark { display: flex; flex-direction: column; gap: 4px; }
-        .toggle-title-dark { color: var(--profile-text-pure); font-size: 1rem; font-weight: 500; }
-        .toggle-desc-dark { color: var(--profile-text-muted); font-size: 0.8rem; }
-
-        /* Switch Toggle Elemento */
-        .switch-dark { position: relative; display: inline-block; width: 50px; height: 30px; flex-shrink: 0; }
-        .switch-dark input { opacity: 0; width: 0; height: 0; }
-        .slider-dark { position: absolute; cursor: pointer; inset: 0; background-color: #39393d; border-radius: 30px; transition: .3s; }
-        .slider-dark:before { content: ""; position: absolute; height: 26px; width: 26px; left: 2px; bottom: 2px; background-color: white; border-radius: 50%; transition: .3s; }
-        .switch-dark input:checked + .slider-dark { background-color: var(--profile-accent); }
-        .switch-dark input:checked + .slider-dark:before { transform: translateX(20px); }
-
-        /* Botão Salvar (Azul) */
-        .btn-save-dark {
-            width: 100%; background-color: var(--profile-accent); color: white; border: none;
-            padding: 16px; border-radius: 12px; font-size: 1.05rem; font-weight: 600; cursor: pointer; transition: opacity 0.2s;
-        }
-        .btn-save-dark:hover { opacity: 0.9; }
-        .btn-save-dark:disabled { opacity: 0.5; cursor: not-allowed; }
-
-        /* Grid de Avatares (Modal) */
-        .avatar-categories { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 12px; margin-bottom: 20px; scrollbar-width: none; border-bottom: 1px solid rgba(255,255,255,0.1); }
-        .avatar-categories::-webkit-scrollbar { display: none; }
-        .category-btn { background: transparent; border: none; color: var(--profile-text-muted); padding: 8px 16px; border-radius: 20px; font-size: 0.9rem; cursor: pointer; white-space: nowrap; transition: color 0.2s; }
-        .category-btn.active { color: var(--profile-text-pure); font-weight: 600; }
-        .avatar-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(75px, 1fr)); gap: 16px; max-height: 400px; overflow-y: auto; padding: 4px; }
-        .avatar-option { width: 75px; height: 75px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: border-color 0.2s; object-fit: cover;}
-        .avatar-option:hover { border-color: rgba(255,255,255,0.5); }
-    </style>
 </head>
 <body>
 
 <div class="profiles-wrapper">
+
+    <div class="logo-container">
+        <img src="/assets/img/logo-pipocine.png" alt="PipoCine">
+    </div>
+
     <h1 class="main-title">Quem está assistindo?</h1>
 
     <div id="pipo-profiles-root">
         <div class="profiles-grid" id="profiles-grid">
-            
-            <div class="profile-item">
-                <div class="avatar-wrapper">
-                    <img src="https://api.dicebear.com/7.x/adventurer/svg?seed=Pipo" alt="Pipo" class="avatar-img">
-                </div>
-                <span class="profile-name">Pipo</span>
-            </div>
-
-            <div class="profile-item">
-                <div class="avatar-wrapper">
-                    <img src="https://api.dicebear.com/7.x/adventurer/svg?seed=Ana" alt="Ana" class="avatar-img">
-                </div>
-                <span class="profile-name">Ana</span>
-            </div>
-
-            <div class="profile-item add-profile-btn" onclick="document.getElementById('pipo-profile-modal').classList.add('open')">
-                <div class="add-icon-wrapper">
-                    <i data-lucide="plus" style="width: 48px; height: 48px;"></i>
-                </div>
-                <span class="profile-name">Adicionar</span>
-            </div>
-
-            </div>
+            <div class="loader-pipo" style="grid-column: 1 / -1; margin: 50px auto;"></div>
+        </div>
     </div>
 
-    <div class="manage-profiles-container">
-        <button class="btn-manage" id="btn-manage-profiles" onclick="window.location.href='/manage-profiles'">Gerenciar Perfis</button>
+    <div style="margin-top: 40px; display: flex; justify-content: center; width: 100%; z-index: 2; position: relative;">
+        <button class="btn-ghost" onclick="window.location.href='/manage-profiles'" style="padding: 12px 32px; font-size: 1rem; border-radius: 8px;">
+            Gerenciar Perfis
+        </button>
     </div>
-</div>
 
-<div class="profile-modal" id="pipo-profile-modal" role="dialog" aria-modal="true">
-    <div class="modal-content-dark">
-        
-        <div class="modal-header-dark">
-            <button type="button" class="btn-cancel-dark pipo-modal-cancel" onclick="document.getElementById('pipo-profile-modal').classList.remove('open')">Cancelar</button>
-            <h2 class="title-dark">Criar Perfil</h2>
-            <div style="width: 65px;"></div>
+</div><div class="profile-modal" id="pipo-profile-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-content modal-content--wide">
+
+        <div class="modal-left">
+            <div class="modal-avatar-section">
+                <div class="avatar-picker-trigger" id="avatar-picker-trigger" role="button" tabindex="0"
+                     aria-label="Trocar avatar">
+                    <div class="avatar-wrapper">
+                        <img src="https://api.dicebear.com/7.x/adventurer/svg?seed=Pipo"
+                             alt="Avatar atual"
+                             class="modal-avatar-img"
+                             id="current-avatar-img">
+                    </div>
+                    <input type="hidden" id="selected-avatar-url" name="image"
+                           value="https://api.dicebear.com/7.x/adventurer/svg?seed=Pipo">
+                    <div class="edit-icon" aria-hidden="true">
+                        <i data-lucide="pencil" width="13" height="13"></i>
+                    </div>
+                </div>
+                <p class="avatar-hint">Clique para trocar<br>seu avatar</p>
+            </div>
         </div>
 
-        <form id="profile-form" class="form-dark" novalidate>
-            
-            <div class="avatar-section-dark" id="avatar-picker-trigger" tabindex="0" onclick="document.getElementById('pipo-avatar-modal').classList.add('open')">
-                <div class="avatar-circle-dark">
-                    <img src="https://api.dicebear.com/7.x/adventurer/svg?seed=Pipo" alt="Avatar atual" id="current-avatar-img">
-                </div>
-                <input type="hidden" id="selected-avatar-url" name="image" value="https://api.dicebear.com/7.x/adventurer/svg?seed=Pipo">
-                <span class="avatar-hint-dark">Toque para escolher um avatar</span>
+        <div class="modal-right">
+            <div class="modal-header">
+                <h2 id="modal-title">Criar Novo Perfil</h2>
+                <button class="modal-close" aria-label="Fechar modal">
+                    <i data-lucide="x" width="16" height="16"></i>
+                </button>
             </div>
 
-            <div class="inputs-container-dark">
-                <div class="input-group-dark">
-                    <input type="text" name="name" id="pro_name" class="input-dark" placeholder="Nome do perfil" required autocomplete="off">
-                </div>
+            <form class="modal-form" id="profile-form" novalidate>
 
-                <div class="input-group-dark">
-                    <input type="text" name="username" id="username" class="input-dark" placeholder="Nome de usuário (ex: joao_123)" required autocomplete="off" maxlength="30" pattern="[a-zA-Z0-9_]+">
-                    <span class="username-status-dark" id="username-status"></span>
-                </div>
-
-                <div class="toggle-row-dark">
-                    <div class="toggle-texts-dark">
-                        <span class="toggle-title-dark">Perfil Infantil</span>
-                        <span class="toggle-desc-dark">Restringe conteúdo apenas para crianças</span>
+                <div class="input-group">
+                    <label for="pro_name">Nome do Perfil</label>
+                    <div class="input-with-icon">
+                        <i data-lucide="user" width="15" height="15" class="input-icon"></i>
+                        <input type="text" name="name" id="pro_name"
+                               placeholder="Ex: Maria"
+                               required autocomplete="off">
                     </div>
-                    <label class="switch-dark">
-                        <input type="checkbox" id="kids-toggle">
-                        <span class="slider-dark"></span>
-                    </label>
                 </div>
+
+                <div class="input-group username-check-wrapper">
+                    <label for="username">Nome de Usuário</label>
+                    <div class="input-with-icon">
+                        <i data-lucide="at-sign" width="15" height="15" class="input-icon"></i>
+                        <input type="text" name="username" id="username"
+                               placeholder="maria_cine"
+                               required autocomplete="off"
+                               maxlength="30"
+                               pattern="[a-zA-Z0-9_]+">
+                    </div>
+                    <span class="username-status" id="username-status" aria-live="polite"></span>
+                    <span class="username-hint">Somente letras, números e _</span>
+                </div>
+
+                <div class="input-group">
+                    <label>Tipo de Conta</label>
+                    <input type="hidden" name="type" id="pro_type" value="standard">
+                    <div class="account-type-picker">
+                        <button type="button"
+                                class="account-type-btn active"
+                                data-type="standard"
+                                id="btn-type-standard"
+                                aria-pressed="true">
+                            <span class="type-icon-wrap">
+                                <i data-lucide="clapperboard" width="20" height="20"></i>
+                            </span>
+                            <span class="type-name">Padrão</span>
+                            <span class="type-desc">Livre</span>
+                        </button>
+                        <button type="button"
+                                class="account-type-btn"
+                                data-type="kids"
+                                id="btn-type-kids"
+                                aria-pressed="false">
+                            <span class="type-icon-wrap type-icon-wrap--kids">
+                                <i data-lucide="baby" width="20" height="20"></i>
+                            </span>
+                            <span class="type-name">Kids</span>
+                            <span class="type-desc">Restrita</span>
+                        </button>
+                        <button type="button"
+                                class="account-type-info-btn"
+                                id="btn-type-info"
+                                aria-label="Saiba mais sobre os tipos de conta">
+                            <i data-lucide="info" width="18" height="18"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="pin-section">
+                    <div class="pin-toggle-wrapper">
+                        <label for="pin-toggle" style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                            <i data-lucide="lock" width="15" height="15" style="color:var(--profile-text-muted);"></i>
+                            Proteger com PIN
+                        </label>
+                        <div class="pipo-switch">
+                            <input type="checkbox" id="pin-toggle" name="lock_profile">
+                            <span class="pipo-slider"></span>
+                        </div>
+                    </div>
+
+                    <div class="pin-dots-wrapper" id="pin-input-box">
+                        <p class="pin-dots-label">
+                            <i data-lucide="keyboard" width="14" height="14"></i>
+                            Digite um PIN de 4 dígitos
+                        </p>
+                        <div class="pin-dots" id="pin-dots" role="group" aria-label="Indicador de PIN">
+                            <span class="pin-dot" data-index="0"></span>
+                            <span class="pin-dot" data-index="1"></span>
+                            <span class="pin-dot" data-index="2"></span>
+                            <span class="pin-dot" data-index="3"></span>
+                        </div>
+                        <input type="hidden" name="pin" id="pin_input" maxlength="4">
+                        <div class="pin-numpad" id="pin-numpad" role="group" aria-label="Teclado numérico">
+                            <?php for ($d = 1; $d <= 9; $d++): ?>
+                            <button type="button" class="pin-key" data-digit="<?= $d ?>"
+                                    aria-label="Dígito <?= $d ?>"><?= $d ?></button>
+                            <?php endfor; ?>
+                            <button type="button" class="pin-key pin-key--empty" tabindex="-1" aria-hidden="true"></button>
+                            <button type="button" class="pin-key" data-digit="0" aria-label="Dígito 0">0</button>
+                            <button type="button" class="pin-key pin-key--del" id="pin-del" aria-label="Apagar">
+                                <i data-lucide="delete" width="18" height="18"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="submit" class="btn-primary btn-save" id="btn-save-profile">
+                        <i data-lucide="check" width="16" height="16"></i>
+                        Salvar Perfil
+                    </button>
+                    <button type="button" class="btn-ghost pipo-modal-cancel">
+                        <i data-lucide="x" width="16" height="16"></i>
+                        Cancelar
+                    </button>
+                </div>
+
+            </form>
+        </div></div></div><div class="profile-modal" id="pipo-pin-modal" role="dialog" aria-modal="true" aria-labelledby="pin-modal-title">
+    <div class="modal-content modal-content--pin">
+
+        <div class="pin-access-header">
+            <div class="pin-access-lock" aria-hidden="true">
+                <i data-lucide="lock-keyhole" width="40" height="40"></i>
+            </div>
+            <h2 id="pin-modal-title">Perfil Bloqueado</h2>
+            <p>Digite o PIN de 4 dígitos para acessar.</p>
+        </div>
+
+        <div class="pin-dots" id="access-pin-dots" role="group" aria-label="Indicador de PIN">
+            <span class="pin-dot" data-index="0"></span>
+            <span class="pin-dot" data-index="1"></span>
+            <span class="pin-dot" data-index="2"></span>
+            <span class="pin-dot" data-index="3"></span>
+        </div>
+        <input type="hidden" id="access-pin-input">
+
+        <div class="pin-numpad" role="group" aria-label="Teclado numérico">
+            <?php for ($d = 1; $d <= 9; $d++): ?>
+            <button type="button" class="pin-key" data-digit="<?= $d ?>"
+                    aria-label="Dígito <?= $d ?>"><?= $d ?></button>
+            <?php endfor; ?>
+            <button type="button" class="pin-key pin-key--empty" tabindex="-1" aria-hidden="true"></button>
+            <button type="button" class="pin-key" data-digit="0" aria-label="Dígito 0">0</button>
+            <button type="button" class="pin-key pin-key--del" id="access-pin-del" aria-label="Apagar">
+                <i data-lucide="delete" width="18" height="18"></i>
+            </button>
+        </div>
+
+        <button type="button" class="btn-ghost pipo-modal-cancel" id="btn-cancel-pin">
+            <i data-lucide="arrow-left" width="15" height="15"></i>
+            Voltar
+        </button>
+
+    </div>
+</div><div class="profile-modal" id="pipo-account-type-modal" role="dialog" aria-modal="true" aria-labelledby="account-type-title">
+    <div class="modal-content modal-content--account-type">
+
+        <div class="modal-header">
+            <h2 id="account-type-title">
+                <i data-lucide="shield-check" width="20" height="20"></i>
+                Tipos de Conta
+            </h2>
+            <button class="modal-close" id="close-account-type-modal" aria-label="Fechar modal">
+                <i data-lucide="x" width="16" height="16"></i>
+            </button>
+        </div>
+
+        <div class="account-type-cards">
+
+            <div class="account-type-card" data-type="standard">
+                <div class="atc-icon-wrap">
+                    <i data-lucide="clapperboard" width="28" height="28"></i>
+                </div>
+                <h3>Conta Padrão</h3>
+                <span class="atc-badge atc-badge--free">
+                    <i data-lucide="unlock" width="11" height="11"></i>
+                    Livre
+                </span>
+                <ul class="atc-features">
+                    <li>
+                        <i data-lucide="check-circle" width="15" height="15" class="atc-check"></i>
+                        Acesso a todos os filmes e séries
+                    </li>
+                    <li>
+                        <i data-lucide="check-circle" width="15" height="15" class="atc-check"></i>
+                        Conteúdo adulto e infantil
+                    </li>
+                    <li>
+                        <i data-lucide="check-circle" width="15" height="15" class="atc-check"></i>
+                        Todas as categorias disponíveis
+                    </li>
+                    <li>
+                        <i data-lucide="check-circle" width="15" height="15" class="atc-check"></i>
+                        Sem restrições de conteúdo
+                    </li>
+                    <li>
+                        <i data-lucide="check-circle" width="15" height="15" class="atc-check"></i>
+                        Histórico completo de visualização
+                    </li>
+                </ul>
+                <button type="button" class="btn-primary atc-select-btn" data-select-type="standard">
+                    <i data-lucide="check" width="15" height="15"></i>
+                    Selecionar Padrão
+                </button>
             </div>
 
-            <button type="submit" class="btn-save-dark" id="btn-save-profile">Salvar</button>
-        </form>
-    </div>
-</div>
+            <div class="account-type-card" data-type="kids">
+                <div class="atc-icon-wrap atc-icon-wrap--kids">
+                    <i data-lucide="baby" width="28" height="28"></i>
+                </div>
+                <h3>Conta Kids</h3>
+                <span class="atc-badge atc-badge--kids">
+                    <i data-lucide="shield" width="11" height="11"></i>
+                    Restrita
+                </span>
+                <ul class="atc-features">
+                    <li>
+                        <i data-lucide="check-circle" width="15" height="15" class="atc-check"></i>
+                        Conteúdo exclusivo infantil
+                    </li>
+                    <li>
+                        <i data-lucide="check-circle" width="15" height="15" class="atc-check"></i>
+                        Filmes e séries para crianças
+                    </li>
+                    <li>
+                        <i data-lucide="lock" width="15" height="15" class="atc-lock"></i>
+                        Conteúdo adulto bloqueado
+                    </li>
+                    <li>
+                        <i data-lucide="lock" width="15" height="15" class="atc-lock"></i>
+                        Ações limitadas no app
+                    </li>
+                    <li>
+                        <i data-lucide="check-circle" width="15" height="15" class="atc-check"></i>
+                        Ambiente seguro e monitorado
+                    </li>
+                </ul>
+                <button type="button" class="btn-primary atc-select-btn atc-select-btn--kids" data-select-type="kids">
+                    <i data-lucide="check" width="15" height="15"></i>
+                    Selecionar Kids
+                </button>
+            </div>
 
-<div class="avatar-modal" id="pipo-avatar-modal" role="dialog" aria-modal="true">
-    <div class="modal-content-dark">
-        <div class="modal-header-dark" style="margin-bottom: 20px;">
-            <button type="button" class="btn-cancel-dark modal-close" onclick="document.getElementById('pipo-avatar-modal').classList.remove('open')">Voltar</button>
-            <h2 class="title-dark">Avatar</h2>
-            <div style="width: 50px;"></div>
+        </div></div>
+</div><div class="avatar-modal" id="pipo-avatar-modal" role="dialog" aria-modal="true" aria-labelledby="avatar-modal-title">
+    <div class="modal-content modal-content--avatars">
+
+        <div class="modal-header">
+            <h2 id="avatar-modal-title">
+                <i data-lucide="image" width="20" height="20"></i>
+                Escolha seu Avatar
+            </h2>
+            <button class="modal-close" aria-label="Fechar">
+                <i data-lucide="x" width="16" height="16"></i>
+            </button>
         </div>
 
         <div class="avatar-categories" id="avatar-categories" role="tablist">
-            <button class="category-btn active" data-category="adventurer">Aventureiro</button>
-            <button class="category-btn" data-category="open-peeps">Pessoas</button>
-            <button class="category-btn" data-category="bottts">Robôs</button>
-            <button class="category-btn" data-category="pixel-art">Pixel</button>
+            <button class="category-btn active" data-category="adventurer" role="tab" aria-selected="true">
+                <i data-lucide="compass" width="13" height="13"></i>
+                Aventureiro
+            </button>
+            <button class="category-btn" data-category="open-peeps" role="tab" aria-selected="false">
+                <i data-lucide="users" width="13" height="13"></i>
+                Pessoas
+            </button>
+            <button class="category-btn" data-category="bottts" role="tab" aria-selected="false">
+                <i data-lucide="bot" width="13" height="13"></i>
+                Robôs
+            </button>
+            <button class="category-btn" data-category="pixel-art" role="tab" aria-selected="false">
+                <i data-lucide="grid-2x2" width="13" height="13"></i>
+                Pixel
+            </button>
+            <button class="category-btn" data-category="notionists" role="tab" aria-selected="false">
+                <i data-lucide="sparkles" width="13" height="13"></i>
+                Notion
+            </button>
         </div>
 
-        <div class="avatar-grid" id="avatar-grid" role="listbox">
-            <img class="avatar-option" src="https://api.dicebear.com/7.x/adventurer/svg?seed=1" alt="Avatar">
-            <img class="avatar-option" src="https://api.dicebear.com/7.x/adventurer/svg?seed=2" alt="Avatar">
-            <img class="avatar-option" src="https://api.dicebear.com/7.x/adventurer/svg?seed=3" alt="Avatar">
-            <img class="avatar-option" src="https://api.dicebear.com/7.x/adventurer/svg?seed=4" alt="Avatar">
+        <div class="avatar-grid" id="avatar-grid" role="listbox" aria-label="Avatares disponíveis"></div>
+
+    </div>
+</div><div class="profile-action-menu" id="pipo-profile-action-menu" role="menu">
+
+    <div class="menu-header">
+        <img src="" alt="Avatar do perfil" class="menu-avatar" id="menu-avatar-img">
+        <div class="menu-info">
+            <h3 id="menu-profile-name">Perfil</h3>
+            <p id="menu-username">@username</p>
         </div>
     </div>
-</div>
+
+    <div class="menu-options">
+        <div class="menu-item" id="trigger-edit-profile" role="menuitem" tabindex="0">
+            <i data-lucide="pencil" width="18" height="18"></i>
+            Editar Perfil
+        </div>
+        <div class="menu-item delete" id="trigger-delete-profile" role="menuitem" tabindex="0">
+            <i data-lucide="trash-2" width="18" height="18"></i>
+            Excluir Perfil
+        </div>
+    </div>
+
+</div><div class="press-overlay" id="pipo-press-overlay"></div>
+
 
 <script src="/assets/js/notification.js"></script>
 <script src="/assets/js/profiles.js"></script>
+
 <script>
-    // Inicializar os ícones do Lucide
     document.addEventListener('DOMContentLoaded', function () {
-        if (typeof lucide !== 'undefined') lucide.createIcons();
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
     });
+
+    // Re-renderiza ícones quando novos elementos são injetados via JS (ex: profiles grid)
+    window.pipoCineRenderIcons = function () {
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+    };
 </script>
 
 </body>
