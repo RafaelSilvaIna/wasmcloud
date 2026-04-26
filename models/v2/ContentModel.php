@@ -51,7 +51,7 @@ class ContentModel {
         ];
 
         $conf = $catMap[$category] ?? $catMap['lancamentos'];
-        $sql = "SELECT id, id_tmdb, titulo, poster, capa, nota, data_lancamento, tipo FROM conteudos WHERE 1=1";
+        $sql = "SELECT id, id_tmdb, titulo, poster, capa, nota, data_lancamento, tipo FROM conteudo WHERE id_tmdb IS NOT NULL AND id_tmdb != ''";
         $params = [];
 
         if ($conf['tipo']) {

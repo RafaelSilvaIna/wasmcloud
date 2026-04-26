@@ -1,32 +1,43 @@
 /* assets/css/hero-slider.css */
 
-/* ── 1. Estrutura do Slider ────────────────────────────────────────── */
 .hero-slider {
     width: 100%;
     height: 100vh;
-    /* Ocupa a tela inteira */
     position: relative;
-    background-color: var(--bg-base);
+    background-color: var(--bg-base, #000);
     overflow: hidden;
 }
 
-/* ── 2. Conteúdo do Slide ───────────────────────────────────────────── */
 .hero-slide {
     width: 100%;
     height: 100%;
     position: relative;
     display: flex;
     align-items: center;
-    /* Centraliza conteúdo verticalmente */
 }
 
-/* Placeholder de Loading */
 .hero-slide--loading {
     justify-content: center;
     text-align: center;
 }
 
-/* Imagem de Fundo (Backdrop) */
+/* LOADING SPINNER SEGURO */
+.hero-loader-spinner {
+    width: 45px;
+    height: 45px;
+    margin: 0 auto;
+    border: 4px solid rgba(255, 255, 255, 0.1);
+    border-top-color: #0a7aff;
+    border-radius: 50%;
+    animation: hero-spin 0.8s linear infinite;
+}
+
+@keyframes hero-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
 .hero-backdrop {
     position: absolute;
     inset: 0;
@@ -39,22 +50,18 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
-    /* Cobre a tela sem distorcer */
     object-position: top center;
-    /* Foca no topo da imagem se cortar */
 }
 
-/* Degradê profissional em cima da imagem */
 .hero-backdrop::after {
     content: '';
     position: absolute;
     inset: 0;
-    background: linear-gradient(0deg, var(--bg-base) 0%, rgba(10, 12, 16, 0.6) 50%, rgba(10, 12, 16, 0.9) 100%),
-        linear-gradient(90deg, var(--bg-base) 0%, rgba(10, 12, 16, 0.5) 40%, transparent 100%);
+    background: linear-gradient(0deg, var(--bg-base, #000) 0%, rgba(10, 12, 16, 0.6) 50%, rgba(10, 12, 16, 0.9) 100%),
+        linear-gradient(90deg, var(--bg-base, #000) 0%, rgba(10, 12, 16, 0.5) 40%, transparent 100%);
     z-index: 2;
 }
 
-/* Área de Texto e Botões */
 .hero-content {
     position: relative;
     z-index: 3;
@@ -62,13 +69,9 @@
     max-width: 700px;
     padding: 100px 5% 50px;
     box-sizing: border-box;
-    margin-left: auto;
-    margin-right: auto;
+    margin: 0 auto;
 }
 
-/* ── 3. Elementos Específicos ──────────────────────────────────────── */
-
-/* Logo / Título em imagem */
 .hero-logo-container {
     margin-bottom: 25px;
     max-height: 150px;
@@ -82,7 +85,18 @@
     object-fit: contain;
 }
 
-/* Metadata (Géneros, Classificação, Ano, Nota) */
+/* NOVO: TÍTULO EM TEXTO (Fallback se não houver logo) */
+.hero-text-title {
+    color: #fff;
+    font-size: clamp(2.5rem, 6vw, 4.5rem);
+    font-weight: 800;
+    margin: 0;
+    line-height: 1.1;
+    text-transform: uppercase;
+    letter-spacing: -1px;
+    text-shadow: 2px 4px 10px rgba(0, 0, 0, 0.8);
+}
+
 .hero-metadata {
     display: flex;
     flex-wrap: wrap;
@@ -93,21 +107,16 @@
     font-weight: 500;
 }
 
-/* Classificação Indicativa (Sprite CSS) */
-/* DESCARREGUE ESTA IMAGEM E COLOQUE EM assets/img/: https://cdn.cineveo.com/ratings_br.png */
 .rating-icon {
     display: inline-block;
     width: 25px;
     height: 25px;
     background-image: url('../img/ratings_br.png');
-    /* Endereço da imagem */
     background-repeat: no-repeat;
     background-size: 150px 25px;
-    /* Define tamanho total do sprite */
     border-radius: 4px;
 }
 
-/* Define a posição para cada classificação indicativa */
 .rating-icon.rating-l {
     background-position: 0 0;
 }
@@ -133,50 +142,43 @@
 }
 
 .meta-genres {
-    color: var(--text-pure);
+    color: #fff;
 }
 
 .meta-year {
-    color: var(--text-muted);
+    color: #8e8e93;
 }
 
 .meta-score {
     color: #ffc107;
-    /* Amarelo ouro para a nota */
     display: flex;
     align-items: center;
     gap: 4px;
 }
 
-/* Sinopse */
 .hero-synopsis {
-    color: var(--text-muted);
+    color: #e5e5ea;
     font-size: 1rem;
     line-height: 1.6;
     margin-bottom: 35px;
-
-    /* Cortar sinopse longa (Apenas em Webkit/Blink) */
     display: -webkit-box;
     -webkit-line-clamp: 3;
-    /* Número de linhas */
     -webkit-box-orient: vertical;
     overflow: hidden;
 }
 
-/* Botões de Ação */
 .hero-actions .btn-primary {
     padding: 14px 40px;
     font-size: 1.1rem;
 }
 
-/* ── 4. Navegação e Paginação (Swiper CSS Overrides) ─────────────────── */
 .hero-slider .swiper-pagination-bullet {
     background: #fff;
     opacity: 0.3;
 }
 
 .hero-slider .swiper-pagination-bullet-active {
-    background: var(--primary);
+    background: #fff;
     opacity: 1;
 }
 
@@ -187,27 +189,14 @@
 
 .hero-slider .swiper-button-next:hover,
 .hero-slider .swiper-button-prev:hover {
-    color: rgba(255, 255, 255, 0.9);
+    color: #fff;
 }
 
-/* ── 5. Responsividade ──────────────────────────────────────────────── */
 @media (max-width: 1024px) {
     .hero-content {
         width: 90%;
         max-width: 600px;
         padding: 120px 0 60px;
-    }
-
-    .hero-logo-container {
-        max-height: 120px;
-    }
-
-    .hero-logo {
-        max-height: 120px;
-    }
-
-    .hero-synopsis {
-        -webkit-line-clamp: 4;
     }
 }
 
@@ -224,17 +213,8 @@
 
     .hero-content {
         padding: 50px 20px 80px;
-        background: linear-gradient(0deg, var(--bg-base) 0%, rgba(10, 12, 16, 0.9) 80%, transparent 100%);
         width: 100%;
         max-width: 100%;
-    }
-
-    .hero-logo-container {
-        max-height: 100px;
-        margin-bottom: 20px;
-    }
-
-    .hero-logo {
-        max-height: 100px;
+        background: linear-gradient(0deg, var(--bg-base, #000) 0%, rgba(10, 12, 16, 0.9) 80%, transparent 100%);
     }
 }
