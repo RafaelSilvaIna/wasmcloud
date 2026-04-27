@@ -8,6 +8,9 @@ $requestMethod = $_SERVER['REQUEST_METHOD'];
 
 if (strpos($requestUri, '/api/') === 0) {
 
+    // =========================================================
+    // ROTAS DE AUTENTICAÇÃO
+    // =========================================================
     if (strpos($requestUri, '/api/auth/') === 0) {
         require_once __DIR__ . '/../models/AuthModel.php';
         require_once __DIR__ . '/../services/AuthService.php';
@@ -18,65 +21,83 @@ if (strpos($requestUri, '/api/') === 0) {
         $authController = new AuthController($authService);
 
         if ($requestUri === '/api/auth/status' && $requestMethod === 'GET') {
-            $authController->getStatus(); exit;
+            $authController->getStatus();
+            exit;
         }
         if ($requestUri === '/api/auth/login' && $requestMethod === 'POST') {
-            $authController->login(); exit;
+            $authController->login();
+            exit;
         }
     }
 
+    // =========================================================
+    // ROTAS DE PERFIS
+    // =========================================================
     if (strpos($requestUri, '/api/profiles/') === 0) {
         require_once __DIR__ . '/../helpers/AvatarHelper.php';
-        require_once __DIR__ . '/../models/AuthModel.php';
+        require_once __DIR__ . '/../models/AuthModel.php';    // ADICIONADO: Necessário para checar o plano Premium
         require_once __DIR__ . '/../models/ProfileModel.php';
         require_once __DIR__ . '/../services/ProfileService.php';
         require_once __DIR__ . '/../controllers/ProfileController.php';
 
+        // CORREÇÃO DO ERRO 500: Instanciamos o AuthModel e passamos para o ProfileService
         $authModel = new AuthModel($pdoCineveo);
         $profileModel = new ProfileModel($pdo);
         $profileService = new ProfileService($profileModel, $authModel);
         $profileController = new ProfileController($profileService);
 
         if ($requestUri === '/api/profiles/list' && $requestMethod === 'GET') {
-            $profileController->list(); exit;
+            $profileController->list();
+            exit;
         }
         if ($requestUri === '/api/profiles/check-username' && $requestMethod === 'GET') {
-            $profileController->checkUsername(); exit;
+            $profileController->checkUsername();
+            exit;
         }
         if ($requestUri === '/api/profiles/avatars' && $requestMethod === 'GET') {
-            $profileController->getAvatars(); exit;
+            $profileController->getAvatars();
+            exit;
         }
         if ($requestUri === '/api/profiles/create' && $requestMethod === 'POST') {
-            $profileController->create(); exit;
+            $profileController->create();
+            exit;
         }
         if ($requestUri === '/api/profiles/select' && $requestMethod === 'POST') {
-            $profileController->select(); exit;
+            $profileController->select();
+            exit;
         }
         if ($requestUri === '/api/profiles/current' && $requestMethod === 'GET') {
-            $profileController->current(); exit;
+            $profileController->current();
+            exit;
         }
         if ($requestUri === '/api/profiles/start-session' && $requestMethod === 'POST') {
-            $profileController->startSession(); exit;
+            $profileController->startSession();
+            exit;
         }
         if ($requestUri === '/api/profiles/heartbeat' && $requestMethod === 'POST') {
-            $profileController->heartbeat(); exit;
+            $profileController->heartbeat();
+            exit;
         }
         if ($requestUri === '/api/profiles/stop-session' && $requestMethod === 'POST') {
-            $profileController->stopSession(); exit;
+            $profileController->stopSession();
+            exit;
         }
-        // NOVA ROTA API: Atualizar o Perfil
         if ($requestUri === '/api/profiles/update' && $requestMethod === 'POST') {
-            $profileController->update(); exit;
+            $profileController->update();
+            exit;
         }
     }
 
+    // Se a rota da API não for encontrada
     header('Content-Type: application/json');
     http_response_code(404);
     echo json_encode(['error' => 'Endpoint não encontrado']);
     exit;
 }
 
-// NOVA ROTA FRONT-END: Página de Gerenciar Perfis (Carrega o HTML)
+// =========================================================
+// ROTAS DE FRONT-END (PÁGINAS)
+// =========================================================
 if ($requestUri === '/manage-profiles') {
     require_once __DIR__ . '/../pages/manage-profiles.php';
     exit;
