@@ -1,10 +1,9 @@
 /* assets/css/content-card.css */
 
-/* ── 1. CONTAINER DO TRILHO (RAIL) ────────────────────────────────── */
+/* ── 1. CONTAINER DO TRILHO (RAIL) ──────────────────────────────── */
 .pipo-rail-section {
-    margin-bottom: 3vw;
+    margin-bottom: 2.5vw;
     position: relative;
-    z-index: 10;
 }
 
 .pipo-rail-header {
@@ -17,16 +16,22 @@
 
 .pipo-rail-title {
     color: #fff;
-    font-size: 1.4vw;
+    font-size: clamp(1rem, 1.4vw, 1.25rem);
     font-weight: 700;
     margin: 0;
     line-height: 1.2;
-    text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.5);
+    letter-spacing: 0.01em;
+    /* Acento visual: barra amarela à esquerda */
+    padding-left: 12px;
+    border-left: 3px solid var(--color-primary);
 }
 
 @media (max-width: 768px) {
+    .pipo-rail-section {
+        margin-bottom: 6vw;
+    }
     .pipo-rail-title {
-        font-size: 1.2rem;
+        font-size: 1.1rem;
     }
 }
 

@@ -14,6 +14,8 @@
     cursor: grab;
     user-select: none;
     -webkit-user-select: none;
+    /* Garante que o ::after em home.php renderize dentro do contexto */
+    isolation: isolate;
 }
 
 .hero-slider:active { cursor: grabbing; }
@@ -66,18 +68,22 @@
     position: absolute;
     inset: 0;
     background:
+        /* Lateral esquerda — escurece para o texto */
         linear-gradient(90deg,
-            rgba(0,0,0,0.88) 0%,
+            rgba(0,0,0,0.90) 0%,
             rgba(0,0,0,0.55) 35%,
             rgba(0,0,0,0.08) 65%,
             transparent 85%),
+        /* Rodapé — desce gradualmente para o preto total da página */
         linear-gradient(0deg,
-            rgba(0,0,0,0.80) 0%,
-            rgba(0,0,0,0.30) 30%,
-            transparent 55%),
+            rgba(0,0,0,1.00) 0%,
+            rgba(0,0,0,0.70) 18%,
+            rgba(0,0,0,0.20) 40%,
+            transparent 60%),
+        /* Topo — sombra suave para o header */
         linear-gradient(180deg,
-            rgba(0,0,0,0.45) 0%,
-            transparent 18%);
+            rgba(0,0,0,0.50) 0%,
+            transparent 20%);
     z-index: 2;
 }
 
