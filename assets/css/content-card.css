@@ -1,48 +1,38 @@
 /* assets/css/content-card.css */
 
-/* ── 1. CONTAINER DO TRILHO (RAIL) ──────────────────────────────── */
+/* ── CONTAINER DO TRILHO (RAIL) ──────────────────────────────────── */
 .pipo-rail-section {
-    margin-bottom: 2.5vw;
+    margin-bottom: 3.5vw;
     position: relative;
+    z-index: 10;
 }
 
 .pipo-rail-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
     padding: 0 4%;
-    margin-bottom: 10px;
+    margin-bottom: 12px;
 }
 
 .pipo-rail-title {
     color: #fff;
-    font-size: clamp(1rem, 1.4vw, 1.25rem);
+    font-size: 1.4vw;
     font-weight: 700;
     margin: 0;
     line-height: 1.2;
-    letter-spacing: 0.01em;
-    /* Acento visual: barra amarela à esquerda */
-    padding-left: 12px;
-    border-left: 3px solid var(--color-primary);
+    text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.5);
 }
 
 @media (max-width: 768px) {
-    .pipo-rail-section {
-        margin-bottom: 6vw;
-    }
     .pipo-rail-title {
-        font-size: 1.1rem;
+        font-size: 1.2rem;
     }
 }
 
-/* A área que desliza horizontalmente */
 .pipo-rail-container {
     display: flex;
     gap: 8px;
     padding: 20px 4%;
     overflow-x: auto;
     overflow-y: visible;
-    /* overflow-y visível é crucial para o hover não ser cortado */
     scroll-behavior: smooth;
     scrollbar-width: none;
 }
@@ -51,12 +41,11 @@
     display: none;
 }
 
-/* ── 2. O CARD BASE ───────────────────────────────────────────────── */
+/* ── O CARD BASE ─────────────────────────────────────────────────── */
 .pipo-card {
     flex: 0 0 calc(100% / 6 - 8px);
-    /* Mostra 6 cards por ecrã no Desktop */
     aspect-ratio: 2 / 3;
-    border-radius: 4px;
+    border-radius: 6px;
     background-color: #181818;
     position: relative;
     cursor: pointer;
@@ -68,10 +57,9 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
-    border-radius: 4px;
+    border-radius: 6px;
 }
 
-/* Responsividade de quantidade de cards */
 @media (max-width: 1200px) {
     .pipo-card {
         flex: 0 0 calc(100% / 5 - 8px);
@@ -96,22 +84,18 @@
     }
 }
 
-/* ── 3. EFEITO HOVER (Magia do Streaming) ─────────────────────────── */
+/* ── EFEITO HOVER (Magia do Streaming) ───────────────────────────── */
 .pipo-card:hover {
     transform: scale(1.15) translateY(-5px);
-    /* Aumenta e sobe ligeiramente */
     z-index: 100;
-    /* Fica por cima de todos os outros */
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.8);
-    border-radius: 6px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.9);
 }
 
-/* Sombra/Degradê interior que escurece a imagem para o texto aparecer */
 .pipo-card-overlay {
     position: absolute;
     inset: 0;
-    border-radius: 4px;
-    background: linear-gradient(0deg, rgba(20, 20, 20, 0.95) 0%, rgba(20, 20, 20, 0.6) 40%, transparent 100%);
+    border-radius: 6px;
+    background: linear-gradient(0deg, rgba(15, 15, 15, 0.95) 0%, rgba(15, 15, 15, 0.7) 45%, transparent 100%);
     opacity: 0;
     transition: opacity 0.3s ease;
     pointer-events: none;
@@ -121,7 +105,6 @@
     opacity: 1;
 }
 
-/* Detalhes que sobem */
 .pipo-card-info {
     position: absolute;
     bottom: 0;
@@ -144,10 +127,10 @@
     pointer-events: auto;
 }
 
-/* ── 4. ESTILIZAÇÃO DOS ELEMENTOS DO CARD ─────────────────────────── */
+/* ── ELEMENTOS DO CARD ───────────────────────────────────────────── */
 .pipo-card-title {
     color: #fff;
-    font-size: 1rem;
+    font-size: 1.05rem;
     font-weight: 700;
     margin: 0 0 5px 0;
     line-height: 1.1;
@@ -155,13 +138,13 @@
 
 .pipo-card-actions {
     display: flex;
-    gap: 6px;
     align-items: center;
+    gap: 6px;
 }
 
 .btn-circle {
-    width: 32px;
-    height: 32px;
+    width: 34px;
+    height: 34px;
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -175,7 +158,7 @@
 
 .btn-circle:hover {
     border-color: #fff;
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.15);
 }
 
 .btn-play-mini {
@@ -192,30 +175,35 @@
     margin-left: auto;
 }
 
-/* Empurra a seta para a direita */
+/* Seta empurrada para o fim */
 
 .pipo-card-meta {
     display: flex;
     align-items: center;
-    gap: 8px;
-    font-size: 0.75rem;
+    gap: 10px;
+    font-size: 0.8rem;
     font-weight: 600;
+    margin-top: 4px;
 }
 
-.match-score {
-    color: #46d369;
+.meta-score {
+    color: #ffc107;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-weight: 700;
 }
 
-/* Verde estilo compatibilidade */
 .release-year {
-    color: #fff;
+    color: #d2d2d2;
 }
 
-/* Re-aproveita o seu sprite CSS, mas em miniatura */
+/* Sprite de Classificação Indicativa Mini */
 .rating-mini {
     width: 15px;
     height: 15px;
     background-size: 90px 15px;
+    border-radius: 2px;
 }
 
 .rating-mini.rating-l {
@@ -242,27 +230,32 @@
     background-position: -75px 0;
 }
 
+/* Gêneros (Badges Profissionais) */
 .pipo-card-genres {
     display: flex;
-    gap: 4px;
-    font-size: 0.7rem;
-    color: #d2d2d2;
     flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 2px;
 }
 
-.pipo-card-genres span:not(:last-child)::after {
-    content: '•';
-    margin-left: 4px;
-    color: #555;
+.pipo-card-genres span {
+    background: rgba(255, 255, 255, 0.15);
+    color: #e5e5ea;
+    padding: 3px 6px;
+    border-radius: 4px;
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
-/* ── 5. SKELETON LOADING (Ondulação) ──────────────────────────────── */
+/* ── SKELETON LOADING ────────────────────────────────────────────── */
 .pipo-skeleton {
     background: linear-gradient(90deg, #1c1c1e 0%, #2c2c2e 50%, #1c1c1e 100%);
     background-size: 200% 100%;
     animation: skeleton-loading 1.5s infinite linear;
     pointer-events: none;
-    border-radius: 4px;
+    border-radius: 6px;
 }
 
 @keyframes skeleton-loading {

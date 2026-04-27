@@ -6,8 +6,7 @@ class PipoRail {
         this.title = title;
         this.apiCategory = apiCategory;
         this.limit = limit;
-        
-        // Templates e Base
+
         this.TMDB_IMG_BASE = 'https://image.tmdb.org/t/p/';
         this.skeletonTpl = document.getElementById('pipo-card-skeleton-template');
         this.cardTpl = document.getElementById('pipo-card-template');
@@ -17,8 +16,7 @@ class PipoRail {
 
     init() {
         if (!this.container || !this.skeletonTpl || !this.cardTpl) return;
-        
-        // 1. Constrói o HTML estrutural do trilho
+
         this.container.className = 'pipo-rail-section';
         this.container.innerHTML = `
             <div class="pipo-rail-header">
@@ -28,10 +26,8 @@ class PipoRail {
         `;
         this.wrapper = document.getElementById(`${this.container.id}-wrapper`);
 
-        // 2. Renderiza Skeletons imediatamente (Simula 6 cards a carregar)
+        // Renderiza 6 Skeletons imediatamente
         this.renderSkeletons(6);
-
-        // 3. Busca os dados reais
         this.fetchData();
     }
 
@@ -48,7 +44,7 @@ class PipoRail {
             const url = `/api/v2/conteudo?categoria=${this.apiCategory}&limite=${this.limit}`;
             const response = await fetch(url);
             if (!response.ok) throw new Error('Network error');
-            
+
             const data = await response.json();
             if (data.sucesso && data.resultados.length > 0) {
                 this.renderCards(data.resultados);
@@ -68,13 +64,13 @@ class PipoRail {
     }
 
     renderCards(items) {
-        this.wrapper.innerHTML = ''; // Apaga os skeletons
-        
+        this.wrapper.innerHTML = ''; // Limpa Skeletons
+
         items.forEach(item => {
             if (!item) return;
             const cardNode = this.cardTpl.content.cloneNode(true);
-            
-            // Poster
+
+            // Pôster
             const imgEl = cardNode.querySelector('.pipo-card-poster');
             if (imgEl) imgEl.src = this.formatImg(item.capa, 'w500');
 
@@ -82,13 +78,12 @@ class PipoRail {
             const titleEl = cardNode.querySelector('.pipo-card-title');
             if (titleEl) titleEl.innerText = item.titulo || '';
 
-            // Meta: Match Score (Calcula Relevância baseada na nota do TMDB)
+            // Meta: Nota
             const nota = parseFloat(item.nota) || 0;
-            const percentage = nota > 0 ? Math.round(nota * 10) : Math.floor(Math.random() * (99 - 70 + 1)) + 70; // Fake percent se 0
             const scoreEl = cardNode.querySelector('.score-value');
-            if (scoreEl) scoreEl.innerText = percentage;
+            if (scoreEl) scoreEl.innerText = nota > 0 ? nota.toFixed(1) : 'N/A';
 
-            // Meta: Classificação Indicativa
+            // Meta: Classificação Indicativa (Sprite)
             const ratingClassMap = {
                 'L': 'rating-l', 'Livre': 'rating-l', '0': 'rating-l',
                 '10': 'rating-10', '12': 'rating-12', '14': 'rating-14',
@@ -104,12 +99,12 @@ class PipoRail {
             const yearEl = cardNode.querySelector('.release-year');
             if (yearEl) yearEl.innerText = item.ano || '';
 
-            // Meta: Gêneros
+            // Meta: Gêneros em Badges
             const genresWrap = cardNode.querySelector('.pipo-card-genres');
             if (genresWrap) {
                 const gens = item.generos || item.genres || [];
-                // Cria spans para os 3 primeiros gêneros
-                gens.slice(0, 3).forEach(g => {
+                // Pega os 2 primeiros géneros para não poluir
+                gens.slice(0, 2).forEach(g => {
                     const s = document.createElement('span');
                     s.innerText = g;
                     genresWrap.appendChild(s);
@@ -119,7 +114,7 @@ class PipoRail {
             this.wrapper.appendChild(cardNode);
         });
 
-        // Renderiza os ícones do Lucide (Play, Plus, Thumb, Chevron) recém inseridos
+        // Aplica os ícones Lucide
         if (typeof lucide !== 'undefined') lucide.createIcons();
     }
 }
