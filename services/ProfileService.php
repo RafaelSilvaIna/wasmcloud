@@ -36,6 +36,7 @@ class ProfileService {
         $_SESSION['profile_id']    = $profile['id'];
         $_SESSION['profile_name']  = $profile['profile_name'];
         $_SESSION['profile_image'] = $profile['profile_image'];
+        $_SESSION['profile_is_kids'] = (bool)(int)$profile['is_kids'];
         return ['success' => true];
     }
 

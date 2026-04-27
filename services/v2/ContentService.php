@@ -6,8 +6,8 @@ class ContentService {
         $this->model = $model;
     }
 
-    public function fetchCategory($category, $limit) {
-        $localData = $this->model->getByCategory($category, $limit);
+    public function fetchCategory($category, $limit, bool $isKids = false) {
+        $localData = $this->model->getByCategory($category, $limit, $isKids);
         if (empty($localData)) return [];
 
         $tmdbData = TMDBHelper::getRichData($localData);
