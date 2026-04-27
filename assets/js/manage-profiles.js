@@ -9,13 +9,27 @@ document.addEventListener('DOMContentLoaded', () => {
     const closeModal = (m) => m.classList.remove('open');
 
     // Carregar Perfis do Banco de Dados
+    const renderSkeletons = () => {
+        grid.innerHTML = '';
+        for (let i = 0; i < 4; i++) {
+            grid.innerHTML += `
+                <div class="profile-skeleton">
+                    <div class="skeleton-avatar"></div>
+                    <div class="skeleton-text"></div>
+                </div>
+            `;
+        }
+    };
+
     const fetchProfiles = async () => {
         try {
+            renderSkeletons();
             const res = await fetch('/api/profiles/list');
             currentProfiles = await res.json();
             renderProfiles();
         } catch (err) {
             if (typeof PipoNotification !== 'undefined') PipoNotification.error('Erro ao carregar perfis.');
+            grid.innerHTML = '<p style="color: var(--profile-text-muted);">Erro ao carregar os perfis.</p>';
         }
     };
 

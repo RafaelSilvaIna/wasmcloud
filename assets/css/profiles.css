@@ -136,6 +136,38 @@ body {
 }
 
 /* ============================================================
+   SKELETON LOADING
+   ============================================================ */
+@keyframes skeletonPulse {
+    0% { background-color: rgba(255, 255, 255, 0.05); }
+    50% { background-color: rgba(255, 255, 255, 0.15); }
+    100% { background-color: rgba(255, 255, 255, 0.05); }
+}
+
+.profile-skeleton {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+.skeleton-avatar {
+    width: var(--profile-card-size);
+    height: var(--profile-card-size);
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.1);
+    animation: skeletonPulse 1.5s infinite ease-in-out;
+}
+
+.skeleton-text {
+    width: 80px;
+    height: 16px;
+    border-radius: 8px;
+    background-color: rgba(255, 255, 255, 0.1);
+    animation: skeletonPulse 1.5s infinite ease-in-out;
+}
+
+/* ============================================================
    MODAL DARK MINIMALISTA (Para Criação/Edição e Avatar)
    ============================================================ */
 .profile-modal,

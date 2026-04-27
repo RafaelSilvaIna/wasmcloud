@@ -79,12 +79,18 @@ document.addEventListener('DOMContentLoaded', () => {
         // Force reflow so transition plays
         dropdown.offsetHeight;
         dropdown.classList.add('open');
+        
+        const btn = document.getElementById('profile-header-btn');
+        if (btn) btn.setAttribute('aria-expanded', 'true');
     };
 
     const closeDropdown = () => {
         if (!dropdown) return;
         dropdown.classList.remove('open');
         overlay.classList.remove('open');
+        
+        const btn = document.getElementById('profile-header-btn');
+        if (btn) btn.setAttribute('aria-expanded', 'false');
     };
 
     // ── Build profile button ───────────────────────────────────────
