@@ -60,9 +60,11 @@ class ProfileService
                 return ['success' => false, 'message' => 'PIN incorreto.'];
             }
         }
-        $_SESSION['profile_id'] = $profile['id'];
-        $_SESSION['profile_name'] = $profile['profile_name'];
-        $_SESSION['profile_image'] = $profile['profile_image'];
+        $_SESSION['profile_id']       = $profile['id'];
+        $_SESSION['profile_name']     = $profile['profile_name'];
+        $_SESSION['profile_image']    = $profile['profile_image'];
+        // Sempre atualiza is_kids — garante a troca correta entre perfis kids e não-kids
+        $_SESSION['profile_is_kids']  = (bool)(int)$profile['is_kids'];
         return ['success' => true];
     }
 

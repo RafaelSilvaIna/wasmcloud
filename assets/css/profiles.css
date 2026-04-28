@@ -69,6 +69,43 @@ body {
     transform: scale(1.05);
 }
 
+/* ── Perfil Infantil: ring azul com pulso ────────────────────────────── */
+.profile-item.kids .avatar-wrapper {
+    border: 3px solid #38bdf8;
+    box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.45);
+    animation: kids-ring-pulse 2.8s ease-in-out infinite;
+}
+
+@keyframes kids-ring-pulse {
+    0%, 100% { box-shadow: 0 0 0 0   rgba(56, 189, 248, 0); }
+    50%       { box-shadow: 0 0 0 8px rgba(56, 189, 248, 0.15); }
+}
+
+/* ── Badge "Kids" ────────────────────────────────────────────────────── */
+.profile-kids-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: linear-gradient(135deg, #0ea5e9, #38bdf8);
+    color: #fff;
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.7px;
+    text-transform: uppercase;
+    padding: 3px 9px;
+    border-radius: 20px;
+    margin-top: -6px;           /* aproxima badge do nome */
+    box-shadow: 0 2px 8px rgba(14, 165, 233, 0.4);
+    pointer-events: none;       /* clique passa direto para o card */
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.profile-item:hover .profile-kids-badge {
+    transform: scale(1.1);
+    box-shadow: 0 4px 14px rgba(14, 165, 233, 0.6);
+}
+
+
 .avatar-wrapper {
     width: var(--profile-card-size);
     height: var(--profile-card-size);

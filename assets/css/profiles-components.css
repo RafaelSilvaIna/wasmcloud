@@ -65,6 +65,7 @@
     border-color: #38bdf8;
 }
 
+
 .profile-item.lock .avatar-wrapper::after {
     content: '';
     position: absolute;

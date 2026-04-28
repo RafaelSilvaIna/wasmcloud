@@ -61,14 +61,21 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!grid) return;
         grid.innerHTML = '';
         currentProfiles.forEach(p => {
-            const isLock = p.has_pin  ? 'lock' : '';
-            const isKids = p.is_kids  ? 'kids' : '';
+            const isLock = p.has_pin ? 'lock' : '';
+            const isKids = p.is_kids ? 'kids' : '';
+            const kidsBadge = p.is_kids
+                ? `<span class="profile-kids-badge" aria-label="Perfil infantil">
+                       <svg xmlns="http://www.w3.org/2000/svg" width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                       Kids
+                   </span>`
+                : '';
             grid.innerHTML += `
                 <div class="profile-item ${isLock} ${isKids}" data-id="${p.id}" data-name="${p.profile_name}" data-img="${p.profile_image}" data-pin="${p.has_pin}">
                     <div class="avatar-wrapper">
                         <img src="${p.profile_image}" alt="${p.profile_name}" class="avatar-img">
                     </div>
                     <span class="profile-name">${p.profile_name}</span>
+                    ${kidsBadge}
                 </div>
             `;
         });
@@ -224,13 +231,20 @@ document.addEventListener('DOMContentLoaded', () => {
             const btn = document.getElementById('btn-save-profile');
             if (btn) { btn.innerText = 'Salvando...'; btn.disabled = true; }
 
-            const formData = new FormData(e.target);
-            const payload  = Object.fromEntries(formData.entries());
-            
+            // Leitura explícita de cada campo por ID — ignora FormData e form.reset()
+            // para garantir que o tipo de conta (kids/standard) seja sempre enviado corretamente
+            const payload = {
+                name:     (document.getElementById('pro_name')?.value     || '').trim(),
+                username: (document.getElementById('username')?.value     || '').trim(),
+                image:     document.getElementById('selected-avatar-url')?.value || '',
+                type:      document.getElementById('pro_type')?.value             || 'standard',
+                pin:       document.getElementById('pin_input')?.value            || ''
+            };
+
             const isPinEnabled = document.getElementById('pin-toggle')?.checked;
             if (!isPinEnabled) {
-                payload.pin = ''; 
-            } else if (payload.pin && payload.pin.length < 4) {
+                payload.pin = '';
+            } else if (payload.pin.length < 4) {
                 if (typeof PipoNotification !== 'undefined') PipoNotification.warning('O PIN deve conter 4 dígitos.');
                 if (btn) { btn.innerText = 'Salvar Perfil'; btn.disabled = false; }
                 return;
@@ -306,12 +320,24 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ── Botões fechar modal ───────────────────────────────────────────────
+    // Cada botão fecha APENAS o modal pai ao qual pertence.
+    // Isso evita que fechar o modal de tipo de conta dispare form.reset()
+    // no modal de criação, apagando a seleção de kids/standard.
     document.querySelectorAll('.modal-close, .pipo-modal-cancel, #btn-cancel-pin').forEach(b => {
-        b.addEventListener('click', () => {
-            closeModal(modalForm);
-            closeModal(modalAvatars);
-            closeModal(modalPin);
-            closeModal(modalAccountType);
+        b.addEventListener('click', (e) => {
+            // Fecha o modal pai direto deste botão
+            const parentModal = e.currentTarget.closest(
+                '.profile-modal, .avatar-modal, #pipo-avatar-modal'
+            );
+            if (parentModal) {
+                closeModal(parentModal);
+            } else {
+                // Fallback: fecha todos (compatibilidade)
+                closeModal(modalForm);
+                closeModal(modalAvatars);
+                closeModal(modalPin);
+                closeModal(modalAccountType);
+            }
         });
     });
 
