@@ -4,13 +4,15 @@ declare(strict_types=1);
 namespace Services\V2;
 
 use Models\V2\ExhibitionModel;
-use Helpers\V2\TMDBHelper;
+use TMDBHelper; // CORREÇÃO: Diz ao PHP para usar o TMDBHelper global!
 
+/**
+ * Serviço que processa a lógica de entrega do conteúdo
+ */
 class ExhibitionService {
     private ExhibitionModel $model;
     private TMDBHelper $tmdbHelper;
 
-    // Injetamos o Model e o TMDBHelper
     public function __construct(ExhibitionModel $model, TMDBHelper $tmdbHelper) {
         $this->model = $model;
         $this->tmdbHelper = $tmdbHelper;
@@ -42,8 +44,9 @@ class ExhibitionService {
             'content_info' => [
                 'tmdb_id' => $baseInfo['id_tmdb'],
                 'title' => $baseInfo['titulo'],
-                'overview' => $baseInfo['sinopse'], // Sinopse geral
+                'overview' => $baseInfo['sinopse'], 
                 'poster' => $baseInfo['poster'],
+                'backdrop' => $baseInfo['capa'],
                 'type' => $baseInfo['tipo']
             ],
             'playback' => [
@@ -58,10 +61,7 @@ class ExhibitionService {
         // 4. Se for série, busca os dados em TEMPO REAL no TMDB
         $isSerie = ($type === 'series' || $type === 'tv' || $type === 'serie');
         if ($isSerie) {
-            // Busca o episódio atual em tempo real
             $epData = $this->tmdbHelper->getEpisodeMetadata($tmdbId, $season, $episode);
-            
-            // Busca a lista de temporadas em tempo real
             $seriesInfo = $this->tmdbHelper->getSeriesInfo($tmdbId);
 
             $response['episode_metadata'] = [
@@ -69,13 +69,12 @@ class ExhibitionService {
                 'episode' => $episode,
                 'name' => $epData['name'] ?? "Episódio {$episode}",
                 'overview' => $epData['overview'] ?? 'Sinopse indisponível.',
-                'still_path' => isset($epData['still_path']) ? "https://image.tmdb.org/t/p/w780" . $epData['still_path'] : $baseInfo['capa'] // Usa a capa da série se o episódio não tiver
+                'still_path' => isset($epData['still_path']) ? "https://image.tmdb.org/t/p/w780" . $epData['still_path'] : $baseInfo['capa']
             ];
 
             $response['seasons_available'] = [];
             if (isset($seriesInfo['seasons'])) {
                 foreach ($seriesInfo['seasons'] as $s) {
-                    // Ignora episódios especiais (Temporada 0) para não poluir
                     if ($s['season_number'] > 0) {
                         $response['seasons_available'][] = [
                             'season_number' => $s['season_number'],

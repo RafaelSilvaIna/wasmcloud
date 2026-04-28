@@ -17,10 +17,6 @@ require_once __DIR__ . '/../../models/v2/ExhibitionModel.php';
 require_once __DIR__ . '/../../services/v2/ExhibitionService.php';
 require_once __DIR__ . '/../../controllers/v2/ExhibitionController.php';
 
-// =========================================================================
-// CORREÇÃO: Importação dos namespaces das classes de exibição.
-// Isto diz ao PHP exatamente onde as classes estão localizadas.
-// =========================================================================
 use Models\V2\ExhibitionModel;
 use Services\V2\ExhibitionService;
 use Controllers\V2\ExhibitionController;
@@ -39,13 +35,11 @@ try {
 
     // Rota 2: Obtenção de Links e Metadados do Player
     } elseif (strpos($requestUri, '/api/v2/exhibition') === 0) {
-        
-        // Agora o PHP reconhece o ExhibitionModel graças ao 'use' lá em cima!
         $model = new ExhibitionModel($pdoCineveo);
-        $tmdbHelper = new TMDBHelper(); // Usado para buscar metadados do ep. em tempo real
+        $tmdbHelper = new TMDBHelper(); // Usando a classe global normalmente
         $service = new ExhibitionService($model, $tmdbHelper);
         $controller = new ExhibitionController($service);
-        $controller->getExhibitionData(); // Método do ExhibitionController
+        $controller->getExhibitionData(); 
 
     // Rota não encontrada
     } else {
