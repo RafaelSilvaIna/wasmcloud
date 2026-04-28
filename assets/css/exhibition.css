@@ -1,0 +1,221 @@
+/* assets/css/exhibition.css */
+
+/* --- HERO --- */
+.ex-hero {
+    position: relative;
+    min-height: 85vh;
+    display: flex;
+    align-items: center;
+    padding: 0 5%;
+    overflow: hidden;
+}
+
+.ex-hero-backdrop {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+}
+
+.ex-backdrop-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.ex-hero-overlay {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 20% 50%, rgba(10, 10, 10, 0.7) 0%, rgba(10, 10, 10, 0.95) 100%);
+}
+
+.ex-hero-content {
+    max-width: 600px;
+    z-index: 10;
+}
+
+.ex-title {
+    font-size: clamp(2rem, 5vw, 4rem);
+    font-weight: 900;
+    margin-bottom: 20px;
+    text-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+}
+
+.ex-overview {
+    font-size: 1.1rem;
+    line-height: 1.6;
+    color: #e5e5e5;
+    margin-bottom: 30px;
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.btn-play-large {
+    padding: 14px 32px;
+    background: #fff;
+    color: #000;
+    border: none;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.btn-play-large:hover {
+    transform: scale(1.05);
+    background: #e6e6e6;
+}
+
+/* --- SEASONS & EPISODES (Netflix Style) --- */
+#exhibition-series-container {
+    padding: 40px 5%;
+}
+
+.ex-season-selector {
+    position: relative;
+    margin-bottom: 30px;
+}
+
+.ex-season-trigger {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+.ex-season-dropdown {
+    position: absolute;
+    top: 110%;
+    left: 0;
+    background: #1f1f1f;
+    border: 1px solid #333;
+    border-radius: 8px;
+    width: 200px;
+    display: none;
+    z-index: 100;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+}
+
+.ex-season-dropdown.open {
+    display: block;
+}
+
+.season-opt {
+    padding: 12px 20px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.season-opt:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.ex-episodes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 25px;
+}
+
+.ex-ep-card {
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.ex-ep-thumb {
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+    aspect-ratio: 16/9;
+}
+
+.ex-ep-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: 0.5s;
+}
+
+.ex-ep-card:hover img {
+    transform: scale(1.1);
+}
+
+.ex-ep-play-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: 0.3s;
+}
+
+.ex-ep-card:hover .ex-ep-play-overlay {
+    opacity: 1;
+}
+
+.ex-ep-info {
+    margin-top: 12px;
+}
+
+.ex-ep-title {
+    margin: 0 0 8px;
+    font-size: 1rem;
+}
+
+.ex-ep-desc {
+    font-size: 0.85rem;
+    color: #888;
+    line-height: 1.4;
+}
+
+/* --- CAST --- */
+.ex-cast-section {
+    padding: 40px 5%;
+}
+
+.ex-cast-grid {
+    display: flex;
+    gap: 20px;
+    overflow-x: auto;
+    padding-bottom: 20px;
+    scrollbar-width: thin;
+}
+
+.ex-cast-card {
+    flex: 0 0 140px;
+    text-align: center;
+}
+
+.ex-cast-img {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-bottom: 10px;
+    border: 2px solid #333;
+}
+
+.ex-cast-name {
+    display: block;
+    font-weight: 700;
+    font-size: 0.9rem;
+}
+
+.ex-cast-char {
+    display: block;
+    font-size: 0.8rem;
+    color: #777;
+}
