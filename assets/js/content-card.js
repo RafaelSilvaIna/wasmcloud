@@ -41,6 +41,7 @@ class PipoRail {
 
     async fetchData() {
         try {
+            // Utiliza a API v2 de conteúdo que já tens implementada
             const url = `/api/v2/conteudo?categoria=${this.apiCategory}&limite=${this.limit}`;
             const response = await fetch(url);
             if (!response.ok) throw new Error('Network error');
@@ -69,6 +70,18 @@ class PipoRail {
         items.forEach(item => {
             if (!item) return;
             const cardNode = this.cardTpl.content.cloneNode(true);
+            const cardElement = cardNode.querySelector('.pipo-card');
+
+            // ── LÓGICA DE CLIQUE (Redirecionamento para View) ─────────────────
+            if (cardElement) {
+                cardElement.addEventListener('click', () => {
+                    // Mapeia o tipo para o padrão esperado pela página view.php
+                    const type = (item.tipo === 'serie' || item.tipo === 'tv') ? 'serie' : 'movie';
+                    // Redireciona para /view com ID do TMDB e Tipo
+                    window.location.href = `/view?id=${item.id_tmdb}&type=${type}`;
+                });
+            }
+            // ──────────────────────────────────────────────────────────────────
 
             // Pôster
             const imgEl = cardNode.querySelector('.pipo-card-poster');
@@ -78,7 +91,7 @@ class PipoRail {
             const titleEl = cardNode.querySelector('.pipo-card-title');
             if (titleEl) titleEl.innerText = item.titulo || '';
 
-            // Meta: Nota Limpa (sem "% Relevante")
+            // Meta: Nota
             const nota = parseFloat(item.nota) || 0;
             const scoreEl = cardNode.querySelector('.score-value');
             if (scoreEl) scoreEl.innerText = nota > 0 ? nota.toFixed(1) : 'N/A';
@@ -99,11 +112,10 @@ class PipoRail {
             const yearEl = cardNode.querySelector('.release-year');
             if (yearEl) yearEl.innerText = item.ano || '';
 
-            // Meta: Gêneros Minimalistas (Texto corrido separado por pontos, sem badges pesadas)
+            // Meta: Gêneros
             const genresWrap = cardNode.querySelector('.pipo-card-genres');
             if (genresWrap) {
                 const gens = item.generos || item.genres || [];
-                // Pega os 2/3 primeiros géneros e junta-os numa string limpa
                 genresWrap.innerText = gens.slice(0, 3).join(' • ');
             }
 
