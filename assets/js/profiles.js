@@ -122,7 +122,6 @@ document.addEventListener('DOMContentLoaded', () => {
         grid.addEventListener('touchend', (e) => {
             clearTimeout(pressTimer);
             const item = e.target.closest('.profile-item:not(.add-profile-btn)');
-            // CORREÇÃO: Verificamos se o menu existe antes de checar as classes
             const isMenuOpen = actionMenu ? actionMenu.classList.contains('open') : false;
             
             if (item && isMobile() && !isMenuOpen) {
@@ -231,13 +230,16 @@ document.addEventListener('DOMContentLoaded', () => {
             const btn = document.getElementById('btn-save-profile');
             if (btn) { btn.innerText = 'Salvando...'; btn.disabled = true; }
 
-            // Leitura explícita de cada campo por ID — ignora FormData e form.reset()
-            // para garantir que o tipo de conta (kids/standard) seja sempre enviado corretamente
+            // CORREÇÃO: Lemos diretamente o estado do Switch "kids-toggle" no ecrã.
+            // Se estiver ativo, o profileType é 'kids', caso contrário é 'standard'.
+            const kidsToggle = document.getElementById('kids-toggle');
+            const profileType = (kidsToggle && kidsToggle.checked) ? 'kids' : (document.getElementById('pro_type')?.value || 'standard');
+
             const payload = {
                 name:     (document.getElementById('pro_name')?.value     || '').trim(),
                 username: (document.getElementById('username')?.value     || '').trim(),
                 image:     document.getElementById('selected-avatar-url')?.value || '',
-                type:      document.getElementById('pro_type')?.value             || 'standard',
+                type:      profileType, // Envia o tipo corrigido aqui
                 pin:       document.getElementById('pin_input')?.value            || ''
             };
 
@@ -320,19 +322,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ── Botões fechar modal ───────────────────────────────────────────────
-    // Cada botão fecha APENAS o modal pai ao qual pertence.
-    // Isso evita que fechar o modal de tipo de conta dispare form.reset()
-    // no modal de criação, apagando a seleção de kids/standard.
     document.querySelectorAll('.modal-close, .pipo-modal-cancel, #btn-cancel-pin').forEach(b => {
         b.addEventListener('click', (e) => {
-            // Fecha o modal pai direto deste botão
-            const parentModal = e.currentTarget.closest(
-                '.profile-modal, .avatar-modal, #pipo-avatar-modal'
-            );
+            const parentModal = e.currentTarget.closest('.profile-modal, .avatar-modal, #pipo-avatar-modal');
             if (parentModal) {
                 closeModal(parentModal);
             } else {
-                // Fallback: fecha todos (compatibilidade)
                 closeModal(modalForm);
                 closeModal(modalAvatars);
                 closeModal(modalPin);
@@ -390,7 +385,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (btnEdit) {
         btnEdit.addEventListener('click', () => {
             closeActionMenu();
-            window.location.href = '/manage-profiles'; // Redireciona para gerir perfis se quiser editar via mobile
+            window.location.href = '/manage-profiles';
         });
     }
 
