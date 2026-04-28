@@ -63,12 +63,26 @@ document.addEventListener('DOMContentLoaded', () => {
         currentProfiles.forEach(p => {
             const isLock = p.has_pin ? 'lock' : '';
             const isKids = p.is_kids ? 'kids' : '';
+
+            // ── NOVA BADGE KIDS MODERNA ──────────────────────────────────────────────
+            // Implementação do novo design profissional, moderno e responsivo.
             const kidsBadge = p.is_kids
-                ? `<span class="profile-kids-badge" aria-label="Perfil infantil">
-                       <svg xmlns="http://www.w3.org/2000/svg" width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-                       Kids
+                ? `<span class="pipo-badge-kids" aria-label="Perfil infantil"
+                        style="display: inline-flex; align-items: center; gap: 6px; 
+                               background: linear-gradient(135deg, #2c3e50 0%, #1a2533 100%); 
+                               color: #ffffff; padding: 6px 12px; border-radius: 50px; 
+                               font-size: 0.8rem; font-weight: 600; text-transform: uppercase; 
+                               letter-spacing: 1px; border: 1px solid rgba(255,255,255,0.05); 
+                               box-shadow: inset 0 1px 3px rgba(255,255,255,0.1), 0 2px 5px rgba(0,0,0,0.2); 
+                               max-width: 90%;">
+                       <span class="pipo-badge-icon" style="color: #3498db; display: flex;">
+                           <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><path d="M12 12s2-2 2-2 1 0 1 1.5V13"></path><path d="M12 12s-2-2-2-2-1 0-1 1.5V13"></path><path d="M12 12v3.5c0 .7-.3 1.2-1 1.5h-.1c-.7-.3-1-.8-1-1.5V12.5a1.5 1.5 0 0 1 1.5-1.5H12"></path></svg>
+                       </span>
+                       <span class="pipo-badge-text" style="line-height: 1;">Kids</span>
                    </span>`
                 : '';
+            // ─────────────────────────────────────────────────────────────────────────
+
             grid.innerHTML += `
                 <div class="profile-item ${isLock} ${isKids}" data-id="${p.id}" data-name="${p.profile_name}" data-img="${p.profile_image}" data-pin="${p.has_pin}">
                     <div class="avatar-wrapper">
@@ -230,8 +244,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const btn = document.getElementById('btn-save-profile');
             if (btn) { btn.innerText = 'Salvando...'; btn.disabled = true; }
 
-            // CORREÇÃO: Lemos diretamente o estado do Switch "kids-toggle" no ecrã.
-            // Se estiver ativo, o profileType é 'kids', caso contrário é 'standard'.
+            // CORREÇÃO ANTERIOR MANTIDA: Lemos diretamente o estado do Switch "kids-toggle".
             const kidsToggle = document.getElementById('kids-toggle');
             const profileType = (kidsToggle && kidsToggle.checked) ? 'kids' : (document.getElementById('pro_type')?.value || 'standard');
 
@@ -239,7 +252,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 name:     (document.getElementById('pro_name')?.value     || '').trim(),
                 username: (document.getElementById('username')?.value     || '').trim(),
                 image:     document.getElementById('selected-avatar-url')?.value || '',
-                type:      profileType, // Envia o tipo corrigido aqui
+                type:      profileType, 
                 pin:       document.getElementById('pin_input')?.value            || ''
             };
 
