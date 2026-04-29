@@ -83,4 +83,30 @@ class TMDBHelper {
     public function getEpisodeMetadata(int $tmdbId, int $season, int $episode): ?array {
         return $this->fetch("/tv/{$tmdbId}/season/{$season}/episode/{$episode}?");
     }
+
+    // Busca TODOS os episódios de uma temporada inteira
+    public function getSeasonEpisodes(int $tmdbId, int $season): ?array {
+        return $this->fetch("/tv/{$tmdbId}/season/{$season}?");
+    }
+
+    // Busca logos do conteúdo (movie ou tv) — PT-BR com fallback para EN
+    public function getContentImages(int $tmdbId, string $type): ?array {
+        $mediaType = ($type === 'serie' || $type === 'series' || $type === 'tv') ? 'tv' : 'movie';
+        // include_image_language sem restrição de language= para trazer logos PT e EN
+        $url = self::BASE_URL . "/{$mediaType}/{$tmdbId}/images?api_key=" . self::API_KEY . "&include_image_language=pt,en,null";
+
+        $ch = curl_init();
+        curl_setopt_array($ch, [
+            CURLOPT_URL            => $url,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT        => 3,
+            CURLOPT_SSL_VERIFYPEER => false
+        ]);
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        if ($httpCode !== 200 || !$response) return null;
+        return json_decode($response, true);
+    }
 }

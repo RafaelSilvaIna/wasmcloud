@@ -14,7 +14,7 @@ class ExhibitionModel {
     }
 
     public function getContentBaseInfo(int $tmdbId, string $type): ?array {
-        $tipoDB = ($type === 'series' || $type === 'tv') ? 'serie' : 'filme';
+        $tipoDB = ($type === 'series' || $type === 'tv' || $type === 'serie') ? 'serie' : 'filme';
         $stmt = $this->db->prepare("SELECT id_tmdb, titulo, sinopse, poster, capa, tipo FROM conteudo WHERE id_tmdb = ? AND tipo = ? LIMIT 1");
         $stmt->execute([$tmdbId, $tipoDB]);
         $result = $stmt->fetch(PDO::FETCH_ASSOC);

@@ -9,7 +9,7 @@ $requestMethod = $_SERVER['REQUEST_METHOD'];
 if (strpos($requestUri, '/api/') === 0) {
 
     // =========================================================
-    // ROTAS DE AUTENTICAÇÃO
+    // ROTAS DE AUTENTICAÇÃOa
     // =========================================================
     if (strpos($requestUri, '/api/auth/') === 0) {
         require_once __DIR__ . '/../models/AuthModel.php';

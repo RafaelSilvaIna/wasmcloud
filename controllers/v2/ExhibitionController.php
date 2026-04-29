@@ -4,11 +4,8 @@ declare(strict_types=1);
 namespace Controllers\V2;
 
 use Services\V2\ExhibitionService;
-use Utils\V2\ResponseUtil;
+use ResponseUtil; // Importa classe global para dentro do namespace Controllers\V2
 
-/**
- * Controlador que lida com as requisições HTTP para a página de exibição/player.
- */
 class ExhibitionController {
     private ExhibitionService $service;
 
@@ -16,36 +13,29 @@ class ExhibitionController {
         $this->service = $service;
     }
 
-    /**
-     * Endpoint principal para obter dados e URL de um conteúdo.
-     */
     public function getExhibitionData(): void {
-        // Captura e sanitiza os parâmetros de entrada
         $tmdbId = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT) ?: 0;
-        $type = filter_input(INPUT_GET, 'type', FILTER_SANITIZE_STRING) ?: 'movie';
+        $type = htmlspecialchars(filter_input(INPUT_GET, 'type', FILTER_DEFAULT) ?? 'movie', ENT_QUOTES, 'UTF-8');
         $season = filter_input(INPUT_GET, 's', FILTER_VALIDATE_INT) ?: 0;
         $episode = filter_input(INPUT_GET, 'e', FILTER_VALIDATE_INT) ?: 0;
 
-        // Validação básica
         if ($tmdbId <= 0) {
-            ResponseUtil::error('ID do TMDB inválido ou ausente.', 400);
+            ResponseUtil::json(['sucesso' => false, 'erro' => 'ID do TMDB inválido ou ausente.'], 400);
             return;
         }
 
-        if (($type === 'series' || $type === 'tv') && ($season <= 0 || $episode <= 0)) {
-            ResponseUtil::error('Para séries, é obrigatório informar a temporada (s) e o episódio (e).', 400);
+        if (($type === 'series' || $type === 'tv' || $type === 'serie') && ($season <= 0 || $episode <= 0)) {
+            ResponseUtil::json(['sucesso' => false, 'erro' => 'Para séries, informe temporada (s) e episódio (e).'], 400);
             return;
         }
 
-        // Processa a requisição via Service
         $data = $this->service->processExhibitionRequest($tmdbId, $type, $season, $episode);
 
         if ($data === null) {
-            ResponseUtil::error('Conteúdo não encontrado na base de dados.', 404);
+            ResponseUtil::json(['sucesso' => false, 'erro' => 'Conteúdo não encontrado na base de dados.'], 404);
             return;
         }
 
-        // Resposta de sucesso
-        ResponseUtil::success('Dados recolhidos com sucesso.', $data);
+        ResponseUtil::json(['sucesso' => true, 'mensagem' => 'Dados recolhidos com sucesso.', 'dados' => $data]);
     }
 }

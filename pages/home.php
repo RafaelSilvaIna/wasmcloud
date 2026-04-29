@@ -139,6 +139,10 @@ if (!isset($_SESSION['profile_is_kids']) && isset($_SESSION['profile_id'])) {
                 <div id="rail-kids-fantasia"></div>
                 <div id="rail-kids-musica"></div>
             <?php else: ?>
+                <!-- Top 10 Séries -->
+                <div id="rail-top10-series"></div>
+                <!-- Top 10 Filmes -->
+                <div id="rail-top10-filmes"></div>
                 <!-- Trilhos para Perfil Adulto -->
                 <div id="rail-series"></div>
                 <div id="rail-filmes"></div>
@@ -180,6 +184,10 @@ if (!isset($_SESSION['profile_is_kids']) && isset($_SESSION['profile_id'])) {
                     new PipoRail('rail-kids-fantasia', 'Mundos de Fantasia', 'fantasia_filmes', 18);
                     new PipoRail('rail-kids-musica', 'Músicas e Aventuras', 'musica_filmes', 18);
                 } else {
+                    // ── Top 10 ────────────────────────────────────────────────
+                    new PipoRail('rail-top10-series', 'Top 10 Séries Hoje', 'top10_series', 10, { isTop10: true });
+                    new PipoRail('rail-top10-filmes', 'Top 10 Filmes Hoje', 'top10_filmes', 10, { isTop10: true });
+
                     // ── Trilhos para Perfil Adulto ────────────────────────────
                     // 1. Séries
                     new PipoRail('rail-series', 'Séries para Maratonar', 'top_series', 18);

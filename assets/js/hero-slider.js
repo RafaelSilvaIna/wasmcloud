@@ -1,242 +1,354 @@
+/**
+ * PIPOCINE — Hero Slider  |  Netflix-Style  |  v3.0
+ * Endpoint: /api/v2/trending?limite=8
+ * Requisitos: Swiper.js, Lucide (opicional), hero-slider.css
+ */
 document.addEventListener('DOMContentLoaded', () => {
-    const API_URL = '/api/v2/conteudo?categoria=em_alta&limite=5';
-    const sliderWrapper = document.getElementById('hero-slider-wrapper');
-    const template = document.getElementById('hero-slide-template');
 
-    const AUTOPLAY_DELAY = 8000;
+    // ── Configuração ────────────────────────────────────────────────
+    const API_URL        = '/api/v2/trending?limite=8';
+    const AUTOPLAY_DELAY = 9000; // ms entre slides
 
-    // Base TMDB para paths relativos
-    const TMDB_IMG_BASE = 'https://image.tmdb.org/t/p/';
+    const sliderWrapper  = document.getElementById('hero-slider-wrapper');
+    const template       = document.getElementById('hero-slide-template');
+    const navPrev        = document.querySelector('.hero-nav--prev');
+    const navNext        = document.querySelector('.hero-nav--next');
 
-    const ratingClassMap = {
-        'L': 'rating-l', 'Livre': 'rating-l', '0': 'rating-l',
-        '10': 'rating-10', '12': 'rating-12', '14': 'rating-14',
-        '16': 'rating-16', '18': 'rating-18'
+    let swiperInstance   = null;
+    let progressTimer    = null;
+
+    // ── Helpers ─────────────────────────────────────────────────────
+    const sanitize = (str) => {
+        const div = document.createElement('div');
+        div.textContent = str || '';
+        return div.innerHTML;
     };
 
-    // Formata URL de imagem — aceita path TMDB relativo ou URL completa
-    const formatImg = (path, size = 'original') => {
-        if (!path) return '';
-        if (path.startsWith('http')) return path;
-        return `${TMDB_IMG_BASE}${size}${path}`;
+    const formatTipo = (tipo) => {
+        if (!tipo) return '';
+        return tipo.charAt(0).toUpperCase() + tipo.slice(1).toLowerCase();
     };
 
-    // ── Carregamento ─────────────────────────────────────────────
-    const loadHeroContent = async () => {
-        try {
-            const response = await fetch(API_URL);
-            if (!response.ok) throw new Error('Falha na rede');
-            const data = await response.json();
+    // ── Animação da barra de progresso ─────────────────────────────
+    const startProgress = (slide) => {
+        clearTimeout(progressTimer);
+        const fill = slide?.querySelector('.hero-progress-fill');
+        if (!fill) return;
+        fill.style.transition = 'none';
+        fill.style.width = '0%';
 
-            if (data && data.sucesso && Array.isArray(data.resultados) && data.resultados.length > 0) {
-                // Filtra itens que têm pelo menos uma imagem válida
-                const validItems = data.resultados.filter(item => {
-                    if (!item) return false;
-                    return (
-                        (item.backdrop && item.backdrop.trim()) ||
-                        (Array.isArray(item.gallery)  && item.gallery[0]) ||
-                        (Array.isArray(item.galeria)  && item.galeria[0]) ||
-                        (item.poster  && item.poster.trim())
-                    );
-                });
-                validItems.length > 0
-                    ? renderSlides(validItems)
-                    : showError('Nenhum conteúdo com imagem encontrado.');
-            } else {
-                showError('Nenhum conteúdo em alta encontrado.');
-            }
-        } catch (err) {
-            console.error('Erro Hero:', err);
-            showError('Erro ao carregar tendências.');
-        }
+        // Força reflow antes de aplicar a transição
+        void fill.offsetWidth;
+        fill.style.transition = `width ${AUTOPLAY_DELAY}ms linear`;
+        fill.style.width = '100%';
     };
 
-    // ── Fallback visual ──────────────────────────────────────────
+    const resetProgress = (slide) => {
+        const fill = slide?.querySelector('.hero-progress-fill');
+        if (!fill) return;
+        fill.style.transition = 'none';
+        fill.style.width = '0%';
+    };
+
+    // ── Erro visual ─────────────────────────────────────────────────
     const showError = (msg) => {
-        if (sliderWrapper) {
-            sliderWrapper.innerHTML = `
-                <div class="swiper-slide hero-slide hero-slide--loading">
-                    <p style="color:#ff3b30;font-size:1rem;font-weight:500;">${msg}</p>
-                </div>`;
-        }
+        if (!sliderWrapper) return;
+        sliderWrapper.innerHTML = `
+            <div class="swiper-slide hero-slide hero-slide--skeleton">
+                <div class="hero-backdrop"><div class="hero-skeleton-bg"></div></div>
+                <div class="hero-content">
+                    <div class="hero-info-area" style="color:rgba(255,255,255,.5);font-size:.85rem;padding-top:20px;">
+                        ${sanitize(msg)}
+                    </div>
+                </div>
+            </div>`;
     };
 
-    // ── Render de slides ─────────────────────────────────────────
+    // ── Render de slides ────────────────────────────────────────────
     const renderSlides = (items) => {
         if (!sliderWrapper || !template) return;
         sliderWrapper.innerHTML = '';
 
-        items.forEach(item => {
+        items.forEach((item) => {
             if (!item) return;
-            const slide = template.content.cloneNode(true);
+            const clone = template.content.cloneNode(true);
 
-            // 1. BACKDROP
-            let backdropPath = item.backdrop || '';
-            if (!backdropPath && Array.isArray(item.gallery) && item.gallery[0]) backdropPath = item.gallery[0];
-            if (!backdropPath && Array.isArray(item.galeria) && item.galeria[0]) backdropPath = item.galeria[0];
+            // 1. Tipo de conteúdo
+            const typeText = clone.querySelector('.type-text');
+            if (typeText) typeText.textContent = formatTipo(item.tipo);
 
-            const backdropImg = slide.querySelector('.backdrop-img');
+            // 2. Backdrop
+            const backdropImg = clone.querySelector('.backdrop-img');
+            const bgUrl = item.backdrop
+                || (Array.isArray(item.galeria) && item.galeria[0])
+                || '';
             if (backdropImg) {
-                backdropImg.src  = formatImg(backdropPath, 'original');
-                backdropImg.alt  = item.titulo || '';
+                backdropImg.src = bgUrl;
+                backdropImg.alt = item.titulo || '';
             }
 
-            // 2. LOGO ou TÍTULO EM TEXTO (hierarquia compacta)
-            const logoEl        = slide.querySelector('.hero-logo');
-            const logoContainer = slide.querySelector('.hero-logo-container');
+            // 3. Logo ou Título
+            const logoEl        = clone.querySelector('.hero-logo');
+            const logoContainer = clone.querySelector('.hero-logo-container');
 
-            const logoUrl = item.logo
-                || (Array.isArray(item.logos) && item.logos[0])
-                || null;
-
-            if (logoUrl && logoEl) {
-                logoEl.src = formatImg(logoUrl, 'w500');
+            if (item.logo && logoEl) {
+                logoEl.src = item.logo;
                 logoEl.alt = item.titulo || 'Logo';
+                logoEl.onerror = () => {
+                    // Fallback para título se logo quebrar
+                    logoEl.remove();
+                    _insertTitle(logoContainer, item.titulo);
+                };
             } else if (logoEl && logoContainer) {
-                // Remove o <img> placeholder e insere um <h1> compacto
                 logoEl.remove();
-
-                const titulo = item.titulo || 'Sem Título';
-                const len    = titulo.length;
-
-                const titleEl = document.createElement('h1');
-                // Escala progressiva: quanto maior o texto, menor o font-size
-                let cls = 'hero-text-title';
-                if      (len >= 35) cls += ' hero-text-title--xlong';
-                else if (len >= 22) cls += ' hero-text-title--long';
-                titleEl.className = cls;
-                titleEl.textContent = titulo;
-                logoContainer.appendChild(titleEl);
+                _insertTitle(logoContainer, item.titulo);
             }
 
-            // 3. CLASSIFICAÇÃO INDICATIVA
-            const ratingIcon = slide.querySelector('.meta-rating');
-            if (ratingIcon) {
-                const cls = ratingClassMap[item.classificacao] || 'rating-l';
-                ratingIcon.classList.add(cls);
-                ratingIcon.title = `Classificação: ${item.classificacao || 'Livre'}`;
-            }
-
-            // 4. SCORE (estrela + nota)
-            const scoreEl = slide.querySelector('.score-value');
+            // 4. Score
+            const scoreEl = clone.querySelector('.score-value');
+            const nota = parseFloat(item.nota);
             if (scoreEl) {
-                const nota = parseFloat(item.nota);
-                scoreEl.textContent = (isNaN(nota) || nota <= 0) ? '' : nota.toFixed(1);
-                // Oculta o bloco de score se não houver nota
-                if (!scoreEl.textContent) {
-                    const scoreBlock = slide.querySelector('.meta-score');
-                    const sep = scoreBlock?.previousElementSibling;
-                    if (scoreBlock) scoreBlock.style.display = 'none';
-                    if (sep && sep.classList.contains('meta-sep')) sep.style.display = 'none';
+                if (!isNaN(nota) && nota > 0) {
+                    scoreEl.textContent = nota.toFixed(1);
+                } else {
+                    clone.querySelector('.meta-score')?.remove();
+                    clone.querySelectorAll('.meta-dot')[0]?.remove();
                 }
             }
 
-            // 5. ANO
-            const yearEl = slide.querySelector('.meta-year');
-            if (yearEl) yearEl.textContent = item.ano || '';
+            // 5. Ano
+            const yearEl = clone.querySelector('.meta-year');
+            if (yearEl) {
+                yearEl.textContent = item.ano || '';
+                if (!item.ano) {
+                    yearEl.previousElementSibling?.remove(); // remove dot
+                    yearEl.remove();
+                }
+            }
 
-            // 6. GÊNEROS — pills individuais (máx. 2)
-            const genreTagsEl = slide.querySelector('.meta-genre-tags');
-            if (genreTagsEl) {
-                let gens = [];
-                if (Array.isArray(item.generos)) gens = item.generos;
-                else if (Array.isArray(item.genres)) gens = item.genres;
+            // 6. Classificação
+            const certEl = clone.querySelector('.meta-cert');
+            if (certEl) {
+                const cert = item.classificacao;
+                if (cert && cert !== 'L') {
+                    certEl.textContent = cert;
+                } else {
+                    certEl.textContent = 'L';
+                }
+            }
 
-                gens.slice(0, 2).forEach(g => {
+            // 7. Gêneros (máx. 3)
+            const genreTagsEl = clone.querySelector('.meta-genre-tags');
+            const genDot      = clone.querySelector('.meta-dot--genres');
+            const gens        = Array.isArray(item.generos) ? item.generos : [];
+
+            if (genreTagsEl && gens.length > 0) {
+                gens.slice(0, 3).forEach(g => {
                     const tag = document.createElement('span');
                     tag.className   = 'genre-tag';
                     tag.textContent = g;
                     genreTagsEl.appendChild(tag);
                 });
+            } else {
+                genDot?.remove();
+                genreTagsEl?.remove();
+            }
 
-                // Se não há gêneros, oculta o separador anterior
-                if (gens.length === 0) {
-                    const sep = genreTagsEl.previousElementSibling;
-                    if (sep && sep.classList.contains('meta-sep')) sep.style.display = 'none';
+            // 8. Sinopse
+            const synopsisEl = clone.querySelector('.hero-synopsis');
+            if (synopsisEl) {
+                const sinopse = item.sinopse || '';
+                synopsisEl.textContent = sinopse;
+                if (!sinopse) synopsisEl.remove();
+            }
+
+            // 9. Duração / Temporadas
+            const durationEl = clone.querySelector('.hero-duration');
+            if (durationEl) {
+                if (item.duracao) {
+                    durationEl.textContent = item.duracao;
+                } else {
+                    durationEl.remove();
                 }
             }
 
-            // 7. SINOPSE (2-3 linhas, controlado via CSS)
-            const synopsisEl = slide.querySelector('.hero-synopsis');
-            if (synopsisEl) {
-                synopsisEl.textContent = item.sinopse || '';
-                // Oculta se sinopse vazia
-                if (!item.sinopse) synopsisEl.style.display = 'none';
-            }
-
-            // 8. BOTÃO ASSISTIR
-            const watchBtn = slide.querySelector('.btn-watch');
+            // 10. Botão Assistir
+            const watchBtn = clone.querySelector('.hero-btn--primary');
             if (watchBtn) {
-                const slug = item.slug || item.id || null;
-                const tipo = (item.tipo || item.type || 'filme').toLowerCase();
-
-                if (slug) {
+                const id   = item.id || item.slug || null;
+                const tipo = (item.tipo || 'filme').toLowerCase();
+                if (id) {
                     watchBtn.addEventListener('click', () => {
-                        window.location.href = `/${tipo}/${slug}`;
-                    });
-                } else if (item.link) {
-                    watchBtn.addEventListener('click', () => {
-                        window.location.href = item.link;
+                        window.location.href = `/${tipo}/${id}`;
                     });
                 } else {
                     watchBtn.disabled = true;
-                    watchBtn.style.opacity = '0.5';
+                    watchBtn.style.opacity = '0.4';
                 }
             }
 
-            sliderWrapper.appendChild(slide);
+            // 11. Botão Mais Infos
+            const infoBtn = clone.querySelector('.hero-btn--info');
+            if (infoBtn) {
+                const id   = item.id || item.slug || null;
+                const tipo = (item.tipo || 'filme').toLowerCase();
+                if (id) {
+                    infoBtn.addEventListener('click', () => {
+                        window.location.href = `/${tipo}/${id}`;
+                    });
+                } else {
+                    infoBtn.style.display = 'none';
+                }
+            }
+
+            sliderWrapper.appendChild(clone);
         });
 
-        initSwiper();
+        _initSwiper();
         if (typeof lucide !== 'undefined') lucide.createIcons();
     };
 
-    // ── Inicialização do Swiper ──────────────────────────────────
-    const initSwiper = () => {
-        if (typeof Swiper === 'undefined') return;
+    // ── Helper: inserir título quando não há logo ────────────────
+    const _insertTitle = (container, titulo) => {
+        if (!container || !titulo) return;
+        const len     = titulo.length;
+        const titleEl = document.createElement('h2');
+        let cls = 'hero-text-title';
+        if      (len >= 35) cls += ' hero-text-title--xlong';
+        else if (len >= 22) cls += ' hero-text-title--long';
+        titleEl.className   = cls;
+        titleEl.textContent = titulo;
+        container.appendChild(titleEl);
+    };
 
-        new Swiper('#pipo-hero-slider', {
-            loop: true,
-            speed: 900,
+    // ── Inicialização do Swiper ──────────────────────────────────
+    const _initSwiper = () => {
+        if (typeof Swiper === 'undefined') {
+            console.warn('[PipoCine Hero] Swiper não encontrado.');
+            return;
+        }
+
+        swiperInstance = new Swiper('#pipo-hero-slider', {
+            loop:  true,
+            speed: 850,
+
             autoplay: {
                 delay: AUTOPLAY_DELAY,
                 disableOnInteraction: false,
-                pauseOnMouseEnter: true
+                pauseOnMouseEnter:    true,
             },
-            pagination: { el: '.swiper-pagination', clickable: true },
-            navigation: false,   // setas escondidas — arrasto activado abaixo
 
-            // Drag / swipe
-            grabCursor: true,
+            pagination: {
+                el:        '.hero-pagination',
+                clickable: true,
+            },
+
+            navigation: false,
+
+            grabCursor:    true,
             simulateTouch: true,
-            touchRatio: 1,
-            touchAngle: 45,
-            threshold: 8,
+            touchRatio:    1,
+            touchAngle:    45,
+            threshold:     10,
 
             keyboard: { enabled: true },
-            a11y: {
-                prevSlideMessage: 'Slide anterior',
-                nextSlideMessage: 'Próximo slide'
-            },
-            effect: 'fade',
-            fadeEffect: { crossFade: true },
-            observer: true,
+
+            effect:      'fade',
+            fadeEffect:  { crossFade: true },
+
+            observer:       true,
             observeParents: true,
 
+            a11y: {
+                prevSlideMessage: 'Slide anterior',
+                nextSlideMessage: 'Próximo slide',
+            },
+
             on: {
-                // Reinicia animação de zoom do backdrop ao mudar
-                slideChange() {
+                init() {
                     const active = this.slides[this.activeIndex];
-                    if (!active) return;
-                    const img = active.querySelector('.backdrop-img');
-                    if (img) {
-                        img.style.animation = 'none';
-                        void img.offsetHeight; // force reflow
-                        img.style.animation  = '';
+                    startProgress(active);
+                },
+
+                slideChangeTransitionStart() {
+                    // Reinicia o zoom do backdrop
+                    const active = this.slides[this.activeIndex];
+                    if (active) {
+                        const img = active.querySelector('.backdrop-img');
+                        if (img) {
+                            img.style.animation = 'none';
+                            void img.offsetHeight;
+                            img.style.animation = '';
+                        }
+                        // Reinicia a animação do conteúdo
+                        const infoArea = active.querySelector('.hero-info-area');
+                        if (infoArea) {
+                            infoArea.style.animation = 'none';
+                            void infoArea.offsetHeight;
+                            infoArea.style.animation = '';
+                        }
                     }
-                }
-            }
+
+                    // Reseta progress de todos os slides
+                    this.slides.forEach(s => resetProgress(s));
+                },
+
+                slideChangeTransitionEnd() {
+                    const active = this.slides[this.activeIndex];
+                    startProgress(active);
+                },
+
+                autoplayPause() {
+                    const active = this.slides[this.activeIndex];
+                    const fill   = active?.querySelector('.hero-progress-fill');
+                    if (fill) fill.style.transitionPlayState = 'paused';
+                },
+
+                autoplayResume() {
+                    const active = this.slides[this.activeIndex];
+                    const fill   = active?.querySelector('.hero-progress-fill');
+                    if (fill) fill.style.transitionPlayState = 'running';
+                },
+            },
         });
+
+        // Setas customizadas
+        navPrev?.addEventListener('click', () => swiperInstance?.slidePrev());
+        navNext?.addEventListener('click', () => swiperInstance?.slideNext());
+    };
+
+    // ── Fetch dos dados ─────────────────────────────────────────────
+    const loadHeroContent = async () => {
+        try {
+            const res = await fetch(API_URL);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json();
+
+            const items = data?.resultados ?? [];
+            if (!data?.sucesso || items.length === 0) {
+                showError('Nenhum conteúdo em destaque encontrado.');
+                return;
+            }
+
+            // Filtra itens incompletos (garantia dupla no frontend)
+            const valid = items.filter(item =>
+                item &&
+                item.logo &&
+                (item.backdrop || (Array.isArray(item.galeria) && item.galeria.length > 0)) &&
+                item.sinopse && item.sinopse.length >= 30
+            );
+
+            if (valid.length === 0) {
+                showError('Sem destaques disponíveis no momento.');
+                return;
+            }
+
+            renderSlides(valid);
+
+        } catch (err) {
+            console.error('[PipoCine Hero]', err);
+            showError('Erro ao carregar os destaques.');
+        }
     };
 
     loadHeroContent();

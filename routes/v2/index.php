@@ -12,6 +12,11 @@ require_once __DIR__ . '/../../models/v2/ContentModel.php';
 require_once __DIR__ . '/../../services/v2/ContentService.php';
 require_once __DIR__ . '/../../controllers/v2/ContentController.php';
 
+// --- Classes da API de Trending (Recentes e Populares) ---
+require_once __DIR__ . '/../../models/v2/TrendingModel.php';
+require_once __DIR__ . '/../../services/v2/TrendingService.php';
+require_once __DIR__ . '/../../controllers/v2/TrendingController.php';
+
 // --- Classes da API de Exibição (Player) ---
 require_once __DIR__ . '/../../models/v2/ExhibitionModel.php';
 require_once __DIR__ . '/../../services/v2/ExhibitionService.php';
@@ -20,6 +25,7 @@ require_once __DIR__ . '/../../controllers/v2/ExhibitionController.php';
 use Models\V2\ExhibitionModel;
 use Services\V2\ExhibitionService;
 use Controllers\V2\ExhibitionController;
+// ResponseUtil é uma classe global — sem namespace, acessível diretamente
 
 ApiHook::init();
 
@@ -33,7 +39,14 @@ try {
         $controller = new ContentController($service);
         $controller->handleRequest();
 
-    // Rota 2: Obtenção de Links e Metadados do Player
+    // Rota 2: Trending — Recentes e Populares
+    } elseif (strpos($requestUri, '/api/v2/trending') === 0) {
+        $model      = new TrendingModel($pdoCineveo);
+        $service    = new TrendingService($model);
+        $controller = new TrendingController($service);
+        $controller->handleRequest();
+
+    // Rota 3: Obtenção de Links e Metadados do Player
     } elseif (strpos($requestUri, '/api/v2/exhibition') === 0) {
         $model = new ExhibitionModel($pdoCineveo);
         $tmdbHelper = new TMDBHelper(); // Usando a classe global normalmente

@@ -1,246 +1,507 @@
-/* assets/css/content-card.css */
+/* ═══════════════════════════════════════════════════════════════════
+   assets/css/content-card.css  —  Cards de conteúdo estilo Netflix
+   ═══════════════════════════════════════════════════════════════════ */
 
-/* ── CONTAINER DO TRILHO (RAIL) ──────────────────────────────────── */
+/* ── VARIAVEIS LOCAIS ───────────────────────────────────────────── */
+:root {
+    --card-radius: 6px;
+    --card-hover-scale: 1.35;
+    --hover-panel-w: 280px;
+    --hover-transition: 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+    --accent-red: #e50914;
+    --accent-green: #46d369;
+    --text-primary: #fff;
+    --text-secondary: #a3a3a3;
+    --bg-card: #141414;
+    --bg-hover-panel: #1a1a1a;
+}
+
+/* ── CONTAINER DO TRILHO (RAIL) ─────────────────────────────────── */
 .pipo-rail-section {
-    margin-bottom: 3.5vw;
+    margin-bottom: 3vw;
     position: relative;
     z-index: 10;
 }
 
 .pipo-rail-header {
     padding: 0 4%;
-    margin-bottom: 12px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 }
 
 .pipo-rail-title {
-    color: #fff;
-    font-size: 1.4vw;
+    color: var(--text-primary);
+    font-size: clamp(0.85rem, 1.4vw, 1.3rem);
     font-weight: 700;
     margin: 0;
     line-height: 1.2;
-    text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.5);
-    letter-spacing: -0.5px;
+    letter-spacing: -0.3px;
+    cursor: default;
+    transition: color 0.2s;
 }
 
-@media (max-width: 768px) {
-    .pipo-rail-title {
-        font-size: 1.2rem;
-    }
+.pipo-rail-title:hover {
+    color: var(--text-secondary);
 }
 
+/* Setas de navegação do trilho */
+.pipo-rail-nav {
+    display: flex;
+    gap: 6px;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.pipo-rail-section:hover .pipo-rail-nav {
+    opacity: 1;
+}
+
+.pipo-rail-nav-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(255, 255, 255, 0.3);
+    background: rgba(20, 20, 20, 0.8);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+    padding: 0;
+}
+
+.pipo-rail-nav-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.6);
+}
+
+.pipo-rail-nav-btn svg {
+    pointer-events: none;
+}
+
+/* Wrapper scrollável */
 .pipo-rail-container {
     display: flex;
-    gap: 12px;
-    /* Ligeiramente mais espaçado para respirar */
-    padding: 20px 4%;
+    gap: 4px;
+    padding: 12px 4% 48px;
     overflow-x: auto;
     overflow-y: visible;
     scroll-behavior: smooth;
     scrollbar-width: none;
+    -ms-overflow-style: none;
 }
 
 .pipo-rail-container::-webkit-scrollbar {
     display: none;
 }
 
-/* ── O CARD BASE (MINIMALISTA) ───────────────────────────────────── */
+/* ── CARD BASE ──────────────────────────────────────────────────── */
 .pipo-card {
-    flex: 0 0 calc(100% / 6 - 12px);
+    flex: 0 0 calc(100% / 6 - 4px);
     aspect-ratio: 2 / 3;
-    border-radius: 10px;
-    /* Bordas mais suaves */
-    background-color: #121212;
+    border-radius: var(--card-radius);
+    background: var(--bg-card);
     position: relative;
     cursor: pointer;
-    overflow: hidden;
-    /* Mantém a imagem contida no efeito de hover */
-    transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.4s ease, border-color 0.4s ease;
+    overflow: visible;
+    transition: transform var(--hover-transition), z-index 0s 0.15s;
     will-change: transform;
-    border: 1px solid rgba(255, 255, 255, 0.03);
-    /* Toque ultra premium */
+    flex-shrink: 0;
 }
 
+/* Clip somente na imagem, não no hover panel */
 .pipo-card-image-wrapper {
     width: 100%;
     height: 100%;
     overflow: hidden;
-    border-radius: 10px;
+    border-radius: var(--card-radius);
+    position: relative;
+    z-index: 1;
 }
 
 .pipo-card-poster {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), filter 0.4s ease;
-    will-change: transform;
+    display: block;
+    transition: filter 0.3s ease;
 }
 
+/* Badge de tipo (Filme / Série) */
+.pipo-card-type-badge {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    z-index: 5;
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(4px);
+    color: #fff;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    padding: 2px 6px;
+    border-radius: 3px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    line-height: 1.5;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.pipo-card:hover .pipo-card-type-badge {
+    opacity: 1;
+}
+
+/* ── HOVER — ELEVAÇÃO E EXPANSÃO ────────────────────────────────── */
+.pipo-card:hover {
+    transform: scale(var(--card-hover-scale));
+    z-index: 200;
+    transition: transform var(--hover-transition), z-index 0s;
+}
+
+.pipo-card:hover .pipo-card-poster {
+    filter: brightness(0.5);
+}
+
+/* Impede que cards nas bordas sejam cortados */
+.pipo-rail-container .pipo-card:nth-child(1):hover,
+.pipo-rail-container .pipo-card:nth-child(2):hover {
+    transform-origin: left center;
+    transform: scale(var(--card-hover-scale)) translateX(10%);
+}
+
+.pipo-rail-container .pipo-card:last-child:hover,
+.pipo-rail-container .pipo-card:nth-last-child(2):hover {
+    transform-origin: right center;
+    transform: scale(var(--card-hover-scale)) translateX(-10%);
+}
+
+/* ── HOVER PANEL (tooltip Netflix) ─────────────────────────────── */
+.pipo-card-hover-panel {
+    position: absolute;
+    bottom: calc(100% + 0px);
+    left: 50%;
+    transform: translateX(-50%) translateY(8px);
+    width: var(--hover-panel-w);
+    background: var(--bg-hover-panel);
+    border-radius: 8px;
+    box-shadow: 0 6px 28px rgba(0, 0, 0, 0.85);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.18s ease, transform 0.18s ease;
+    z-index: 300;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.pipo-card:hover .pipo-card-hover-panel {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateX(-50%) translateY(0);
+}
+
+/* Thumbnail de contexto no topo do panel */
+.pipo-card-hover-thumb {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    background: #000;
+}
+
+.pipo-card-hover-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.pipo-card-hover-gradient {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom, transparent 30%, var(--bg-hover-panel) 100%);
+}
+
+/* Corpo inferior do panel */
+.pipo-card-hover-body {
+    padding: 10px 14px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* Ações: play, lista, score */
+.pipo-card-hover-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.pipo-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    transition: border-color 0.18s, background 0.18s;
+    flex-shrink: 0;
+    padding: 0;
+}
+
+.pipo-btn svg {
+    pointer-events: none;
+}
+
+.pipo-btn--play {
+    background: var(--text-primary);
+    border-color: var(--text-primary);
+    color: #000;
+    padding-left: 2px;
+}
+
+.pipo-btn--play:hover {
+    background: rgba(255, 255, 255, 0.8);
+}
+
+.pipo-btn--list {
+    background: transparent;
+    color: var(--text-primary);
+}
+
+.pipo-btn--list:hover {
+    border-color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* Badge de score (%) */
+.pipo-card-score-badge {
+    margin-left: auto;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--accent-green);
+    letter-spacing: 0.2px;
+    white-space: nowrap;
+}
+
+/* Título no panel */
+.pipo-card-hover-title {
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    font-weight: 700;
+    margin: 0;
+    line-height: 1.25;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Meta: ano, duração, classificação */
+.pipo-card-hover-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.pipo-card-hover-meta span {
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.meta-match {
+    color: var(--accent-green) !important;
+    font-weight: 700 !important;
+}
+
+.meta-year {
+    color: #e5e5e5 !important;
+}
+
+/* Gêneros */
+.pipo-card-hover-genres {
+    font-size: 0.68rem;
+    color: #737373;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.4;
+}
+
+.pipo-card-hover-genres span {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.pipo-card-hover-genres span::before {
+    content: '';
+    display: inline-block;
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: #737373;
+}
+
+.pipo-card-hover-genres span:first-child::before {
+    display: none;
+}
+
+/* ── RESPONSIVO ─────────────────────────────────────────────────── */
 @media (max-width: 1200px) {
     .pipo-card {
-        flex: 0 0 calc(100% / 5 - 12px);
+        flex: 0 0 calc(100% / 5 - 4px);
     }
 }
 
 @media (max-width: 992px) {
     .pipo-card {
-        flex: 0 0 calc(100% / 4 - 12px);
+        flex: 0 0 calc(100% / 4 - 4px);
     }
 }
 
 @media (max-width: 768px) {
     .pipo-card {
-        flex: 0 0 calc(100% / 3 - 12px);
+        flex: 0 0 calc(100% / 3 - 4px);
+    }
+
+    .pipo-card-hover-panel {
+        display: none;
+    }
+
+    :root {
+        --card-hover-scale: 1.0;
+    }
+
+    .pipo-card:hover .pipo-card-poster {
+        filter: none;
     }
 }
 
 @media (max-width: 480px) {
     .pipo-card {
-        flex: 0 0 calc(100% / 2.5 - 12px);
+        flex: 0 0 calc(100% / 2.3 - 4px);
     }
 }
 
-/* ── EFEITO HOVER (Elegância) ────────────────────────────────────── */
-.pipo-card:hover {
-    transform: translateY(-8px);
-    /* Levanta subtilmente sem quebrar layout lateral */
-    box-shadow: 0 16px 32px rgba(0, 0, 0, 0.7);
-    border-color: rgba(255, 255, 255, 0.15);
-    z-index: 100;
+/* ═══════════════════════════════════════════════════════════════════
+   TOP 10 — Cards com número sobreposto estilo Netflix
+   ═══════════════════════════════════════════════════════════════════ */
+.pipo-card--top10 {
+    flex: 0 0 calc(100% / 5 - 4px);
+    aspect-ratio: unset;
+    height: 160px;
+    display: flex;
+    align-items: flex-end;
+    position: relative;
+    overflow: visible;
+    background: transparent;
+    padding-left: 60px;
+    /* espaço para o número */
 }
 
-.pipo-card:hover .pipo-card-poster {
-    transform: scale(1.08);
-    /* Zoom interno estilo Apple TV */
-    filter: brightness(0.7) contrast(1.1);
-}
-
-.pipo-card-overlay {
+/* Número grande estilo Netflix */
+.pipo-card-rank {
     position: absolute;
-    inset: 0;
-    background: linear-gradient(to top, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.3) 50%, transparent 100%);
-    opacity: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: opacity 0.4s ease;
+    left: -8px;
+    bottom: -8px;
+    font-family: 'Netflix Sans', 'Bebas Neue', 'Impact', 'Arial Black', sans-serif;
+    font-size: 10rem;
+    font-weight: 900;
+    line-height: 1;
+    color: transparent;
+    -webkit-text-stroke: 3px rgba(255, 255, 255, 0.15);
+    text-stroke: 3px rgba(255, 255, 255, 0.15);
+    letter-spacing: -8px;
+    user-select: none;
     pointer-events: none;
+    z-index: 0;
+    transition: -webkit-text-stroke 0.2s;
 }
 
-.pipo-card:hover .pipo-card-overlay {
-    opacity: 1;
-    pointer-events: auto;
+.pipo-card--top10:hover .pipo-card-rank {
+    -webkit-text-stroke: 3px rgba(255, 255, 255, 0.35);
 }
 
-/* Botão Play Glassmorphism Central */
-.btn-play-center {
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.2);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    border: 1px solid rgba(255, 255, 255, 0.4);
-    color: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transform: translateY(10px) scale(0.8);
-    opacity: 0;
-    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-    padding-left: 4px;
-    /* Centrar oticamente o triângulo */
-}
-
-.pipo-card:hover .btn-play-center {
-    transform: translateY(0) scale(1);
-    opacity: 1;
-}
-
-.btn-play-center:hover {
-    background: #fff;
-    color: #000;
-    transform: translateY(0) scale(1.1) !important;
-}
-
-.pipo-card-info {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    padding: 20px 14px 14px;
-    box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    opacity: 0;
-    transform: translateY(15px);
-    transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
-    pointer-events: none;
-}
-
-.pipo-card:hover .pipo-card-info {
-    opacity: 1;
-    transform: translateY(0);
-}
-
-/* ── TEXTOS E METADADOS ──────────────────────────────────────────── */
-.pipo-card-title {
-    color: #fff;
-    font-size: 0.95rem;
-    font-weight: 600;
-    margin: 0;
-    line-height: 1.2;
-    white-space: nowrap;
+/* O poster no top10 é menor, à direita do número */
+.pipo-card--top10 .pipo-card-image-wrapper {
+    width: 110px;
+    height: 160px;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 2;
+    border-radius: var(--card-radius);
     overflow: hidden;
-    text-overflow: ellipsis;
-    letter-spacing: 0.2px;
 }
 
-.pipo-card-meta {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 0.75rem;
-    color: #a1a1aa;
-    /* Cinza claro suave */
-    font-weight: 500;
+/* Hover no top10 — escala menor */
+.pipo-card--top10:hover {
+    transform: scale(1.2);
+    z-index: 200;
 }
 
-.meta-rating {
-    display: flex;
-    align-items: center;
-    gap: 3px;
-    color: #e4e4e7;
-    font-weight: 600;
+.pipo-rail-container .pipo-card--top10:nth-child(1):hover,
+.pipo-rail-container .pipo-card--top10:nth-child(2):hover {
+    transform-origin: left center;
+    transform: scale(1.2) translateX(8%);
 }
 
-.meta-dot {
-    font-size: 0.6rem;
-    color: #52525b;
+.pipo-rail-container .pipo-card--top10:last-child:hover,
+.pipo-rail-container .pipo-card--top10:nth-last-child(2):hover {
+    transform-origin: right center;
+    transform: scale(1.2) translateX(-8%);
 }
 
-.release-year {
-    letter-spacing: 0.5px;
+/* Hover panel para top10 — posiciona abaixo do card */
+.pipo-card--top10 .pipo-card-hover-panel {
+    top: calc(100% + 8px);
+    bottom: auto;
+    transform: translateX(-50%) translateY(-8px);
+    left: 50%;
 }
 
-.pipo-card-genres {
-    font-size: 0.7rem;
-    color: #71717a;
-    font-weight: 400;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    margin-top: 2px;
+.pipo-card--top10:hover .pipo-card-hover-panel {
+    transform: translateX(-50%) translateY(0);
 }
 
-/* Sprite de Classificação Indicativa Mini (Mantido, mas ajustado à linha) */
+@media (max-width: 1200px) {
+    .pipo-card--top10 {
+        flex: 0 0 calc(100% / 4 - 4px);
+    }
+}
+
+@media (max-width: 768px) {
+    .pipo-card--top10 {
+        flex: 0 0 calc(100% / 2.8 - 4px);
+        height: 120px;
+        padding-left: 44px;
+    }
+
+    .pipo-card-rank {
+        font-size: 7rem;
+    }
+
+    .pipo-card--top10 .pipo-card-image-wrapper {
+        width: 86px;
+        height: 120px;
+    }
+}
+
+/* ── SPRITE DE CLASSIFICAÇÃO INDICATIVA ─────────────────────────── */
 .rating-mini {
-    width: 15px;
-    height: 15px;
-    background-size: 90px 15px;
+    width: 16px;
+    height: 16px;
+    background-size: 96px 16px;
     border-radius: 2px;
     display: inline-block;
+    flex-shrink: 0;
 }
 
 .rating-mini.rating-l {
@@ -248,36 +509,43 @@
 }
 
 .rating-mini.rating-10 {
-    background-position: -15px 0;
+    background-position: -16px 0;
 }
 
 .rating-mini.rating-12 {
-    background-position: -30px 0;
+    background-position: -32px 0;
 }
 
 .rating-mini.rating-14 {
-    background-position: -45px 0;
+    background-position: -48px 0;
 }
 
 .rating-mini.rating-16 {
-    background-position: -60px 0;
+    background-position: -64px 0;
 }
 
 .rating-mini.rating-18 {
-    background-position: -75px 0;
+    background-position: -80px 0;
 }
 
-/* ── SKELETON LOADING ────────────────────────────────────────────── */
+/* ── SKELETON LOADING ───────────────────────────────────────────── */
 .pipo-skeleton {
-    background: linear-gradient(90deg, #18181b 0%, #27272a 50%, #18181b 100%);
+    background: linear-gradient(90deg, #1a1a1a 0%, #252525 50%, #1a1a1a 100%);
     background-size: 200% 100%;
-    animation: skeleton-loading 1.5s infinite linear;
+    animation: pipo-skeleton-shimmer 1.6s infinite linear;
     pointer-events: none;
-    border-radius: 10px;
+    border-radius: var(--card-radius);
     border: none;
 }
 
-@keyframes skeleton-loading {
+.pipo-card--top10.pipo-skeleton {
+    width: 170px;
+    height: 160px;
+    flex: 0 0 170px;
+    padding: 0;
+}
+
+@keyframes pipo-skeleton-shimmer {
     0% {
         background-position: 200% 0;
     }
