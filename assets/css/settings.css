@@ -1,0 +1,764 @@
+/* ==========================================================================
+   PIPOCINE — SETTINGS PAGE
+   Inspiração: Netflix · Ultra-minimalista · Dark mode profissional
+   Paleta: #0a0c10 · #12151c · #1a1e28 · #ffd60a · #e2e8f0
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   0. TOKENS
+   -------------------------------------------------------------------------- */
+:root {
+    --set-bg: #0a0c10;
+    --set-surface: #12151c;
+    --set-elevated: #1a1e28;
+    --set-highlight: #1f2430;
+    --set-border: rgba(255, 255, 255, 0.07);
+    --set-border-strong: rgba(255, 255, 255, 0.13);
+
+    --set-text-pure: #ffffff;
+    --set-text-primary: #e2e8f0;
+    --set-text-secondary: #94a3b8;
+    --set-text-muted: #4a5568;
+
+    --set-accent: #ffd60a;
+    --set-accent-dim: rgba(255, 214, 10, 0.10);
+
+    --set-danger: #e50914;
+    --set-success: #10b981;
+
+    --set-sidebar-w: 252px;
+    --set-radius: 10px;
+    --set-radius-sm: 7px;
+    --set-transition: 0.16s ease;
+}
+
+/* --------------------------------------------------------------------------
+   1. BASE
+   -------------------------------------------------------------------------- */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body.settings-body {
+    background-color: var(--set-bg);
+    color: var(--set-text-primary);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+        Helvetica, Arial, sans-serif;
+    font-size: 15px;
+    line-height: 1.55;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+}
+
+/* --------------------------------------------------------------------------
+   2. LAYOUT
+   -------------------------------------------------------------------------- */
+.settings-layout {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* --------------------------------------------------------------------------
+   3. SIDEBAR
+   -------------------------------------------------------------------------- */
+.settings-sidebar {
+    width: var(--set-sidebar-w);
+    background-color: var(--set-surface);
+    border-right: 1px solid var(--set-border);
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    z-index: 300;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: none;
+    transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.settings-sidebar::-webkit-scrollbar {
+    display: none;
+}
+
+/* Logo */
+.sidebar-logo {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 20px 20px 18px;
+    border-bottom: 1px solid var(--set-border);
+    text-decoration: none;
+    flex-shrink: 0;
+}
+
+.sidebar-logo-img {
+    width: 110px;
+    height: auto;
+    display: block;
+    object-fit: contain;
+    user-select: none;
+    -webkit-user-drag: none;
+    opacity: 0.92;
+    transition: opacity 0.2s ease;
+}
+
+.sidebar-logo:hover .sidebar-logo-img {
+    opacity: 1;
+}
+
+/* Kept for compat but hidden since we use img now */
+.sidebar-logo-icon,
+.sidebar-logo-text,
+.sidebar-logo-name {
+    display: none;
+}
+
+.sidebar-logo-sub {
+    font-size: 10.5px;
+    color: var(--set-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    font-weight: 500;
+}
+
+/* Nav */
+.sidebar-nav {
+    flex: 1;
+    padding: 12px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.sidebar-section-label {
+    display: block;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--set-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.9px;
+    padding: 14px 10px 5px;
+    user-select: none;
+}
+
+.sidebar-link {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 11px;
+    border-radius: var(--set-radius-sm);
+    color: var(--set-text-secondary);
+    text-decoration: none;
+    font-size: 13.5px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    width: 100%;
+    text-align: left;
+    transition: background-color var(--set-transition), color var(--set-transition);
+}
+
+.sidebar-link svg {
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+    opacity: 0.6;
+    transition: opacity var(--set-transition);
+}
+
+.sidebar-link-label {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sidebar-link:hover {
+    background-color: var(--set-highlight);
+    color: var(--set-text-primary);
+}
+
+.sidebar-link:hover svg {
+    opacity: 1;
+}
+
+.sidebar-link.active {
+    background-color: var(--set-accent-dim);
+    color: var(--set-accent);
+    font-weight: 600;
+}
+
+.sidebar-link.active svg {
+    opacity: 1;
+    color: var(--set-accent);
+}
+
+.sidebar-badge {
+    background-color: var(--set-accent-dim);
+    color: var(--set-accent);
+    font-size: 10.5px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 20px;
+    flex-shrink: 0;
+}
+
+/* Rodapé */
+.sidebar-footer {
+    padding: 12px 10px;
+    border-top: 1px solid var(--set-border);
+    flex-shrink: 0;
+}
+
+.sidebar-footer .sidebar-link {
+    color: var(--set-danger);
+    opacity: 0.75;
+}
+
+.sidebar-footer .sidebar-link:hover {
+    background-color: rgba(229, 9, 20, 0.08);
+    color: var(--set-danger);
+    opacity: 1;
+}
+
+/* Overlay mobile */
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(4px);
+    z-index: 250;
+    opacity: 0;
+    transition: opacity 0.22s;
+    pointer-events: none;
+}
+
+.sidebar-overlay.open {
+    opacity: 1;
+    pointer-events: all;
+}
+
+/* --------------------------------------------------------------------------
+   4. CONTEÚDO PRINCIPAL
+   -------------------------------------------------------------------------- */
+.settings-main {
+    flex: 1;
+    margin-left: var(--set-sidebar-w);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Topbar mobile */
+.settings-topbar {
+    display: none;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--set-border);
+    background-color: var(--set-bg);
+    position: sticky;
+    top: 0;
+    z-index: 200;
+    flex-shrink: 0;
+}
+
+.topbar-menu-btn {
+    background: none;
+    border: none;
+    color: var(--set-text-primary);
+    cursor: pointer;
+    padding: 5px;
+    display: flex;
+    align-items: center;
+    border-radius: 6px;
+    transition: background-color var(--set-transition);
+}
+
+.topbar-menu-btn:hover {
+    background-color: var(--set-highlight);
+}
+
+.topbar-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--set-text-pure);
+}
+
+/* Área de conteúdo */
+.settings-content {
+    flex: 1;
+    padding: 48px 60px;
+    max-width: 840px;
+}
+
+/* --------------------------------------------------------------------------
+   5. PAINÉIS
+   -------------------------------------------------------------------------- */
+.settings-panel {
+    display: none;
+}
+
+.settings-panel:not([hidden]) {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    animation: panelFadeIn 0.2s ease;
+}
+
+@keyframes panelFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* --------------------------------------------------------------------------
+   6. CABEÇALHO DE SEÇÃO
+   -------------------------------------------------------------------------- */
+.settings-section-header {
+    margin-bottom: 4px;
+}
+
+.settings-section-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--set-text-pure);
+    letter-spacing: -0.4px;
+    line-height: 1.2;
+}
+
+.settings-section-desc {
+    font-size: 13.5px;
+    color: var(--set-text-secondary);
+    margin-top: 5px;
+    line-height: 1.5;
+}
+
+/* --------------------------------------------------------------------------
+   7. HERO DA CONTA  (foto + nome + badge de plano)
+   -------------------------------------------------------------------------- */
+.account-hero {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 22px 26px;
+    background-color: var(--set-surface);
+    border: 1px solid var(--set-border);
+    border-radius: var(--set-radius);
+}
+
+.account-hero-avatar {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+    background-color: var(--set-elevated);
+    border: 2px solid var(--set-border-strong);
+}
+
+.account-hero-avatar-placeholder {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    background-color: var(--set-elevated);
+    border: 2px solid var(--set-border-strong);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--set-text-muted);
+}
+
+.account-hero-avatar-placeholder svg {
+    width: 28px;
+    height: 28px;
+}
+
+.account-hero-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.account-hero-name {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--set-text-pure);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.account-hero-username {
+    font-size: 13.5px;
+    color: var(--set-text-secondary);
+    margin-top: 2px;
+}
+
+.account-hero-email {
+    font-size: 12.5px;
+    color: var(--set-text-muted);
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Badge plano */
+.plan-badge {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 13px;
+    border-radius: 20px;
+    font-size: 11.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.plan-badge.free {
+    background-color: var(--set-elevated);
+    color: var(--set-text-secondary);
+    border: 1px solid var(--set-border-strong);
+}
+
+.plan-badge.premium {
+    background-color: var(--set-accent);
+    color: #000;
+}
+
+.plan-badge.family {
+    background-color: #2563eb;
+    color: #fff;
+}
+
+.plan-badge.student {
+    background-color: var(--set-success);
+    color: #000;
+}
+
+/* --------------------------------------------------------------------------
+   8. TABELA DE DETALHES  (lista de linhas)
+   -------------------------------------------------------------------------- */
+.account-details {
+    background-color: var(--set-surface);
+    border: 1px solid var(--set-border);
+    border-radius: var(--set-radius);
+    overflow: hidden;
+}
+
+.detail-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 15px 22px;
+    border-bottom: 1px solid var(--set-border);
+}
+
+.detail-row:last-child {
+    border-bottom: none;
+}
+
+.detail-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    background-color: var(--set-highlight);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: var(--set-text-secondary);
+}
+
+.detail-icon svg {
+    width: 15px;
+    height: 15px;
+}
+
+.detail-label {
+    font-size: 10.5px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+    color: var(--set-text-muted);
+    min-width: 96px;
+    flex-shrink: 0;
+}
+
+.detail-value {
+    flex: 1;
+    font-size: 14px;
+    color: var(--set-text-primary);
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.detail-value.muted {
+    color: var(--set-text-muted);
+    font-style: italic;
+}
+
+/* --------------------------------------------------------------------------
+   9. GRID DE PERFIS PIPOCINE
+   -------------------------------------------------------------------------- */
+.profiles-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.profiles-section-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--set-text-primary);
+}
+
+.profiles-section-desc {
+    font-size: 13px;
+    color: var(--set-text-muted);
+    margin-top: 4px;
+    margin-bottom: 14px;
+}
+
+.profiles-grid-settings {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px;
+}
+
+.profile-card-settings {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 9px;
+    padding: 18px 12px 16px;
+    background-color: var(--set-surface);
+    border: 1px solid var(--set-border);
+    border-radius: var(--set-radius);
+    text-align: center;
+    transition: border-color var(--set-transition), background-color var(--set-transition);
+    position: relative;
+}
+
+.profile-card-settings:hover {
+    background-color: var(--set-elevated);
+    border-color: var(--set-border-strong);
+}
+
+.profile-card-avatar {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    object-fit: cover;
+    background-color: var(--set-elevated);
+    border: 2px solid var(--set-border-strong);
+}
+
+.profile-card-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--set-text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
+}
+
+.profile-card-username {
+    font-size: 11.5px;
+    color: var(--set-text-muted);
+}
+
+.profile-card-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10.5px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 12px;
+}
+
+.profile-card-tag.kids {
+    background-color: rgba(255, 214, 10, 0.12);
+    color: var(--set-accent);
+}
+
+.profile-card-tag.adult {
+    background-color: var(--set-elevated);
+    color: var(--set-text-muted);
+}
+
+/* --------------------------------------------------------------------------
+   10. ESTADOS (loader · empty)
+   -------------------------------------------------------------------------- */
+.settings-loader {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    padding: 64px 24px;
+    color: var(--set-text-muted);
+    font-size: 14px;
+}
+
+.settings-spinner {
+    width: 28px;
+    height: 28px;
+    border: 2.5px solid var(--set-border-strong);
+    border-top-color: var(--set-accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.settings-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 52px 24px;
+    background-color: var(--set-surface);
+    border: 1px solid var(--set-border);
+    border-radius: var(--set-radius);
+    text-align: center;
+    color: var(--set-text-muted);
+    font-size: 13.5px;
+}
+
+.settings-empty svg {
+    width: 36px;
+    height: 36px;
+    opacity: 0.35;
+}
+
+/* --------------------------------------------------------------------------
+   11. BOTÃO CTA
+   -------------------------------------------------------------------------- */
+.settings-cta-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background-color: var(--set-accent);
+    color: #000;
+    padding: 10px 22px;
+    border-radius: var(--set-radius-sm);
+    font-size: 13.5px;
+    font-weight: 700;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: opacity var(--set-transition);
+    align-self: flex-start;
+}
+
+.settings-cta-btn:hover {
+    opacity: 0.86;
+}
+
+.settings-cta-btn svg {
+    width: 15px;
+    height: 15px;
+    flex-shrink: 0;
+}
+
+/* --------------------------------------------------------------------------
+   12. SEÇÃO GENÉRICA (fallback para painéis futuros)
+   -------------------------------------------------------------------------- */
+.settings-section {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+/* --------------------------------------------------------------------------
+   13. RESPONSIVO — MOBILE ≤ 768px
+   -------------------------------------------------------------------------- */
+@media (max-width: 768px) {
+    .settings-sidebar {
+        position: fixed;
+        transform: translateX(-100%);
+    }
+
+    .settings-sidebar.open {
+        transform: translateX(0);
+        box-shadow: 6px 0 48px rgba(0, 0, 0, 0.65);
+    }
+
+    .sidebar-overlay {
+        display: block;
+    }
+
+    .settings-main {
+        margin-left: 0;
+    }
+
+    .settings-topbar {
+        display: flex;
+    }
+
+    .settings-content {
+        padding: 28px 20px;
+    }
+
+    .account-hero {
+        flex-direction: column;
+        text-align: center;
+        padding: 20px 16px;
+    }
+
+    .account-hero-name,
+    .account-hero-username,
+    .account-hero-email {
+        white-space: normal;
+    }
+
+    .detail-row {
+        padding: 13px 16px;
+        gap: 10px;
+    }
+
+    .detail-label {
+        min-width: 76px;
+    }
+
+    .detail-value {
+        white-space: normal;
+    }
+
+    .profiles-grid-settings {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 380px) {
+    .profiles-grid-settings {
+        grid-template-columns: 1fr 1fr;
+    }
+}

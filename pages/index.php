@@ -38,6 +38,12 @@ if ($requestUri === '/select-profile') {
     exit;
 }
 
+// ROTA: Configurações da conta (CineVEO + PipoCine)
+if ($requestUri === '/settings') {
+    require_once __DIR__ . '/settings.php';
+    exit;
+}
+
 // ROTA: Gerenciamento de Perfis
 if ($requestUri === '/manage-profiles') {
     require_once __DIR__ . '/manage-profiles.php';
