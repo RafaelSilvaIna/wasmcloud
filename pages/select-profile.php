@@ -23,47 +23,6 @@ if (!isset($_SESSION['user_id'])) {
 
     <style>
         /* ============================================================
-           SETTINGS GEAR BUTTON — estilo PipoCine/Netflix
-           ============================================================ */
-        .settings-gear-btn {
-            position: fixed;
-            top: 18px;
-            right: 20px;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background-color: rgba(18, 21, 28, 0.85);
-            border: 1px solid rgba(255,255,255,0.09);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: rgba(255,255,255,0.55);
-            cursor: pointer;
-            text-decoration: none;
-            transition: background-color 0.2s, color 0.2s, border-color 0.2s, box-shadow 0.2s;
-            z-index: 100;
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-        }
-
-        .settings-gear-btn:hover {
-            background-color: rgba(255, 214, 10, 0.12);
-            border-color: rgba(255, 214, 10, 0.3);
-            color: #ffd60a;
-            box-shadow: 0 0 0 3px rgba(255, 214, 10, 0.08);
-        }
-
-        .settings-gear-btn svg {
-            width: 19px;
-            height: 19px;
-            transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-
-        .settings-gear-btn:hover svg {
-            transform: rotate(72deg);
-        }
-
-        /* ============================================================
            PROFILES — Design System Minimalista & Escuro
            ============================================================ */
         :root {
@@ -512,21 +471,6 @@ if (!isset($_SESSION['user_id'])) {
 </head>
 
 <body>
-
-    <!-- Botão de Configurações — acessível ao administrador da conta -->
-    <a
-        href="/settings"
-        class="settings-gear-btn"
-        title="Configurações da conta"
-        aria-label="Abrir configurações da conta"
-    >
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-             fill="none" stroke="currentColor" stroke-width="2"
-             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
-            <circle cx="12" cy="12" r="3"/>
-        </svg>
-    </a>
 
     <div class="profiles-wrapper">
         <h1 class="main-title">Quem está assistindo?</h1>
