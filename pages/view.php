@@ -1026,10 +1026,9 @@ if (!isset($_SESSION['user_id'])) {
 
         /* ── Navegação ──────────────────────────────────── */
         static goToEpisode(season, ep) {
-            const url = new URL(window.location.href);
-            url.searchParams.set('s', season);
-            url.searchParams.set('e', ep);
-            window.location.href = url.toString();
+            const { id, type } = this.cfg;
+            // Redireciona para o player com o episódio selecionado
+            window.location.href = `/player?id=${id}&type=${type}&s=${season}&e=${ep}`;
         }
 
         static changeSeason(s) {

@@ -172,30 +172,25 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
-            // 10. Botão Assistir
+            // 10. Botão Assistir — armazena dados no atributo data-* para funcionar com clones do Swiper loop
             const watchBtn = clone.querySelector('.hero-btn--primary');
             if (watchBtn) {
                 const id   = item.id || item.slug || null;
                 const tipo = (item.tipo || 'filme').toLowerCase();
                 if (id) {
-                    watchBtn.addEventListener('click', () => {
-                        window.location.href = `/${tipo}/${id}`;
-                    });
+                    watchBtn.dataset.href = `/${tipo}/${id}`;
                 } else {
                     watchBtn.disabled = true;
                     watchBtn.style.opacity = '0.4';
                 }
             }
 
-            // 11. Botão Mais Infos
+            // 11. Botão Mais Infos — armazena tmdbId no atributo data-* para funcionar com clones do Swiper loop
             const infoBtn = clone.querySelector('.hero-btn--info');
             if (infoBtn) {
-                const id   = item.id || item.slug || null;
-                const tipo = (item.tipo || 'filme').toLowerCase();
-                if (id) {
-                    infoBtn.addEventListener('click', () => {
-                        window.location.href = `/${tipo}/${id}`;
-                    });
+                const tmdbId = item.id_tmdb || null;
+                if (tmdbId) {
+                    infoBtn.dataset.href = `/info=${tmdbId}`;
                 } else {
                     infoBtn.style.display = 'none';
                 }
@@ -206,6 +201,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
         _initSwiper();
         if (typeof lucide !== 'undefined') lucide.createIcons();
+
+        // Delegação de eventos: funciona nos slides originais E nos clones gerados pelo Swiper loop
+        const sliderEl = document.getElementById('pipo-hero-slider');
+        if (sliderEl) {
+            sliderEl.addEventListener('click', (e) => {
+                const btn = e.target.closest('[data-href]');
+                if (btn && btn.dataset.href) {
+                    window.location.href = btn.dataset.href;
+                }
+            });
+        }
     };
 
     // ── Helper: inserir título quando não há logo ────────────────

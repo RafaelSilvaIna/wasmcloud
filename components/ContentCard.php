@@ -1,115 +1,102 @@
 <?php
 // components/ContentCard.php
+// Templates HTML para cards de conteúdo.
+// Versão Ultra Minimalista (Estilo Póster): Foco 100% na arte, título abaixo da imagem e Play centralizado.
 ?>
 
-<!-- Template: Skeleton de carregamento (card padrão) -->
+<!-- ═══════════════════════════════════════════════════════════════
+     SKELETONS DE CARREGAMENTO (Simulando a imagem e o título)
+═══════════════════════════════════════════════════════════════ -->
+
 <template id="pipo-card-skeleton-template">
-    <div class="pipo-card pipo-skeleton"></div>
+    <div class="slick-item">
+        <div class="slick-card slick-skeleton" aria-hidden="true"></div>
+        <!-- Simula o espaço do título que agora fica de fora -->
+        <div class="card-title-skeleton" style="height:14px; width:70%; background:#333; margin-top:10px; border-radius:4px;"></div>
+    </div>
 </template>
 
-<!-- Template: Skeleton de carregamento (Top 10) -->
 <template id="pipo-card-top10-skeleton-template">
-    <div class="pipo-card pipo-card--top10 pipo-skeleton"></div>
+    <div class="slick-item slick-item--top10">
+        <div class="slick-card slick-card--top10 slick-skeleton" aria-hidden="true"></div>
+        <!-- Simula o espaço do título -->
+        <div class="card-title-skeleton" style="height:14px; width:60%; background:#333; margin-top:10px; border-radius:4px;"></div>
+    </div>
 </template>
 
-<!-- Template: Card padrão -->
+
+<!-- ═══════════════════════════════════════════════════════════════
+     CARD PADRÃO (Ultra Minimalista)
+     Estrutura:
+       .slick-item   → Divisão na grelha
+         .slick-card → O card com a imagem (cresce ao passar o rato)
+           .slick-thumb → A imagem do filme
+             .play-overlay → O botão de Play (invisível até passar o rato)
+           .slick-badge → Etiqueta (Ex: FILME)
+         .card-title-outside → O título do filme, posicionado por baixo
+═══════════════════════════════════════════════════════════════ -->
 <template id="pipo-card-template">
-    <div class="pipo-card" tabindex="0" role="button">
+    <div class="slick-item">
+        <div class="slick-card" tabindex="0" role="button" aria-haspopup="true" aria-expanded="false">
 
-        <div class="pipo-card-image-wrapper">
-            <img src="" alt="" class="pipo-card-poster" loading="lazy">
-        </div>
-
-        <!-- Badge tipo (Filme / Série) -->
-        <span class="pipo-card-type-badge"></span>
-
-        <div class="pipo-card-hover-panel">
-            <div class="pipo-card-hover-top">
-                <!-- Thumbnail maior no hover -->
-                <div class="pipo-card-hover-thumb">
-                    <img src="" alt="" class="pipo-card-hover-img" loading="lazy">
-                    <div class="pipo-card-hover-gradient"></div>
+            <!-- Imagem Principal (Poster) e Botão de Play Centralizado -->
+            <div class="slick-thumb">
+                <img src="" alt="" class="poster" loading="lazy" decoding="async">
+                
+                <!-- Botão de Play (Aparece no Hover via CSS) -->
+                <div class="play-overlay" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="currentColor" width="48" height="48">
+                        <!-- Fundo branco ligeiramente transparente -->
+                        <circle cx="12" cy="12" r="11" fill="rgba(255,255,255,0.85)"/>
+                        <!-- Seta preta de play -->
+                        <polygon points="10,8 16,12 10,16" fill="#000"/>
+                    </svg>
                 </div>
             </div>
 
-            <div class="pipo-card-hover-body">
-                <div class="pipo-card-hover-actions">
-                    <button class="pipo-btn pipo-btn--play" title="Assistir" aria-label="Assistir">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
-                            <polygon points="5,3 19,12 5,21"/>
-                        </svg>
-                    </button>
-                    <button class="pipo-btn pipo-btn--list" title="Minha Lista" aria-label="Adicionar à lista">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
-                            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-                        </svg>
-                    </button>
-                    <div class="pipo-card-score-badge"></div>
-                </div>
+            <!-- Etiqueta de Categoria -->
+            <span class="slick-badge" aria-hidden="true"></span>
 
-                <h3 class="pipo-card-hover-title"></h3>
+        </div><!-- /.slick-card -->
 
-                <div class="pipo-card-hover-meta">
-                    <span class="meta-match"></span>
-                    <span class="meta-year"></span>
-                    <span class="meta-duration"></span>
-                    <span class="rating-icon rating-mini"></span>
-                </div>
+        <!-- Título do Conteúdo (Agora fica fora do card, por baixo da imagem) -->
+        <h3 class="card-title-outside"></h3>
 
-                <div class="pipo-card-hover-genres"></div>
-            </div>
-        </div>
-
-    </div>
+    </div><!-- /.slick-item -->
 </template>
 
-<!-- Template: Card Top 10 (número + poster sobreposto) -->
+
+<!-- ═══════════════════════════════════════════════════════════════
+     CARD TOP 10 (Ultra Minimalista)
+     Mantém a estrutura do card padrão, mas adiciona o número do ranking.
+═══════════════════════════════════════════════════════════════ -->
 <template id="pipo-card-top10-template">
-    <div class="pipo-card pipo-card--top10" tabindex="0" role="button">
+    <div class="slick-item slick-item--top10">
+        <div class="slick-card slick-card--top10" tabindex="0" role="button" aria-haspopup="true" aria-expanded="false">
 
-        <span class="pipo-card-rank"></span>
+            <!-- Número do Ranking Gigante (1, 2, 3...) -->
+            <span class="rank-number" aria-hidden="true"></span>
 
-        <div class="pipo-card-image-wrapper">
-            <img src="" alt="" class="pipo-card-poster" loading="lazy">
-        </div>
+            <!-- Imagem Principal (Poster), Badge e Botão de Play -->
+            <div class="slick-thumb slick-thumb--top10">
+                <img src="" alt="" class="poster" loading="lazy" decoding="async">
 
-        <span class="pipo-card-type-badge"></span>
+                <!-- Etiqueta de Categoria (dentro do thumb para posicionamento correto) -->
+                <span class="slick-badge" aria-hidden="true"></span>
 
-        <div class="pipo-card-hover-panel">
-            <div class="pipo-card-hover-top">
-                <div class="pipo-card-hover-thumb">
-                    <img src="" alt="" class="pipo-card-hover-img" loading="lazy">
-                    <div class="pipo-card-hover-gradient"></div>
+                <!-- Botão de Play -->
+                <div class="play-overlay" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="currentColor" width="48" height="48">
+                        <circle cx="12" cy="12" r="11" fill="rgba(255,255,255,0.85)"/>
+                        <polygon points="10,8 16,12 10,16" fill="#000"/>
+                    </svg>
                 </div>
             </div>
 
-            <div class="pipo-card-hover-body">
-                <div class="pipo-card-hover-actions">
-                    <button class="pipo-btn pipo-btn--play" title="Assistir" aria-label="Assistir">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
-                            <polygon points="5,3 19,12 5,21"/>
-                        </svg>
-                    </button>
-                    <button class="pipo-btn pipo-btn--list" title="Minha Lista" aria-label="Adicionar à lista">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
-                            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-                        </svg>
-                    </button>
-                    <div class="pipo-card-score-badge"></div>
-                </div>
+        </div><!-- /.slick-card -->
 
-                <h3 class="pipo-card-hover-title"></h3>
+        <!-- Título do Conteúdo (Fora do card) -->
+        <h3 class="card-title-outside"></h3>
 
-                <div class="pipo-card-hover-meta">
-                    <span class="meta-match"></span>
-                    <span class="meta-year"></span>
-                    <span class="meta-duration"></span>
-                    <span class="rating-icon rating-mini"></span>
-                </div>
-
-                <div class="pipo-card-hover-genres"></div>
-            </div>
-        </div>
-
-    </div>
+    </div><!-- /.slick-item -->
 </template>

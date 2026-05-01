@@ -1,89 +1,193 @@
-// assets/js/content-card.js
+/**
+ * content-card.js — PipoRail (Versão Ultra Minimalista - Estilo Pôster)
+ * Trilhos de conteúdo focados 100% na arte do filme/série.
+ *
+ * Melhorias implementadas:
+ *  1. Título movido para baixo do card (fora do pôster).
+ *  2. Remoção completa de painéis e textos sobrepostos.
+ *  3. Inclusão de um botão Play centralizado no template DOM.
+ *  4. Lógica JS enxuta, removendo cálculos de dados que não aparecem mais.
+ */
 
 class PipoRail {
     /**
-     * @param {string} containerId  - ID do elemento host
-     * @param {string} title        - Título do trilho
-     * @param {string} apiCategory  - Categoria para /api/v2/conteudo OU 'top10_filmes'/'top10_series'
-     * @param {number} limit        - Quantidade máxima de itens
-     * @param {object} opts         - { isTop10: bool }
+     * @param {string} containerId   ID do div host
+     * @param {string} title         Título do trilho
+     * @param {string} apiCategory   Categoria para a API
+     * @param {number} limit         Máximo de itens
+     * @param {object} opts          { isTop10: boolean }
      */
-    constructor(containerId, title, apiCategory, limit = 15, opts = {}) {
-        this.container   = document.getElementById(containerId);
-        this.title       = title;
+    constructor(containerId, title, apiCategory, limit = 18, opts = {}) {
+        this.host = document.getElementById(containerId);
+        this.title = title;
         this.apiCategory = apiCategory;
-        this.limit       = limit;
-        this.isTop10     = !!opts.isTop10;
+        this.limit = limit;
+        this.isTop10 = !!opts.isTop10;
 
-        this.TMDB_IMG = 'https://image.tmdb.org/t/p/';
+        this.TMDB = 'https://image.tmdb.org/t/p/';
 
-        this.skelTpl    = document.getElementById(
+        // Delays mantidos curtos para interatividade fluida
+        this.ENTER_DELAY = 200;   // ms — Rápido, pois agora só mostraremos o botão Play
+        this.LEAVE_DELAY = 150;   // ms — Saída suave
+        this.EDGE_RATIO = 1.1;   // Proporção para considerar "borda"
+
+        this._activeCard = null;
+
+        // Gerenciamento de Templates
+        this._skelTpl = document.getElementById(
             this.isTop10 ? 'pipo-card-top10-skeleton-template' : 'pipo-card-skeleton-template'
-        );
-        this.cardTpl    = document.getElementById(
-            this.isTop10 ? 'pipo-card-top10-template' : 'pipo-card-template'
-        );
+        ) || PipoRail._createSkeletonTemplate(this.isTop10);
 
-        this._init();
+        this._cardTpl = document.getElementById(
+            this.isTop10 ? 'pipo-card-top10-template' : 'pipo-card-template'
+        ) || PipoRail._createCardTemplate(this.isTop10);
+
+        if (this.host) this._build();
+        else console.warn(`[PipoRail] Container #${containerId} não encontrado.`);
     }
 
-    _init() {
-        if (!this.container || !this.skelTpl || !this.cardTpl) return;
-
-        this.container.className = 'pipo-rail-section';
-        this.container.innerHTML = `
-            <div class="pipo-rail-header">
-                <h2 class="pipo-rail-title">${this.title}</h2>
-                <div class="pipo-rail-nav" aria-hidden="true">
-                    <button class="pipo-rail-nav-btn pipo-rail-nav-btn--prev" aria-label="Anterior">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
-                             stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+    /* ──────────────────────────────────────────────────────────────────
+       BUILD — Cria a estrutura inicial
+    ────────────────────────────────────────────────────────────────── */
+    _build() {
+        this.host.className = 'slick-section';
+        this.host.innerHTML = `
+            <div class="slick-header">
+                <h2 class="slick-title">${this._esc(this.title)}</h2>
+                <nav class="slick-nav" aria-label="Navegação do trilho">
+                    <button class="slick-nav-btn js-prev" aria-label="Anterior">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="2.5"
+                             stroke-linecap="round" stroke-linejoin="round">
                             <polyline points="15 18 9 12 15 6"/>
                         </svg>
                     </button>
-                    <button class="pipo-rail-nav-btn pipo-rail-nav-btn--next" aria-label="Próximo">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
-                             stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <button class="slick-nav-btn js-next" aria-label="Próximo">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="2.5"
+                             stroke-linecap="round" stroke-linejoin="round">
                             <polyline points="9 18 15 12 9 6"/>
                         </svg>
                     </button>
-                </div>
+                </nav>
             </div>
-            <div class="pipo-rail-container" id="${this.container.id}-wrap"></div>
+            <div class="slick-track" id="${this.host.id}__track"></div>
         `;
 
-        this.wrap = document.getElementById(`${this.container.id}-wrap`);
+        this.track = document.getElementById(`${this.host.id}__track`);
         this._bindNav();
-        this._renderSkeletons(this.isTop10 ? 5 : 6);
-        this._fetchData();
+        this._showSkeletons(this.isTop10 ? 6 : 6);
+        this._fetch();
     }
 
+    /* ──────────────────────────────────────────────────────────────────
+       Navegação Horizontal Suave
+    ────────────────────────────────────────────────────────────────── */
     _bindNav() {
-        const prev = this.container.querySelector('.pipo-rail-nav-btn--prev');
-        const next = this.container.querySelector('.pipo-rail-nav-btn--next');
-        const scrollBy = () => this.wrap.clientWidth * 0.75;
-
-        if (prev) prev.addEventListener('click', () => this.wrap.scrollBy({ left: -scrollBy(), behavior: 'smooth' }));
-        if (next) next.addEventListener('click', () => this.wrap.scrollBy({ left:  scrollBy(), behavior: 'smooth' }));
+        const scroll = (dir) => {
+            const amount = this.track.clientWidth * 0.75;
+            this.track.scrollBy({ left: dir * amount, behavior: 'smooth' });
+        };
+        this.host.querySelector('.js-prev')?.addEventListener('click', () => scroll(-1));
+        this.host.querySelector('.js-next')?.addEventListener('click', () => scroll(1));
     }
 
-    _renderSkeletons(n) {
-        this.wrap.innerHTML = '';
-        for (let i = 0; i < n; i++) {
-            this.wrap.appendChild(this.skelTpl.content.cloneNode(true));
+    /* ──────────────────────────────────────────────────────────────────
+       HOVER — Controla o estado de foco do card
+    ────────────────────────────────────────────────────────────────── */
+    _bindHover(item, card) {
+        item._enterTimer = null;
+        item._leaveTimer = null;
+        item._active = false;
+
+        item.addEventListener('mouseenter', () => {
+            clearTimeout(item._leaveTimer);
+
+            item._enterTimer = setTimeout(() => {
+                if (this._activeCard && this._activeCard !== item) {
+                    this._deactivate(this._activeCard, true);
+                }
+                this._activate(item, card);
+                this._activeCard = item;
+            }, this.ENTER_DELAY);
+        });
+
+        item.addEventListener('mouseleave', () => {
+            clearTimeout(item._enterTimer);
+
+            if (item._active) {
+                item._leaveTimer = setTimeout(() => {
+                    this._deactivate(item, false);
+                    if (this._activeCard === item) this._activeCard = null;
+                }, this.LEAVE_DELAY);
+            }
+        });
+
+        card.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                this._openDetail(card.dataset);
+            }
+        });
+    }
+
+    _activate(item, card) {
+        this._detectEdge(item, card);
+        item._active = true;
+        item.classList.add('is-active');
+        card.classList.add('is-hovered');
+        card.setAttribute('aria-expanded', 'true');
+    }
+
+    _deactivate(item, instant) {
+        const card = item.querySelector('.slick-card');
+        item._active = false;
+
+        if (instant && card) {
+            card.style.transition = 'none';
+            card.classList.remove('is-hovered', 'edge-left', 'edge-right');
+            void card.offsetWidth;
+            card.style.transition = '';
+        } else if (card) {
+            card.classList.remove('is-hovered', 'edge-left', 'edge-right');
+        }
+
+        item.classList.remove('is-active');
+        card?.setAttribute('aria-expanded', 'false');
+    }
+
+    /* ──────────────────────────────────────────────────────────────────
+       DETECÇÃO DE BORDA HORIZONTAL
+    ────────────────────────────────────────────────────────────────── */
+    _detectEdge(item, card) {
+        const trackRect = this.track.getBoundingClientRect();
+        const cardRect = item.getBoundingClientRect();
+
+        card.classList.remove('edge-left', 'edge-right');
+        const threshold = cardRect.width * this.EDGE_RATIO;
+
+        if (cardRect.left - trackRect.left < threshold) {
+            card.classList.add('edge-left');
+        } else if (trackRect.right - cardRect.right < threshold) {
+            card.classList.add('edge-right');
         }
     }
 
-    async _fetchData() {
+    /* ──────────────────────────────────────────────────────────────────
+       API E RENDERIZAÇÃO
+    ────────────────────────────────────────────────────────────────── */
+    _showSkeletons(n) {
+        this.track.innerHTML = '';
+        for (let i = 0; i < n; i++) {
+            this.track.appendChild(this._skelTpl.content.cloneNode(true));
+        }
+    }
+
+    async _fetch() {
         try {
-            // Top 10: usa o endpoint /api/v2/trending com filtro de tipo
-            let url;
-            if (this.isTop10) {
-                const tipo = this.apiCategory === 'top10_series' ? 'serie' : 'filme';
-                url = `/api/v2/trending?limite=${this.limit}&tipo=${tipo}`;
-            } else {
-                url = `/api/v2/conteudo?categoria=${this.apiCategory}&limite=${this.limit}`;
-            }
+            let url = this.isTop10
+                ? `/api/v2/trending?limite=${this.limit}&tipo=${this.apiCategory === 'top10_series' ? 'serie' : 'filme'}`
+                : `/api/v2/conteudo?categoria=${this.apiCategory}&limite=${this.limit}`;
 
             const res = await fetch(url);
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -92,125 +196,152 @@ class PipoRail {
             const items = data.resultados || data.items || [];
 
             if (data.sucesso && items.length > 0) {
-                this._renderCards(items);
+                this._render(items);
             } else {
-                this.wrap.innerHTML = '<p class="pipo-rail-empty">Conteudo indisponivel no momento.</p>';
+                this.track.innerHTML = '<p class="slick-empty">Nenhum conteúdo disponível nesta seção.</p>';
             }
         } catch (err) {
-            console.error(`[PipoRail] Erro no trilho "${this.title}":`, err);
-            this.wrap.innerHTML = '<p class="pipo-rail-error">Erro ao carregar conteudo.</p>';
+            console.error(`[PipoRail "${this.title}"]`, err);
+            this.track.innerHTML = '<p class="slick-error">Não foi possível carregar os títulos.</p>';
         }
     }
 
-    _img(path, size = 'w342') {
-        if (!path) return '';
-        if (path.startsWith('http')) return path;
-        return `${this.TMDB_IMG}${size}${path}`;
-    }
-
-    _scoreLabel(nota) {
-        const n = parseFloat(nota) || 0;
-        if (n <= 0) return '';
-        const pct = Math.round(n * 10);
-        return `${pct}% Match`;
-    }
-
-    _typeBadge(item) {
-        const t = (item.tipo || '').toLowerCase();
-        if (t === 'serie' || t === 'tv') return 'SÉRIE';
-        return 'FILME';
-    }
-
-    _ratingClass(classificacao) {
-        const map = {
-            'L': 'rating-l', 'Livre': 'rating-l', '0': 'rating-l',
-            '10': 'rating-10', '12': 'rating-12',
-            '14': 'rating-14', '16': 'rating-16', '18': 'rating-18'
-        };
-        return map[String(classificacao)] || 'rating-l';
-    }
-
-    _renderCards(items) {
-        this.wrap.innerHTML = '';
+    _render(items) {
+        this.track.innerHTML = '';
 
         items.forEach((item, idx) => {
             if (!item) return;
 
-            const node = this.cardTpl.content.cloneNode(true);
-            const card = node.querySelector('.pipo-card');
+            const node = this._cardTpl.content.cloneNode(true);
+            const item_wrap = node.querySelector('.slick-item');
+            const card = node.querySelector('.slick-card');
 
-            // Clique → view
-            card.addEventListener('click', (e) => {
-                // Não navegar se clicou no botão "Minha Lista"
-                if (e.target.closest('.pipo-btn--list')) return;
-                const type = (item.tipo === 'serie' || item.tipo === 'tv') ? 'serie' : 'movie';
-                window.location.href = `/view?id=${item.id_tmdb}&type=${type}`;
-            });
+            if (!item_wrap || !card) return;
 
-            // ── Top 10: número de ranking ──────────────────────────────────
-            if (this.isTop10) {
-                const rank = node.querySelector('.pipo-card-rank');
-                if (rank) rank.textContent = String(idx + 1);
-            }
+            // Dados do Dataset
+            card.dataset.id = item.id_tmdb || item.id || '';
+            card.dataset.tipo = item.tipo || 'filme';
+            card.dataset.title = item.titulo || '';
 
-            // ── Poster ────────────────────────────────────────────────────
-            const poster = node.querySelector('.pipo-card-poster');
+            // Poster Principal
+            const poster = node.querySelector('.poster');
             if (poster) {
-                poster.src = this._img(item.capa, 'w342');
-                poster.alt = item.titulo || 'Capa';
+                poster.src = this._img(this._bestPoster(item), 'w342');
+                poster.alt = item.titulo || '';
+                poster.onerror = () => { poster.style.display = 'none'; };
             }
 
-            // ── Hover thumb (backdrop 16:9) ────────────────────────────────
-            const hoverImg = node.querySelector('.pipo-card-hover-img');
-            if (hoverImg) {
-                const backdrop = item.backdrop || item.capa_fundo || item.capa;
-                hoverImg.src = this._img(backdrop, 'w780');
-                hoverImg.alt = item.titulo || '';
-            }
+            // Textos: Apenas Título, Ranking e Badge permaneceram
+            const rankEl = node.querySelector('.rank-number');
+            const badge = node.querySelector('.slick-badge');
+            // Nota: O título agora tem a classe .card-title-outside
+            const titleEl = node.querySelector('.card-title-outside');
 
-            // ── Badge tipo ─────────────────────────────────────────────────
-            const badge = node.querySelector('.pipo-card-type-badge');
-            if (badge) badge.textContent = this._typeBadge(item);
+            if (rankEl) rankEl.textContent = String(idx + 1);
+            if (badge) badge.textContent = this._badgeLabel(item);
+            if (titleEl) titleEl.textContent = item.titulo || '';
 
-            // ── Score badge ────────────────────────────────────────────────
-            const scoreBadge = node.querySelector('.pipo-card-score-badge');
-            if (scoreBadge) scoreBadge.textContent = this._scoreLabel(item.nota);
+            // Delegação de cliques no card inteiro
+            card.addEventListener('click', () => this._openDetail(card.dataset));
 
-            // ── Título no hover panel ──────────────────────────────────────
-            const hoverTitle = node.querySelector('.pipo-card-hover-title');
-            if (hoverTitle) hoverTitle.textContent = item.titulo || '';
-
-            // ── Meta: ano ─────────────────────────────────────────────────
-            const yearEl = node.querySelector('.meta-year');
-            if (yearEl) yearEl.textContent = item.ano || '';
-
-            // ── Meta: duração/temporadas ───────────────────────────────────
-            const durEl = node.querySelector('.meta-duration');
-            if (durEl) {
-                const t = (item.tipo || '').toLowerCase();
-                if (t === 'serie' || t === 'tv') {
-                    durEl.textContent = item.temporadas ? `${item.temporadas}T` : '';
-                } else {
-                    durEl.textContent = item.duracao ? `${item.duracao}min` : '';
-                }
-            }
-
-            // ── Classificação indicativa ───────────────────────────────────
-            const ratingIcon = node.querySelector('.rating-icon');
-            if (ratingIcon) ratingIcon.classList.add(this._ratingClass(item.classificacao));
-
-            // ── Gêneros no hover panel ─────────────────────────────────────
-            const genresEl = node.querySelector('.pipo-card-hover-genres');
-            if (genresEl) {
-                const gens = (item.generos || item.genres || []).slice(0, 3);
-                genresEl.innerHTML = gens.map(g => `<span>${g}</span>`).join('');
-            }
-
-            // ── Match (verde) ──────────────────────────────────────────────
-            const matchEl = node.querySelector('.meta-match');
-            if (matchEl) matchEl.textContent = this._scoreLabel(item.nota);
-
-            this.wrap.appendChild(node);
+            // Acoplar Eventos de Hover
+            this._bindHover(item_wrap, card);
+            this.track.appendChild(node);
         });
+    }
+
+    /* ──────────────────────────────────────────────────────────────────
+       HELPERS E FORMATADORES
+    ────────────────────────────────────────────────────────────────── */
+    _openDetail(dataset) {
+        const id = dataset.id;
+        const tipo = (dataset.tipo === 'serie' || dataset.tipo === 'tv') ? 'serie' : 'movie';
+        if (id) window.location.href = `/view?id=${id}&type=${tipo}`;
+    }
+
+    _img(path, size = 'w342') {
+        if (!path || typeof path !== 'string') return '';
+        const p = path.trim();
+        if (!p) return '';
+        if (p.startsWith('http://') || p.startsWith('https://')) return p;
+        if (p.startsWith('/')) {
+            if (p.match(/^\/[a-zA-Z_\-]+\//)) return p;
+            return `${this.TMDB}${size}${p}`;
+        }
+        return `${this.TMDB}${size}/${p}`;
+    }
+
+    _bestPoster(item) {
+        return item.capa || item.poster || item.imagem || '';
+    }
+
+    _badgeLabel(item) {
+        const t = (item.tipo || '').toLowerCase();
+        return (t === 'serie' || t === 'tv') ? 'SÉRIE' : 'FILME';
+    }
+
+    _esc(str) {
+        if (!str) return '';
+        return String(str).replace(/[&<>"']/g, m => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        })[m]);
+    }
+
+    /* ──────────────────────────────────────────────────────────────────
+       TEMPLATES DOM (Ultra Limpos e Focados no Pôster)
+    ────────────────────────────────────────────────────────────────── */
+    static _createSkeletonTemplate(isTop10) {
+        const tpl = document.createElement('template');
+        tpl.innerHTML = isTop10
+            ? `<div class="slick-item slick-item--top10">
+                   <div class="slick-card slick-card--top10 slick-skeleton"></div>
+                   <div class="card-title-skeleton" style="height:14px; width:60%; background:#333; margin-top:8px; border-radius:4px;"></div>
+               </div>`
+            : `<div class="slick-item">
+                   <div class="slick-card slick-skeleton"></div>
+                   <div class="card-title-skeleton" style="height:14px; width:70%; background:#333; margin-top:8px; border-radius:4px;"></div>
+               </div>`;
+        return tpl;
+    }
+
+    static _createCardTemplate(isTop10) {
+        const tpl = document.createElement('template');
+
+        // Botão de Play centralizado (baseado na sua imagem)
+        const playOverlay = `
+            <div class="play-overlay" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="currentColor" width="48" height="48">
+                    <circle cx="12" cy="12" r="11" fill="rgba(255,255,255,0.85)"/>
+                    <polygon points="10,8 16,12 10,16" fill="#000"/>
+                </svg>
+            </div>`;
+
+        tpl.innerHTML = isTop10 ? `
+            <div class="slick-item slick-item--top10">
+                <div class="slick-card slick-card--top10" tabindex="0" role="button">
+                    <span class="rank-number" aria-hidden="true"></span>
+                    <div class="slick-thumb slick-thumb--top10">
+                        <img src="" alt="" class="poster" loading="lazy">
+                        <span class="slick-badge"></span>
+                        ${playOverlay}
+                    </div>
+                </div>
+                <!-- Título fora do card (Abaixo do pôster) -->
+                <h3 class="card-title-outside"></h3>
+            </div>`
+            : `
+            <div class="slick-item">
+                <div class="slick-card" tabindex="0" role="button">
+                    <div class="slick-thumb">
+                        <img src="" alt="" class="poster" loading="lazy">
+                        ${playOverlay}
+                    </div>
+                    <span class="slick-badge"></span>
+                </div>
+                <!-- Título fora do card (Abaixo do pôster) -->
+                <h3 class="card-title-outside"></h3>
+            </div>`;
+
+        return tpl;
     }
 }

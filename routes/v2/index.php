@@ -22,9 +22,18 @@ require_once __DIR__ . '/../../models/v2/ExhibitionModel.php';
 require_once __DIR__ . '/../../services/v2/ExhibitionService.php';
 require_once __DIR__ . '/../../controllers/v2/ExhibitionController.php';
 
+// --- Classes da API de Informações (Detalhes) ---
+require_once __DIR__ . '/../../models/v2/InfoModel.php';
+require_once __DIR__ . '/../../services/v2/InfoService.php';
+require_once __DIR__ . '/../../controllers/v2/InfoController.php';
+
 use Models\V2\ExhibitionModel;
 use Services\V2\ExhibitionService;
 use Controllers\V2\ExhibitionController;
+
+use Models\V2\InfoModel;
+use Services\V2\InfoService;
+use Controllers\V2\InfoController;
 // ResponseUtil é uma classe global — sem namespace, acessível diretamente
 
 ApiHook::init();
@@ -49,10 +58,22 @@ try {
     // Rota 3: Obtenção de Links e Metadados do Player
     } elseif (strpos($requestUri, '/api/v2/exhibition') === 0) {
         $model = new ExhibitionModel($pdoCineveo);
-        $tmdbHelper = new TMDBHelper(); // Usando a classe global normalmente
+        $tmdbHelper = new TMDBHelper();
         $service = new ExhibitionService($model, $tmdbHelper);
         $controller = new ExhibitionController($service);
-        $controller->getExhibitionData(); 
+        $controller->getExhibitionData();
+
+    // Rota 4: Informações Completas de um Conteúdo (Página de Detalhes)
+    } elseif (strpos($requestUri, '/api/v2/info') === 0) {
+        $model      = new InfoModel($pdoCineveo);
+        $tmdbHelper = new TMDBHelper();
+        $service    = new InfoService($model, $tmdbHelper);
+        $controller = new InfoController($service);
+        $controller->handle();
+
+    // Rota 5: URL de vídeo de episódio/filme (banco cineveo)
+    } elseif (strpos($requestUri, '/api/v2/episode-url') === 0) {
+        require_once __DIR__ . '/../../api/v2/episode-url.php';
 
     // Rota não encontrada
     } else {

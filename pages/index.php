@@ -39,6 +39,19 @@ if ($requestUri === '/view') {
     exit;
 }
 
+// ROTA: Página de Informações /info=<tmdb_id>
+if (preg_match('/^\/info=(\d+)$/', $requestUri, $matches)) {
+    $_GET['tmdb_id'] = (int) $matches[1];
+    require_once __DIR__ . '/info.php';
+    exit;
+}
+
+// ROTA: Página de Informações sem ID (fallback)
+if ($requestUri === '/info') {
+    require_once __DIR__ . '/info.php';
+    exit;
+}
+
 // FALLBACK: Página não encontrada
 http_response_code(404);
 echo "<div style='background:#0a0a0a; color:white; height:100vh; display:flex; align-items:center; justify-content:center; font-family:sans-serif;'>";
