@@ -84,6 +84,138 @@ if (!isset($_SESSION['profile_is_kids']) && isset($_SESSION['profile_id'])) {
             }
         }
 
+        /* ── Seção de Plataformas ──────────────────────────────────────────────── */
+        .platforms-section {
+            padding: 32px 0 8px;
+        }
+
+        .platforms-section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 4%;
+            margin-bottom: 18px;
+        }
+
+        .platforms-section-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--text-pure);
+            letter-spacing: -.01em;
+        }
+
+        .platforms-see-all {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-decoration: none;
+            letter-spacing: .04em;
+            text-transform: uppercase;
+            transition: color .15s;
+        }
+
+        .platforms-see-all:hover { color: var(--text-pure); }
+
+        /* Trilho horizontal de cards de plataforma */
+        .platforms-track {
+            display: flex;
+            gap: 14px;
+            padding: 4px 4% 20px;
+            overflow-x: auto;
+            overflow-y: visible;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+            scroll-behavior: smooth;
+        }
+
+        .platforms-track::-webkit-scrollbar { display: none; }
+
+        /* Card individual de plataforma */
+        .platform-card {
+            flex: 0 0 140px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0;
+            text-decoration: none;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Caixa colorida com logo (inspirada no design fornecido) */
+        .platform-card-thumb {
+            width: 100%;
+            aspect-ratio: 16/10;
+            border-radius: 8px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 14px 18px;
+            position: relative;
+            transition: transform .18s ease, box-shadow .18s ease;
+            /* Cor injetada via style= */
+        }
+
+        .platform-card:hover .platform-card-thumb {
+            transform: scale(1.04);
+            box-shadow: 0 8px 28px rgba(0,0,0,.5);
+        }
+
+        /* Overlay escuro suave no hover */
+        .platform-card-thumb::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,0);
+            border-radius: 8px;
+            transition: background .18s ease;
+        }
+
+        .platform-card:hover .platform-card-thumb::after {
+            background: rgba(0,0,0,.15);
+        }
+
+        .platform-card-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            filter: brightness(0) invert(1);
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Apple TV+ tem logo branca — não inverte */
+        .platform-card-thumb img.no-invert {
+            filter: none;
+        }
+
+        /* Nome da plataforma abaixo do card */
+        .platform-card-name {
+            margin-top: 10px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-align: center;
+            letter-spacing: .01em;
+            transition: color .15s;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
+            padding: 0 4px;
+        }
+
+        .platform-card:hover .platform-card-name { color: var(--text-pure); }
+
+        /* ── Responsive da seção de plataformas ─────────────────────────────── */
+        @media (max-width: 640px) {
+            .platforms-section { padding: 24px 0 4px; }
+            .platforms-section-title { font-size: 1rem; }
+            .platform-card { flex: 0 0 118px; }
+            .platforms-track { gap: 10px; padding: 4px 4% 16px; }
+        }
+
         /* Badge de perfil infantil */
         .kids-profile-badge {
             display: inline-flex;
@@ -127,6 +259,48 @@ if (!isset($_SESSION['profile_is_kids']) && isset($_SESSION['profile_id'])) {
                 </svg>
                 Modo Infantil Ativo
             </div>
+        <?php endif; ?>
+
+        <!-- ── Seção: Navegar por Plataforma ──────────────────────────────────── -->
+        <?php if (!$isKidsProfile): ?>
+        <section class="platforms-section" aria-label="Navegar por plataforma de streaming">
+            <div class="platforms-section-header">
+                <h2 class="platforms-section-title">Navegar por Plataforma</h2>
+                <a href="/plataforma?marca=netflix" class="platforms-see-all">Ver todos &rarr;</a>
+            </div>
+
+            <div class="platforms-track" role="list">
+                <?php
+                $platList = [
+                    ['slug' => 'netflix',   'nome' => 'Netflix',      'cor' => '#c00000', 'logo' => 'https://upload.wikimedia.org/wikipedia/commons/0/08/Netflix_2015_logo.svg'],
+                    ['slug' => 'prime',     'nome' => 'Prime Video',  'cor' => '#00567d', 'logo' => 'https://upload.wikimedia.org/wikipedia/commons/1/11/Amazon_Prime_Video_logo.svg'],
+                    ['slug' => 'disney',    'nome' => 'Disney+',      'cor' => '#0050b8', 'logo' => 'https://upload.wikimedia.org/wikipedia/commons/3/3e/Disney%2B_logo.svg'],
+                    ['slug' => 'max',       'nome' => 'Max',          'cor' => '#001db8', 'logo' => 'https://upload.wikimedia.org/wikipedia/commons/1/17/HBO_Max_Logo.svg'],
+                    ['slug' => 'globoplay', 'nome' => 'Globoplay',    'cor' => '#a80000', 'logo' => 'https://upload.wikimedia.org/wikipedia/commons/7/7e/Globoplay_logo.svg'],
+                    ['slug' => 'appletv',   'nome' => 'Apple TV+',    'cor' => '#2a2a2a', 'logo' => 'https://upload.wikimedia.org/wikipedia/commons/2/28/Apple_TV_Plus_Logo.svg'],
+                    ['slug' => 'paramount', 'nome' => 'Paramount+',   'cor' => '#0050cc', 'logo' => 'https://upload.wikimedia.org/wikipedia/commons/a/a5/Paramount_Plus_logo.svg'],
+                ];
+                foreach ($platList as $plat): ?>
+                <a
+                    href="/plataforma?marca=<?= htmlspecialchars($plat['slug']) ?>"
+                    class="platform-card"
+                    role="listitem"
+                    aria-label="Ver conteudos da <?= htmlspecialchars($plat['nome']) ?>"
+                >
+                    <div class="platform-card-thumb" style="background:<?= htmlspecialchars($plat['cor']) ?>;">
+                        <img
+                            src="<?= htmlspecialchars($plat['logo']) ?>"
+                            alt="Logo <?= htmlspecialchars($plat['nome']) ?>"
+                            class="<?= $plat['slug'] === 'appletv' ? 'no-invert' : '' ?>"
+                            loading="lazy"
+                            onerror="this.style.display='none'"
+                        >
+                    </div>
+                    <span class="platform-card-name"><?= htmlspecialchars($plat['nome']) ?></span>
+                </a>
+                <?php endforeach; ?>
+            </div>
+        </section>
         <?php endif; ?>
 
         <div class="content-rails-container">

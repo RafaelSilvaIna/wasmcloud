@@ -27,6 +27,11 @@ require_once __DIR__ . '/../../models/v2/InfoModel.php';
 require_once __DIR__ . '/../../services/v2/InfoService.php';
 require_once __DIR__ . '/../../controllers/v2/InfoController.php';
 
+// --- Classes da API de Plataformas (Netflix, Prime Video, etc.) ---
+require_once __DIR__ . '/../../models/v2/PlatformModel.php';
+require_once __DIR__ . '/../../services/v2/PlatformService.php';
+require_once __DIR__ . '/../../controllers/v2/PlatformController.php';
+
 use Models\V2\ExhibitionModel;
 use Services\V2\ExhibitionService;
 use Controllers\V2\ExhibitionController;
@@ -74,6 +79,13 @@ try {
     // Rota 5: URL de vídeo de episódio/filme (banco cineveo)
     } elseif (strpos($requestUri, '/api/v2/episode-url') === 0) {
         require_once __DIR__ . '/../../api/v2/episode-url.php';
+
+    // Rota 6: Conteúdos por plataforma de streaming (Netflix, Prime, Disney+ etc.)
+    } elseif (strpos($requestUri, '/api/v2/plataforma') === 0) {
+        $model      = new PlatformModel($pdoCineveo);
+        $service    = new PlatformService($model);
+        $controller = new PlatformController($service);
+        $controller->handle();
 
     // Rota não encontrada
     } else {
