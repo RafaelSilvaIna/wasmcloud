@@ -2,6 +2,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const header = document.getElementById('main-header');
     const userMenuContainer = document.getElementById('user-menu-container');
 
+    // ── Marca item ativo no bottom nav pelo pathname ───────────────
+    const path = window.location.pathname;
+    document.querySelectorAll('.mobile-nav-item').forEach(item => {
+        const href = item.getAttribute('href') || '';
+        const isActive =
+            href === '/' ? path === '/'
+            : href.length > 1 && path.startsWith(href);
+        if (isActive) item.classList.add('active');
+        else item.classList.remove('active');
+    });
+
     // ── Scroll effect ──────────────────────────────────────────────
     window.addEventListener('scroll', () => {
         window.requestAnimationFrame(() => {

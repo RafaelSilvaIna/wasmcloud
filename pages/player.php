@@ -114,43 +114,40 @@ $backUrl = $isSerie
 
         :root {
             --accent:        #e50914;
-            --accent-hover:  #f40612;
-            --yellow:        #ffd60a;
-            --bg:            #000000;
-            --surface:       #141414;
-            --surface2:      #1f1f1f;
-            --surface3:      #2a2a2a;
+            --accent-hover:  #b20610;
+            --bg:            #141414;
+            --surface:       #1f1f1f;
+            --surface2:      #2a2a2a;
             --text-pure:     #ffffff;
-            --text-primary:  #e2e8f0;
-            --text-secondary:#94a3b8;
-            --text-muted:    #64748b;
+            --text-primary:  #e5e5e5;
+            --text-secondary:#b3b3b3;
+            --text-muted:    #737373;
             --border:        #2a2a2a;
-            --border-strong: #3d3d3d;
-            --radius:        6px;
-            --radius-lg:     10px;
-            --shadow-lg:     0 12px 40px rgba(0,0,0,.85);
-            --transition:    .2s ease;
+            --border-strong: #404040;
+            --radius:        4px;
+            --transition:    .15s ease;
         }
 
         html, body {
-            width: 100%; height: 100%;
+            width: 100%;
             background: var(--bg);
             color: var(--text-primary);
-            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            font-family: 'Netflix Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
             overflow-x: hidden;
             -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
 
         /* ─── NAVBAR ──────────────────────────────────────────────────── */
         #pplayer-nav {
-            position: fixed;
+            position: absolute;
             top: 0; left: 0; right: 0;
             z-index: 200;
-            height: 56px;
+            height: 68px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 0 24px;
+            padding: 0 28px;
             background: linear-gradient(to bottom, rgba(0,0,0,.9) 0%, transparent 100%);
             pointer-events: none;
             transition: opacity .3s;
@@ -161,26 +158,29 @@ $backUrl = $isSerie
         .nav-left {
             display: flex;
             align-items: center;
-            gap: 14px;
+            gap: 16px;
         }
 
         .nav-back-btn {
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            color: var(--text-primary);
+            color: var(--text-pure);
             text-decoration: none;
-            font-size: 13px;
+            font-size: 14px;
             font-weight: 500;
-            background: rgba(0,0,0,.4);
-            border: 1px solid rgba(255,255,255,.12);
-            border-radius: 20px;
-            padding: 6px 14px;
-            backdrop-filter: blur(8px);
-            transition: background var(--transition), color var(--transition);
+            opacity: .85;
+            transition: opacity var(--transition);
+            padding: 4px 0;
         }
-        .nav-back-btn svg { width: 14px; height: 14px; flex-shrink: 0; }
-        .nav-back-btn:hover { background: rgba(255,255,255,.15); color: var(--text-pure); }
+        .nav-back-btn svg { width: 20px; height: 20px; flex-shrink: 0; }
+        .nav-back-btn:hover { opacity: 1; }
+
+        .nav-divider {
+            width: 1px;
+            height: 20px;
+            background: rgba(255,255,255,.2);
+        }
 
         .nav-title-block {
             display: flex;
@@ -188,16 +188,17 @@ $backUrl = $isSerie
             gap: 1px;
         }
         .nav-series-name {
-            font-size: 13px;
+            font-size: 14px;
             font-weight: 700;
             color: var(--text-pure);
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            max-width: 300px;
+            max-width: 340px;
+            letter-spacing: .01em;
         }
         .nav-ep-label {
-            font-size: 11px;
+            font-size: 12px;
             color: var(--text-secondary);
             white-space: nowrap;
         }
@@ -208,11 +209,18 @@ $backUrl = $isSerie
             width: 100%;
             background: #000;
             aspect-ratio: 16/9;
-            max-height: 100vh;
             overflow: hidden;
             cursor: none;
         }
         #player-wrap.cursor-visible { cursor: default; }
+
+        /* Em tela cheia o player ocupa tudo */
+        #player-wrap:fullscreen,
+        #player-wrap:-webkit-full-screen {
+            width: 100vw;
+            height: 100vh;
+            aspect-ratio: unset;
+        }
 
         #pip-video {
             width: 100%;
@@ -225,41 +233,49 @@ $backUrl = $isSerie
         /* ─── LOADER OVERLAY ──────────────────────────────────────────── */
         #pip-loader-overlay {
             position: absolute; inset: 0;
-            background: rgba(0,0,0,.75);
+            background: rgba(0,0,0,.6);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 16px;
+            gap: 14px;
             z-index: 10;
-            transition: opacity .3s;
+            transition: opacity .25s;
         }
         #pip-loader-overlay.hidden { opacity: 0; pointer-events: none; }
 
+        /* Spinner estilo Netflix — anel fino + ponto vermelho */
         .loader-spinner {
-            width: 48px; height: 48px;
-            border: 3px solid rgba(255,255,255,.15);
+            position: relative;
+            width: 44px; height: 44px;
+        }
+        .loader-spinner::before {
+            content: '';
+            position: absolute; inset: 0;
+            border: 3px solid rgba(255,255,255,.12);
             border-top-color: var(--accent);
             border-radius: 50%;
-            animation: spin .8s linear infinite;
+            animation: spin .75s linear infinite;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
 
         .loader-text {
-            font-size: 13px;
-            color: var(--text-secondary);
-            letter-spacing: .03em;
+            font-size: 11px;
+            color: var(--text-muted);
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            font-weight: 600;
         }
 
         /* ─── ERRO OVERLAY ────────────────────────────────────────────── */
         #pip-error-overlay {
             position: absolute; inset: 0;
-            background: rgba(0,0,0,.88);
+            background: rgba(0,0,0,.9);
             display: none;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 16px;
+            gap: 14px;
             z-index: 15;
             padding: 32px;
             text-align: center;
@@ -267,22 +283,22 @@ $backUrl = $isSerie
         #pip-error-overlay.visible { display: flex; }
 
         .error-icon {
-            width: 56px; height: 56px;
+            width: 52px; height: 52px;
             border-radius: 50%;
-            background: rgba(229,9,20,.12);
-            border: 1px solid rgba(229,9,20,.3);
+            background: rgba(229,9,20,.1);
+            border: 1px solid rgba(229,9,20,.25);
             display: flex; align-items: center; justify-content: center;
         }
-        .error-icon svg { width: 28px; height: 28px; color: var(--accent); }
+        .error-icon svg { width: 26px; height: 26px; color: var(--accent); }
         .error-title {
-            font-size: 18px;
+            font-size: 17px;
             font-weight: 700;
             color: var(--text-pure);
         }
         .error-message {
-            font-size: 14px;
+            font-size: 13px;
             color: var(--text-secondary);
-            max-width: 420px;
+            max-width: 380px;
             line-height: 1.6;
         }
         .error-actions {
@@ -290,20 +306,21 @@ $backUrl = $isSerie
             gap: 10px;
             flex-wrap: wrap;
             justify-content: center;
-            margin-top: 8px;
+            margin-top: 4px;
         }
         .btn-retry {
             display: inline-flex;
             align-items: center;
             gap: 6px;
             font-size: 13px;
-            font-weight: 600;
+            font-weight: 700;
             color: #fff;
             background: var(--accent);
             border: none;
             border-radius: var(--radius);
-            padding: 10px 20px;
+            padding: 9px 22px;
             cursor: pointer;
+            letter-spacing: .02em;
             transition: background var(--transition);
         }
         .btn-retry:hover { background: var(--accent-hover); }
@@ -312,93 +329,95 @@ $backUrl = $isSerie
             align-items: center;
             gap: 6px;
             font-size: 13px;
-            font-weight: 600;
+            font-weight: 700;
             color: var(--text-primary);
-            background: rgba(255,255,255,.1);
-            border: 1px solid rgba(255,255,255,.15);
+            background: rgba(255,255,255,.08);
+            border: 1px solid rgba(255,255,255,.12);
             border-radius: var(--radius);
-            padding: 10px 20px;
+            padding: 9px 22px;
             cursor: pointer;
             text-decoration: none;
             transition: background var(--transition);
         }
-        .btn-back-err:hover { background: rgba(255,255,255,.18); }
+        .btn-back-err:hover { background: rgba(255,255,255,.15); }
 
         /* ─── CONTROLES CUSTOMIZADOS ──────────────────────────────────── */
         #pip-controls {
             position: absolute;
             bottom: 0; left: 0; right: 0;
             z-index: 20;
-            padding: 0 20px 16px;
-            background: linear-gradient(to top, rgba(0,0,0,.85) 0%, transparent 100%);
-            transition: opacity .3s, transform .3s;
-            transform: translateY(0);
+            padding: 0 24px 20px;
+            background: linear-gradient(to top,
+                rgba(0,0,0,.95) 0%,
+                rgba(0,0,0,.5) 50%,
+                transparent 100%);
+            transition: opacity .25s;
         }
         #pip-controls.hidden {
             opacity: 0;
-            transform: translateY(8px);
             pointer-events: none;
         }
 
-        /* Progress bar */
+        /* Progress bar — estilo Netflix: track fino, fill vermelho, thumb no hover */
         .progress-wrap {
             position: relative;
-            height: 4px;
-            background: rgba(255,255,255,.2);
-            border-radius: 2px;
+            height: 3px;
+            background: rgba(255,255,255,.3);
+            border-radius: 0;
             cursor: pointer;
-            margin-bottom: 10px;
-            transition: height .15s;
+            margin-bottom: 16px;
+            transition: height .12s;
         }
-        .progress-wrap:hover { height: 6px; }
+        .progress-wrap:hover { height: 5px; }
         .progress-fill {
+            position: absolute;
+            top: 0; left: 0;
             height: 100%;
             background: var(--accent);
-            border-radius: 2px;
             pointer-events: none;
-            transition: width .1s linear;
         }
         .progress-buffer {
             position: absolute;
             top: 0; left: 0;
             height: 100%;
-            background: rgba(255,255,255,.25);
-            border-radius: 2px;
+            background: rgba(255,255,255,.2);
             pointer-events: none;
         }
         .progress-thumb {
             position: absolute;
             top: 50%;
-            width: 12px; height: 12px;
-            background: var(--accent);
+            width: 13px; height: 13px;
+            background: #fff;
             border-radius: 50%;
             transform: translate(-50%, -50%) scale(0);
             pointer-events: none;
-            transition: transform .15s;
+            transition: transform .1s;
+            box-shadow: 0 0 0 2px rgba(255,255,255,.2);
         }
         .progress-wrap:hover .progress-thumb { transform: translate(-50%, -50%) scale(1); }
 
-        /* Botões de controle */
+        /* Linha de botões */
         .controls-row {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 2px;
         }
-        .controls-left  { flex: 1; display: flex; align-items: center; gap: 8px; }
-        .controls-right { display: flex; align-items: center; gap: 8px; }
+        .controls-left  { flex: 1; display: flex; align-items: center; gap: 2px; }
+        .controls-right { display: flex; align-items: center; gap: 2px; }
 
         .ctrl-btn {
             background: none;
             border: none;
             color: var(--text-pure);
             cursor: pointer;
-            padding: 6px;
-            border-radius: var(--radius);
+            padding: 8px;
             display: flex; align-items: center; justify-content: center;
             opacity: .85;
-            transition: opacity var(--transition), background var(--transition);
+            transition: opacity var(--transition), transform var(--transition);
+            -webkit-tap-highlight-color: transparent;
         }
-        .ctrl-btn:hover { opacity: 1; background: rgba(255,255,255,.1); }
+        .ctrl-btn:hover { opacity: 1; }
+        .ctrl-btn:active { transform: scale(.92); }
         .ctrl-btn svg { width: 20px; height: 20px; }
         .ctrl-btn.lg svg { width: 26px; height: 26px; }
 
@@ -410,10 +429,10 @@ $backUrl = $isSerie
         }
         .volume-slider {
             -webkit-appearance: none;
-            width: 70px;
+            width: 72px;
             height: 3px;
             background: rgba(255,255,255,.3);
-            border-radius: 2px;
+            border-radius: 0;
             outline: none;
             cursor: pointer;
         }
@@ -427,76 +446,76 @@ $backUrl = $isSerie
         /* Tempo */
         .time-label {
             font-size: 12px;
-            color: var(--text-secondary);
+            color: rgba(255,255,255,.7);
             font-variant-numeric: tabular-nums;
             white-space: nowrap;
             letter-spacing: .02em;
+            padding: 0 6px;
         }
 
         /* Audio badge */
         .audio-badge {
-            font-size: 10px;
+            font-size: 9px;
             font-weight: 700;
-            letter-spacing: .08em;
+            letter-spacing: .12em;
             text-transform: uppercase;
             padding: 3px 7px;
-            border-radius: 4px;
-            background: rgba(255,255,255,.1);
-            border: 1px solid rgba(255,255,255,.15);
-            color: var(--text-secondary);
+            border-radius: 2px;
+            background: transparent;
+            border: 1px solid rgba(255,255,255,.3);
+            color: rgba(255,255,255,.6);
         }
 
         /* ─── BOTÃO PRÓXIMO EPISÓDIO ──────────────────────────────────── */
         #btn-next-episode {
             display: none;
             position: absolute;
-            bottom: 90px;
+            bottom: 96px;
             right: 24px;
             z-index: 25;
             align-items: center;
-            gap: 10px;
-            background: rgba(20,20,20,.92);
-            border: 1px solid rgba(255,255,255,.15);
-            border-radius: var(--radius-lg);
-            padding: 14px 20px;
+            gap: 8px;
+            background: rgba(255,255,255,.1);
+            border: 1.5px solid rgba(255,255,255,.6);
+            border-radius: var(--radius);
+            padding: 10px 20px;
             color: var(--text-pure);
             cursor: pointer;
-            backdrop-filter: blur(12px);
-            transition: background var(--transition), transform var(--transition), opacity .3s;
+            backdrop-filter: blur(10px);
             text-decoration: none;
             font-size: 14px;
-            font-weight: 600;
-            box-shadow: var(--shadow-lg);
-            animation: slideInRight .35s ease-out;
+            font-weight: 700;
+            letter-spacing: .02em;
+            transition: background var(--transition), border-color var(--transition);
+            animation: slideInRight .3s ease-out;
         }
         #btn-next-episode.visible { display: flex; }
         #btn-next-episode:hover {
-            background: rgba(229,9,20,.85);
-            transform: translateY(-2px);
+            background: rgba(255,255,255,.2);
+            border-color: #fff;
         }
         #btn-next-episode svg { width: 18px; height: 18px; }
 
         @keyframes slideInRight {
-            from { opacity: 0; transform: translateX(20px); }
+            from { opacity: 0; transform: translateX(16px); }
             to   { opacity: 1; transform: translateX(0); }
         }
 
         /* ─── TOAST INFORMATIVO ────────────────────────────────────────── */
         #pip-toast {
             position: absolute;
-            top: 70px;
+            top: 72px;
             left: 50%;
-            transform: translateX(-50%) translateY(-10px);
+            transform: translateX(-50%) translateY(-6px);
             background: rgba(0,0,0,.8);
-            border: 1px solid rgba(255,255,255,.12);
-            color: var(--text-pure);
+            color: rgba(255,255,255,.9);
             font-size: 13px;
-            font-weight: 500;
+            font-weight: 600;
             padding: 8px 18px;
-            border-radius: 20px;
-            backdrop-filter: blur(10px);
+            border-radius: 2px;
+            letter-spacing: .03em;
             opacity: 0;
-            transition: opacity .25s, transform .25s;
+            transition: opacity .18s, transform .18s;
             pointer-events: none;
             z-index: 30;
             white-space: nowrap;
@@ -510,72 +529,31 @@ $backUrl = $isSerie
         #player-info-section {
             max-width: 900px;
             margin: 0 auto;
-            padding: 32px 24px 64px;
+            padding: 32px 28px 72px;
         }
 
-        .info-header {
-            display: flex;
-            align-items: flex-start;
-            gap: 20px;
+        /* Linha divisória Netflix */
+        .info-divider {
+            height: 1px;
+            background: var(--border);
             margin-bottom: 28px;
         }
 
-        .info-poster {
-            width: 80px;
-            height: 120px;
-            border-radius: var(--radius-lg);
-            object-fit: cover;
-            flex-shrink: 0;
-            border: 1px solid var(--border);
-        }
-
-        .info-text { flex: 1; min-width: 0; }
-
-        .info-series-name {
-            font-size: 11px;
-            font-weight: 600;
-            letter-spacing: .1em;
-            text-transform: uppercase;
-            color: var(--accent);
-            margin-bottom: 6px;
-        }
-
-        .info-main-title {
-            font-size: 22px;
-            font-weight: 700;
-            color: var(--text-pure);
-            line-height: 1.2;
-            margin-bottom: 6px;
-        }
-
-        .info-ep-label {
-            font-size: 13px;
-            color: var(--text-secondary);
-            margin-bottom: 10px;
-        }
-
-        .info-synopsis {
-            font-size: 14px;
-            color: var(--text-secondary);
-            line-height: 1.65;
-            max-width: 680px;
-        }
-
-        /* Audio toggle */
+        /* Audio toggle — acima do bloco de info */
         .audio-toggle-wrap {
             display: flex;
             gap: 8px;
-            margin-bottom: 24px;
+            margin-bottom: 28px;
         }
         .audio-tab {
-            padding: 7px 18px;
-            border-radius: 20px;
+            padding: 5px 18px;
+            border-radius: 2px;
             font-size: 12px;
             font-weight: 700;
-            letter-spacing: .04em;
+            letter-spacing: .06em;
             text-transform: uppercase;
             cursor: pointer;
-            border: 1px solid var(--border-strong);
+            border: 1.5px solid var(--border-strong);
             background: transparent;
             color: var(--text-muted);
             transition: all var(--transition);
@@ -586,17 +564,106 @@ $backUrl = $isSerie
             color: #fff;
         }
         .audio-tab:hover:not(.active) {
-            border-color: rgba(255,255,255,.3);
+            border-color: rgba(255,255,255,.5);
             color: var(--text-primary);
         }
 
-        @media (max-width: 600px) {
-            #pplayer-nav { padding: 0 14px; }
-            .nav-series-name { max-width: 180px; }
-            #player-info-section { padding: 20px 16px 48px; }
-            .info-main-title { font-size: 18px; }
-            #btn-next-episode { bottom: 80px; right: 12px; font-size: 13px; padding: 12px 16px; }
+        /* Bloco de metadados */
+        .info-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 20px;
         }
+
+        .info-poster {
+            width: 78px;
+            height: 117px;
+            border-radius: 2px;
+            object-fit: cover;
+            flex-shrink: 0;
+        }
+
+        .info-text { flex: 1; min-width: 0; }
+
+        .info-series-name {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: .15em;
+            text-transform: uppercase;
+            color: var(--accent);
+            margin-bottom: 6px;
+        }
+
+        .info-main-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--text-pure);
+            line-height: 1.2;
+            margin-bottom: 5px;
+            letter-spacing: -.015em;
+        }
+
+        .info-ep-label {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-bottom: 14px;
+            font-weight: 500;
+        }
+
+        .info-synopsis {
+            font-size: 14px;
+            color: var(--text-secondary);
+            line-height: 1.65;
+            max-width: 580px;
+        }
+
+        /* ─── MOBILE ──────────────────────────────────────────────────── */
+        @media (max-width: 640px) {
+            /* Navbar */
+            #pplayer-nav { padding: 0 16px; height: 56px; }
+            .nav-series-name { max-width: 200px; font-size: 13px; }
+            .nav-ep-label { font-size: 11px; }
+            .nav-divider { display: none; }
+
+            /* Player ocupa 100% da largura, mantém 16:9 */
+            #player-wrap { aspect-ratio: 16/9; }
+
+            /* Controles mais tocáveis */
+            #pip-controls { padding: 0 14px 16px; }
+            .progress-wrap { margin-bottom: 12px; }
+            .ctrl-btn { padding: 10px; }
+            .ctrl-btn svg { width: 22px; height: 22px; }
+            .ctrl-btn.lg svg { width: 28px; height: 28px; }
+            .volume-wrap { display: none; } /* ocultar volume no mobile */
+            .time-label { font-size: 11px; padding: 0 4px; }
+            .audio-badge { font-size: 9px; padding: 2px 5px; }
+
+            /* Botão próximo ep */
+            #btn-next-episode { bottom: 80px; right: 14px; font-size: 13px; padding: 9px 16px; }
+
+            /* Seção de info */
+            #player-info-section { padding: 24px 16px 56px; }
+            .info-divider { margin-bottom: 20px; }
+            .info-main-title { font-size: 18px; }
+            .info-ep-label { font-size: 12px; }
+            .info-synopsis { font-size: 13px; }
+            .info-poster { width: 64px; height: 96px; }
+        }
+
+        /* ─── FULLSCREEN / LANDSCAPE no mobile ───────────────────────── */
+        @media (max-width: 640px) and (orientation: landscape) {
+            #player-wrap {
+                aspect-ratio: unset;
+                height: 100svh;
+            }
+        }
+
+        /* Ícone fullscreen — troca para sair */
+        #icon-fs-exit { display: none; }
+        #player-wrap:fullscreen #icon-fs-exit,
+        #player-wrap:-webkit-full-screen #icon-fs-exit { display: block; }
+        #player-wrap:fullscreen #icon-fs,
+        #player-wrap:-webkit-full-screen #icon-fs { display: none; }
     </style>
 </head>
 <body>
@@ -604,17 +671,15 @@ $backUrl = $isSerie
 <!-- ─── NAVBAR ──────────────────────────────────────────────────────────── -->
 <nav id="pplayer-nav">
     <div class="nav-left">
-        <a href="<?php echo htmlspecialchars($backUrl); ?>" class="nav-back-btn" id="nav-back">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-            Voltar
+        <a href="<?php echo htmlspecialchars($backUrl); ?>" class="nav-back-btn" id="nav-back" aria-label="Voltar">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 12H5M12 5l-7 7 7 7"/></svg>
+            <span>Voltar</span>
         </a>
+        <div class="nav-divider"></div>
         <div class="nav-title-block">
             <span class="nav-series-name"><?php echo htmlspecialchars($title); ?></span>
             <?php if ($isSerie): ?>
-            <span class="nav-ep-label">
-                Temporada <?php echo $season; ?> &mdash; Episódio <?php echo $episode; ?>
-                <?php if ($episodeName): ?>&mdash; <?php echo htmlspecialchars($episodeName); ?><?php endif; ?>
-            </span>
+            <span class="nav-ep-label">T<?php echo $season; ?> &bull; Ep. <?php echo $episode; ?><?php if ($episodeName): ?> &mdash; <?php echo htmlspecialchars($episodeName); ?><?php endif; ?></span>
             <?php endif; ?>
         </div>
     </div>
@@ -707,7 +772,8 @@ $backUrl = $isSerie
                 </button>
                 <!-- Fullscreen -->
                 <button class="ctrl-btn" id="btn-fs" aria-label="Tela cheia" onclick="toggleFullscreen()">
-                    <svg id="icon-fs" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
+                    <svg id="icon-fs" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
+                    <svg id="icon-fs-exit" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 9V4M9 9H4m5 0L3 3m12 6V4m0 5h5m-5 0l6-6M9 15v5m0-5H4m5 0l-6 6m12-6v5m0-5h5m-5 0l6 6"/></svg>
                 </button>
             </div>
         </div>
@@ -716,8 +782,9 @@ $backUrl = $isSerie
 
 <!-- ─── INFO ABAIXO DO PLAYER ──────────────────────────────────────────── -->
 <section id="player-info-section">
+    <div class="info-divider"></div>
+
     <?php if ($isSerie): ?>
-    <!-- Audio toggle (duplicado para facilitar acesso) -->
     <div class="audio-toggle-wrap" id="audio-toggle-below"></div>
     <?php endif; ?>
 
@@ -935,12 +1002,36 @@ $backUrl = $isSerie
     };
 
     window.toggleFullscreen = function () {
-        if (!document.fullscreenElement) {
-            playerWrap.requestFullscreen?.() || playerWrap.webkitRequestFullscreen?.();
+        const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) || window.innerWidth < 768;
+        const isFs = !!document.fullscreenElement || !!document.webkitFullscreenElement;
+
+        if (!isFs) {
+            const req = playerWrap.requestFullscreen || playerWrap.webkitRequestFullscreen;
+            if (req) req.call(playerWrap);
+            // No mobile, força landscape após entrar em fullscreen
+            if (isMobile && screen.orientation?.lock) {
+                screen.orientation.lock('landscape').catch(() => {});
+            }
         } else {
-            document.exitFullscreen?.() || document.webkitExitFullscreen?.();
+            const exit = document.exitFullscreen || document.webkitExitFullscreen;
+            if (exit) exit.call(document);
+            // Libera a orientação ao sair
+            if (isMobile && screen.orientation?.unlock) {
+                screen.orientation.unlock();
+            }
         }
     };
+
+    // Sincroniza quando o usuário sai do fullscreen via Esc ou gesto do sistema
+    document.addEventListener('fullscreenchange',       syncFsIcon);
+    document.addEventListener('webkitfullscreenchange', syncFsIcon);
+    function syncFsIcon() {
+        const isFs = !!document.fullscreenElement || !!document.webkitFullscreenElement;
+        document.getElementById('icon-fs').style.display      = isFs ? 'none' : '';
+        document.getElementById('icon-fs-exit').style.display = isFs ? '' : 'none';
+        // Libera orientação se saiu do fullscreen sem passar pelo botão
+        if (!isFs && screen.orientation?.unlock) screen.orientation.unlock();
+    }
 
     window.togglePiP = async function () {
         try {
@@ -1042,11 +1133,31 @@ $backUrl = $isSerie
     }
 
     playerWrap.addEventListener('mousemove',  showControls);
-    playerWrap.addEventListener('touchstart', showControls, { passive: true });
-    playerWrap.addEventListener('click', (e) => {
-        if (e.target === video) togglePlay();
-    });
     video.addEventListener('pause', showControls);
+
+    // Toque único: mostra/oculta controles. Toque duplo: avança/volta 10s (Netflix)
+    let tapCount = 0;
+    let tapTimer  = null;
+    playerWrap.addEventListener('touchstart', (e) => {
+        showControls();
+        tapCount++;
+        clearTimeout(tapTimer);
+        tapTimer = setTimeout(() => {
+            if (tapCount === 1) {
+                // toque único — apenas mostra controles (já feito acima)
+            } else if (tapCount >= 2) {
+                const x = e.changedTouches[0].clientX;
+                const mid = playerWrap.getBoundingClientRect().width / 2;
+                skip(x > mid ? 10 : -10);
+            }
+            tapCount = 0;
+        }, 280);
+    }, { passive: true });
+
+    // Click no desktop
+    playerWrap.addEventListener('click', (e) => {
+        if (e.target === video || e.target === playerWrap) togglePlay();
+    });
 
     // ─── Teclas de atalho ─────────────────────────────────────────────────
     document.addEventListener('keydown', (e) => {

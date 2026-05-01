@@ -83,8 +83,9 @@
     scrollbar-width: none;
     position: relative;
     z-index: 1;
-    /* Alinha os items ao topo, evitando que estiquem caso haja diferenças residuais */
     align-items: flex-start;
+    /* Garante que todos os itens começam no mesmo ponto vertical */
+    align-content: flex-start;
 }
 
 .slick-track::-webkit-scrollbar {
@@ -93,6 +94,10 @@
 
 .slick-item {
     flex: 0 0 calc(100% / 6 - 12px);
+    /* Largura máxima idêntica ao flex-basis para evitar expansão */
+    max-width: calc(100% / 6 - 12px);
+    /* Garante que todos os itens têm a mesma largura base, não crescem nem encolhem */
+    min-width: 0;
     position: relative;
     z-index: 1;
     transition: z-index 0s var(--transition-smooth);
@@ -110,12 +115,15 @@
 .slick-card {
     position: relative;
     width: 100%;
+    /* Proporção 2:3 de pôster — aplicada via padding-bottom para compatibilidade máxima */
     aspect-ratio: 2 / 3;
-    /* Força matematicamente a proporção de poster */
+    /* Fallback para browsers sem suporte a aspect-ratio */
     background: var(--bg-surface);
     border-radius: var(--radius);
     cursor: pointer;
     overflow: hidden;
+    /* Impede que imagens com proporção diferente vazem */
+    contain: layout paint;
     transform-origin: center center;
     transition: transform var(--transition-smooth), box-shadow var(--transition-smooth);
     will-change: transform;
@@ -146,10 +154,14 @@
 }
 
 .poster {
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
     object-fit: cover;
-    /* Corta automaticamente excessos da imagem em vez de esticá-la */
+    object-position: center top;
+    /* Ancora o topo do pôster (rosto/logo) sempre visível */
     display: block;
 }
 
@@ -222,7 +234,7 @@
    TOP 10 - Estrutura Especial
    ═══════════════════════════════════════════════════════════════════════ */
 
-/* Cada item do Top 10 tem largura fixa e alinha o número + poster lado a lado */
+/* Cada item do Top 10 tem largura fixa e alinha o n��mero + poster lado a lado */
 .slick-item--top10 {
     flex: 0 0 180px;
     width: 180px;
@@ -300,18 +312,21 @@
 @media (max-width: 1200px) {
     .slick-item {
         flex: 0 0 calc(100% / 5 - 12px);
+        max-width: calc(100% / 5 - 12px);
     }
 }
 
 @media (max-width: 900px) {
     .slick-item {
         flex: 0 0 calc(100% / 4 - 12px);
+        max-width: calc(100% / 4 - 12px);
     }
 }
 
 @media (max-width: 680px) {
     .slick-item {
-        flex: 0 0 calc(100% / 3 - 12px);
+        flex: 0 0 calc(100% / 3 - 8px);
+        max-width: calc(100% / 3 - 8px);
     }
 
     .slick-track {
@@ -320,13 +335,14 @@
     }
 
     .card-title-outside {
-        font-size: 0.85rem;
+        font-size: 0.8rem;
     }
 }
 
 @media (max-width: 480px) {
     .slick-item {
-        flex: 0 0 calc(100% / 2.2 - 12px);
+        flex: 0 0 calc(100% / 2.2 - 8px);
+        max-width: calc(100% / 2.2 - 8px);
     }
 
     .rank-number {
@@ -337,6 +353,7 @@
 
     .slick-item--top10 {
         flex: 0 0 148px;
+        max-width: 148px;
         width: 148px;
     }
 }
