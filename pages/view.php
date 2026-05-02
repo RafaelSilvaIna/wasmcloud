@@ -1114,5 +1114,10 @@ if (!isset($_SESSION['user_id'])) {
 
     document.addEventListener('DOMContentLoaded', () => PipView.init());
     </script>
+
+<?php
+require_once __DIR__ . '/../components/CommentsSection.php';
+CommentsSection::render();
+?>
 </body>
 </html>
