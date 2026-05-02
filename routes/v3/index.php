@@ -28,11 +28,17 @@ require_once __DIR__ . '/../../controllers/v3/CommentController.php';
 require_once __DIR__ . '/../../models/v3/LibraryModel.php';
 require_once __DIR__ . '/../../controllers/v3/LibraryController.php';
 
+// ── Classes do progresso de reprodução ───────────────────────
+require_once __DIR__ . '/../../models/v3/WatchProgressModel.php';
+require_once __DIR__ . '/../../controllers/v3/WatchProgressController.php';
+
 use Models\V3\CommentModel;
 use Services\V3\CommentService;
 use Controllers\V3\CommentController;
 use Models\V3\LibraryModel;
 use Controllers\V3\LibraryController;
+use Models\V3\WatchProgressModel;
+use Controllers\V3\WatchProgressController;
 
 // ── Inicia sessão ────────────────────────────────────────────
 if (session_status() === PHP_SESSION_NONE) {
@@ -91,6 +97,14 @@ try {
     if (str_starts_with($action, 'library')) {
         $model      = new LibraryModel($pdo);
         $controller = new LibraryController($model);
+        $controller->handle($action, $method);
+        exit;
+    }
+
+    // ── Progresso de reprodução ───────────────────────────────
+    if (str_starts_with($action, 'watch-progress')) {
+        $model      = new WatchProgressModel($pdo);
+        $controller = new WatchProgressController($model);
         $controller->handle($action, $method);
         exit;
     }

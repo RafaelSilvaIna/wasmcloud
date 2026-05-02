@@ -312,6 +312,31 @@ if (!isset($_SESSION['user_id'])) {
             margin-top: 2px;
         }
 
+        /* ── BARRA DE PROGRESSO (Continua Assistindo) ────────────── */
+        .lib-card-progress {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: rgba(255,255,255,0.15);
+        }
+
+        .lib-card-progress-fill {
+            height: 100%;
+            background: var(--accent);
+            border-radius: 0 0 0 6px;
+        }
+
+        .lib-card-ep-label {
+            font-size: 10px;
+            color: var(--text-muted);
+            margin-top: 3px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
         /* ── EMPTY STATE ─────────────────────────────────────────── */
         .lib-empty {
             display: flex;
@@ -442,6 +467,14 @@ if (!isset($_SESSION['user_id'])) {
 <div class="lib-tabs-wrap">
     <nav class="lib-tabs" role="tablist">
         <button class="lib-tab active" role="tab" aria-selected="true"
+                onclick="Library.switchTab('continue', this)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="5 3 19 12 5 21 5 3"/>
+            </svg>
+            Continua Assistindo
+            <span class="lib-tab-count" id="cnt-continue">0</span>
+        </button>
+        <button class="lib-tab" role="tab" aria-selected="false"
                 onclick="Library.switchTab('history', this)">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
@@ -468,7 +501,7 @@ if (!isset($_SESSION['user_id'])) {
     </nav>
 </div>
 
-<!-- ── CONTENT ─────────────────────────────��─────────────────── -->
+<!-- ── CONTENT ─────────────────────────────��──────────���──────── -->
 <div class="lib-content">
 
     <!-- Loader -->
@@ -477,8 +510,11 @@ if (!isset($_SESSION['user_id'])) {
         <span>Carregando sua biblioteca...</span>
     </div>
 
+    <!-- Continua Assistindo -->
+    <div class="lib-panel active" id="panel-continue" role="tabpanel"></div>
+
     <!-- Histórico -->
-    <div class="lib-panel active" id="panel-history" role="tabpanel"></div>
+    <div class="lib-panel" id="panel-history" role="tabpanel"></div>
 
     <!-- Salvos -->
     <div class="lib-panel" id="panel-saved" role="tabpanel">
@@ -497,16 +533,26 @@ if (!isset($_SESSION['user_id'])) {
 <script src="/assets/js/header.js"></script>
 <script>
 class Library {
-    static data = { history: [], saved: [], liked: [] };
-    static currentTab = 'history';
+    static data = { history: [], saved: [], liked: [], continueWatching: [] };
+    static currentTab = 'continue';
 
     static async init() {
         try {
-            const res  = await fetch('/api/v3/library/all');
-            const json = await res.json();
-            if (!json.sucesso) throw new Error('Falha ao carregar biblioteca.');
+            // Carrega biblioteca e "continua assistindo" em paralelo
+            const [libRes, contRes] = await Promise.all([
+                fetch('/api/v3/library/all'),
+                fetch('/api/v3/watch-progress/continue?limit=20'),
+            ]);
+            const libJson  = await libRes.json();
+            const contJson = await contRes.json();
 
-            this.data = json.dados;
+            if (!libJson.sucesso) throw new Error('Falha ao carregar biblioteca.');
+
+            this.data = {
+                ...libJson.dados,
+                continueWatching: contJson.sucesso ? (contJson.dados || []) : [],
+            };
+
             document.getElementById('lib-loader').style.display = 'none';
 
             this.updateStats();
@@ -514,7 +560,7 @@ class Library {
 
         } catch (err) {
             document.getElementById('lib-loader').style.display = 'none';
-            document.getElementById('panel-history').innerHTML = this.emptyState(
+            document.getElementById('panel-continue').innerHTML = this.emptyState(
                 'Não foi possível carregar sua lista.',
                 'Tente novamente mais tarde.', false
             );
@@ -522,18 +568,91 @@ class Library {
     }
 
     static updateStats() {
-        document.getElementById('stat-history').textContent = this.data.history.length;
-        document.getElementById('stat-saved').textContent   = this.data.saved.length;
-        document.getElementById('stat-liked').textContent   = this.data.liked.length;
-        document.getElementById('cnt-history').textContent  = this.data.history.length;
-        document.getElementById('cnt-saved').textContent    = this.data.saved.length;
-        document.getElementById('cnt-liked').textContent    = this.data.liked.length;
+        document.getElementById('stat-history').textContent      = this.data.history.length;
+        document.getElementById('stat-saved').textContent        = this.data.saved.length;
+        document.getElementById('stat-liked').textContent        = this.data.liked.length;
+        document.getElementById('cnt-continue').textContent      = this.data.continueWatching.length;
+        document.getElementById('cnt-history').textContent       = this.data.history.length;
+        document.getElementById('cnt-saved').textContent         = this.data.saved.length;
+        document.getElementById('cnt-liked').textContent         = this.data.liked.length;
     }
 
     static renderAll() {
+        this.renderContinue(this.data.continueWatching);
         this.renderGrid('history', this.data.history,  'Você não assistiu nada ainda.', 'Explore o catálogo e comece a assistir.');
         this.renderGrid('saved',   this.data.saved,    'Nenhum conteúdo salvo.',         'Salve filmes e séries para assistir depois.');
         this.renderGrid('liked',   this.data.liked,    'Nenhum conteúdo curtido.',        'Curta os conteúdos que você amou.');
+    }
+
+    // ── Renderiza "Continua Assistindo" ──────────────────────────────────
+    static renderContinue(items) {
+        const panel = document.getElementById('panel-continue');
+        if (!items.length) {
+            panel.innerHTML = this.emptyState(
+                'Nada para continuar.',
+                'Quando você pausar ou fechar um conteúdo no meio, ele aparece aqui.', true
+            );
+            return;
+        }
+        panel.innerHTML =
+            `<div class="lib-grid">` +
+            items.map(item => this.continueCardHtml(item)).join('') +
+            `</div>`;
+    }
+
+    // ── Card com barra de progresso e link para retomar exato ────────────
+    static continueCardHtml(item) {
+        const id          = item.content_id;
+        const isSerie     = item.content_type === 'serie';
+        const ct          = isSerie ? 'serie' : 'filme';
+        const season      = item.season   || 1;
+        const episode     = item.episode  || 1;
+        const audio       = item.audio    || 'dub';
+        const progress    = parseFloat(item.progress_time || 0);
+        const duration    = parseFloat(item.duration      || 0);
+        const pct         = duration > 0 ? Math.min(100, Math.round((progress / duration) * 100)) : 0;
+        const badge       = isSerie ? 'Série' : 'Filme';
+
+        // URL do player apontando para o ponto exato via parâmetro &t=
+        const href = isSerie
+            ? `/assistir/serie/${id}/${season}/${episode}?audio=${audio}&t=${Math.floor(progress)}`
+            : `/assistir/filme/${id}?audio=${audio}&t=${Math.floor(progress)}`;
+
+        const poster = item.content_poster
+            ? this.esc(item.content_poster)
+            : `https://via.placeholder.com/140x210/111318/4a5568?text=${this.esc(item.content_title?.slice(0,2) || '?')}`;
+
+        const year    = item.content_year ? `<div class="lib-card-year">${item.content_year}</div>` : '';
+        const epLabel = isSerie
+            ? `<div class="lib-card-ep-label">T${season} &bull; Ep. ${episode}</div>`
+            : '';
+
+        return `
+            <div class="lib-card" onclick="window.location.href='${href}'" role="button" tabindex="0"
+                 onkeydown="if(event.key==='Enter')window.location.href='${href}'"
+                 aria-label="Continuar assistindo ${this.esc(item.content_title)}">
+                <div class="lib-card-thumb">
+                    <img src="${poster}"
+                         alt="${this.esc(item.content_title)}"
+                         class="lib-card-img"
+                         loading="lazy"
+                         onerror="this.src='https://via.placeholder.com/140x210/181b22/4a5568?text=?'">
+                    <div class="lib-card-overlay" aria-hidden="true">
+                        <div class="lib-card-play">
+                            <svg viewBox="0 0 24 24" fill="black"><path d="M8 5v14l11-7z"/></svg>
+                        </div>
+                    </div>
+                    <span class="lib-card-type">${badge}</span>
+                    ${pct > 0 ? `
+                    <div class="lib-card-progress" aria-hidden="true">
+                        <div class="lib-card-progress-fill" style="width:${pct}%"></div>
+                    </div>` : ''}
+                </div>
+                <div class="lib-card-info">
+                    <div class="lib-card-title">${this.esc(item.content_title)}</div>
+                    ${epLabel}${year}
+                </div>
+            </div>`;
     }
 
     static renderGrid(type, items, emptyTitle, emptySub) {

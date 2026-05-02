@@ -466,7 +466,7 @@ $backUrl = $isSerie
             color: rgba(255,255,255,.6);
         }
 
-        /* ─── BOTÃO PRÓXIMO EPISÓDIO ──────────────────────────────────── */
+        /* ─── BOTÃO PRÓXIMO EPISÓDIO ────���─────────────────────────────── */
         #btn-next-episode {
             display: none;
             position: absolute;
@@ -815,14 +815,21 @@ $backUrl = $isSerie
     'use strict';
 
     // ─── Config ──────────────────────────────────────────────────────────
-    const API_URL      = <?php echo json_encode($apiUrl); ?>;
-    const IS_SERIE     = <?php echo $isSerie ? 'true' : 'false'; ?>;
-    const TMDB_ID      = <?php echo $tmdbId; ?>;
-    const CONTENT_SLUG = <?php echo json_encode($slug); ?>;
-    const CONTENT_TYPE = <?php echo json_encode($contentType); ?>;
-    const CURRENT_S    = <?php echo $season; ?>;
-    const CURRENT_E    = <?php echo $episode; ?>;
-    let   AUDIO        = <?php echo json_encode($audio); ?>;
+    const API_URL        = <?php echo json_encode($apiUrl); ?>;
+    const IS_SERIE       = <?php echo $isSerie ? 'true' : 'false'; ?>;
+    const TMDB_ID        = <?php echo $tmdbId; ?>;
+    const CONTENT_SLUG   = <?php echo json_encode($slug); ?>;
+    const CONTENT_TYPE   = <?php echo json_encode($contentType); ?>;
+    const CONTENT_TITLE  = <?php echo json_encode($title); ?>;
+    const CONTENT_POSTER = <?php echo json_encode($posterImg); ?>;
+    const CONTENT_YEAR   = <?php echo json_encode((int) substr($content['data_lancamento'] ?? '0', 0, 4) ?: null); ?>;
+    const CURRENT_S      = <?php echo $season; ?>;
+    const CURRENT_E      = <?php echo $episode; ?>;
+    let   AUDIO          = <?php echo json_encode($audio); ?>;
+
+    // Progresso inicial: lê ?t= da URL (link "Continua Assistindo") ou usa a API
+    const _urlT = parseInt(new URLSearchParams(window.location.search).get('t') || '0', 10);
+    let RESUME_TIME = _urlT > 5 ? _urlT : 0;
 
     // ─── Elementos ───────────────────────────────────────────────────────
     const video          = document.getElementById('pip-video');
@@ -929,6 +936,10 @@ $backUrl = $isSerie
                 hls.on(Hls.Events.MANIFEST_PARSED, () => {
                     loaderOverlay.classList.add('hidden');
                     controls.classList.remove('hidden');
+                    if (RESUME_TIME > 5 && video.duration && RESUME_TIME < video.duration - 10) {
+                        video.currentTime = RESUME_TIME;
+                        RESUME_TIME = 0;
+                    }
                     video.play().catch(() => {});
                 });
                 hls.on(Hls.Events.ERROR, (_e, d) => {
@@ -971,6 +982,11 @@ $backUrl = $isSerie
     function onReady() {
         loaderOverlay.classList.add('hidden');
         controls.classList.remove('hidden');
+        // Restaura ponto exato onde o usuário parou
+        if (RESUME_TIME > 5 && video.duration && RESUME_TIME < video.duration - 10) {
+            video.currentTime = RESUME_TIME;
+            RESUME_TIME = 0; // aplica apenas uma vez
+        }
         video.play().catch(() => {});
     }
 
@@ -1297,8 +1313,90 @@ $backUrl = $isSerie
     // Dispara a verificação de áudio apenas após o vídeo começar (não concorre com o carregamento)
     video.addEventListener('playing', () => { setTimeout(checkAvailableAudio, 2000); }, { once: true });
 
+    // ─── WatchProgress ───────────────────────────────────────────────────
+    // Salva o progresso periodicamente e ao fechar/trocar de página.
+    // Restaura o ponto exato em que o usuário parou ao abrir o player.
+    const WatchProgress = {
+        _saveInterval: null,
+        _lastSaved: -1,
+
+        _payload() {
+            return {
+                content_id:     TMDB_ID,
+                content_type:   IS_SERIE ? 'serie' : 'filme',
+                season:         CURRENT_S,
+                episode:        CURRENT_E,
+                progress_time:  Math.floor(video.currentTime || 0),
+                duration:       Math.floor(video.duration    || 0),
+                content_title:  CONTENT_TITLE,
+                content_poster: CONTENT_POSTER,
+                content_year:   CONTENT_YEAR,
+                audio:          AUDIO,
+            };
+        },
+
+        save(force = false) {
+            const t = Math.floor(video.currentTime || 0);
+            // Só salva se moveu pelo menos 5s desde o último save
+            if (!force && Math.abs(t - this._lastSaved) < 5) return;
+            if (t < 5) return; // ignora os primeiros 5s
+            this._lastSaved = t;
+            const body = JSON.stringify(this._payload());
+            // Usa sendBeacon quando disponível (garante envio mesmo ao fechar)
+            if (navigator.sendBeacon) {
+                const blob = new Blob([body], { type: 'application/json' });
+                navigator.sendBeacon('/api/v3/watch-progress/save', blob);
+            } else {
+                fetch('/api/v3/watch-progress/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body,
+                    keepalive: true,
+                }).catch(() => {});
+            }
+        },
+
+        startInterval() {
+            this.stopInterval();
+            this._saveInterval = setInterval(() => this.save(), 15000);
+        },
+
+        stopInterval() {
+            if (this._saveInterval) {
+                clearInterval(this._saveInterval);
+                this._saveInterval = null;
+            }
+        },
+
+        async init() {
+            // Busca o progresso existente para retomar
+            try {
+                const params = new URLSearchParams({
+                    content_id:   TMDB_ID,
+                    content_type: IS_SERIE ? 'serie' : 'filme',
+                    season:       CURRENT_S,
+                    episode:      CURRENT_E,
+                });
+                const res  = await fetch('/api/v3/watch-progress/get?' + params);
+                const json = await res.json();
+                if (json.sucesso && json.dados && json.dados.progress_time > 5) {
+                    RESUME_TIME = parseFloat(json.dados.progress_time);
+                }
+            } catch (_) {}
+        },
+    };
+
+    // Salva ao sair da página (fechou aba, navegou para outro lugar)
+    window.addEventListener('beforeunload',   () => WatchProgress.save(true));
+    window.addEventListener('pagehide',       () => WatchProgress.save(true));
+    // Pausa/retoma intervalo junto com o vídeo
+    video.addEventListener('play',  () => WatchProgress.startInterval());
+    video.addEventListener('pause', () => { WatchProgress.save(true); WatchProgress.stopInterval(); });
+    video.addEventListener('ended', () => { WatchProgress.save(true); WatchProgress.stopInterval(); });
+
     // ─── Init ─────────────────────────────────────────────────────────────
-    loadVideo();
+    // Primeiro busca o progresso, depois carrega o vídeo para poder retomar
+    WatchProgress.init().then(() => loadVideo());
 
 })();
 </script>

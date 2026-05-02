@@ -234,8 +234,12 @@ class InfoService {
                 'titulo_original'      => $tmdbData['original_title'] ?? $tmdbData['original_name'] ?? $base['titulo'],
                 'tagline'              => $tagline,
                 'sinopse'              => $tmdbData['overview'] ?? $base['sinopse'] ?? '',
-                'poster'               => $base['poster'] ?? (!empty($tmdbData['poster_path']) ? self::IMG_BASE_W500 . $tmdbData['poster_path'] : null),
-                'backdrop'             => $base['capa'] ?? (!empty($tmdbData['backdrop_path']) ? self::IMG_BASE_ORIGINAL . $tmdbData['backdrop_path'] : null),
+                'poster'               => !empty($base['poster'])
+                                             ? $base['poster']
+                                             : (!empty($tmdbData['poster_path']) ? self::IMG_BASE_W500 . $tmdbData['poster_path'] : null),
+                'backdrop'             => !empty($base['capa'])
+                                             ? $base['capa']
+                                             : (!empty($tmdbData['backdrop_path']) ? self::IMG_BASE_ORIGINAL . $tmdbData['backdrop_path'] : null),
                 'logo'                 => $logo,
                 'backdrops'            => $backdrops,
                 'trailer_key'          => $trailer,

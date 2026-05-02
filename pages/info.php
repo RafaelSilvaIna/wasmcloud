@@ -979,7 +979,7 @@ if ($tmdbId <= 0) {
         const TMDB_ID  = <?= (int)$tmdbId ?>;
         const API_BASE = '/api/v2/info';
 
-        /* ── Referências DOM ─────────────────────────────────────────── */
+        /* ── Referências DOM ──────────────────────────────────���──────── */
         const $ = id => document.getElementById(id);
 
         const heroBackdrop  = $('heroBackdrop');
@@ -1069,20 +1069,29 @@ if ($tmdbId <= 0) {
             document.title = `${d.titulo} — PipoCine`;
 
             // ── Hero: Backdrop
-            if (d.backdrop) {
-                heroBackdrop.style.backgroundImage = `url('${esc(d.backdrop)}')`;
+            const backdropUrl = (d.backdrop && d.backdrop.trim()) ? d.backdrop.trim() : null;
+            if (backdropUrl) {
+                const img = new Image();
+                img.onload = () => { heroBackdrop.style.backgroundImage = `url('${esc(backdropUrl)}')`; };
+                img.onerror = () => {}; // mantém fundo escuro se falhar
+                img.src = backdropUrl;
             }
 
             // ── Hero: Poster
-            if (d.poster) {
-                heroPosterImg.src = d.poster;
+            const posterUrl = (d.poster && d.poster.trim()) ? d.poster.trim() : null;
+            if (posterUrl) {
+                heroPosterImg.src = posterUrl;
                 heroPosterImg.alt = d.titulo;
                 heroPosterImg.style.display = 'block';
                 heroPosterImg.onload = () => {
                     heroPosterWrap.classList.remove('skeleton');
                     heroPosterImg.style.opacity = '1';
                 };
-                heroPosterImg.onerror = () => heroPosterWrap.classList.remove('skeleton');
+                heroPosterImg.onerror = () => {
+                    // Tenta poster do TMDB diretamente como fallback
+                    heroPosterImg.onerror = null;
+                    heroPosterWrap.classList.remove('skeleton');
+                };
             } else {
                 heroPosterWrap.classList.remove('skeleton');
             }
