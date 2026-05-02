@@ -1,3 +1,48 @@
+<?php
+// Verificação de sessão única por perfil (mais confiável no header)
+function checkProfileSessionConflictInHeader(): void {
+    global $pdoCineveo, $pdo;
+    // Só verifica se houver perfil selecionado
+    if (!isset($_SESSION['user_id']) || !isset($_SESSION['profile_id'])) {
+        return;
+    }
+    
+    // Não verifica em páginas públicas
+    $currentUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+    $publicPages = ['/login', '/select-profile', '/'];
+    
+    foreach ($publicPages as $page) {
+        if ($currentUri === $page) {
+            return;
+        }
+    }
+    
+    try {
+        // Verifica se as variáveis de banco existem
+        if (!isset($pdoCineveo) || !isset($pdo)) {
+            return;
+        }
+        
+        require_once __DIR__ . '/../services/AuthService.php';
+        require_once __DIR__ . '/../models/AuthModel.php';
+        require_once __DIR__ . '/../controllers/AuthController.php';
+        
+        $authModel = new AuthModel($pdoCineveo, $pdo);
+        $authService = new AuthService($authModel);
+        $authController = new AuthController($authService);
+        
+        // Verifica conflito de sessão
+        $authController->checkSessionConflict();
+    } catch (Exception $e) {
+        // Log erro mas não quebra a página
+        error_log("Session check error in header: " . $e->getMessage());
+    }
+}
+
+// Executa verificação
+checkProfileSessionConflictInHeader();
+?>
+
 <header id="main-header" class="header-transparent">
     <div class="header-container">
         <a href="/home" class="logo-link">

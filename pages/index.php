@@ -14,6 +14,7 @@
 // Se a requisição for de API, ele responde com exit e nunca chega ao código abaixo.
 require_once __DIR__ . '/../routes/index.php';
 
+
 $requestUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 
 // ─────────────────────────────────────────────────────────────────────────────

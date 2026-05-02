@@ -36,7 +36,7 @@ DirectoryIndex index.php index.html
     # Adicionada exceção para permitir o redirecionamento interno para os entrypoints da V2 e V3
     RewriteCond %{REQUEST_URI} !^/routes/v2/index.php
     RewriteCond %{REQUEST_URI} !^/routes/v3/index.php
-    RewriteRule ^(components/|controllers/|data/|database/|helpers/|hooks/|models/|routes/|services/|utils/)(/.*)?$ - [F,L]
+    RewriteRule ^(components/|controllers/|data/|database/|helpers/|hooks||models/|routes/|services/|utils/)(/.*)?$ - [F,L]
 
     # Redirecionamento para páginas específicas
     RewriteRule ^home/?$ pages/index.php [L]

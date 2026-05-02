@@ -21,27 +21,25 @@ if (!isset($_SESSION['user_id'])) {
     <link rel="icon" type="image/png" href="/assets/img/favicon.png">
     <link rel="stylesheet" href="/assets/css/style.css">
     <link rel="stylesheet" href="/assets/css/header.css">
-    <link rel="stylesheet" href="/assets/css/content-card.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
         :root {
             --accent:         #e50914;
-            --accent-hover:   #f40612;
+            --accent-dim:     rgba(229, 9, 20, 0.12);
             --bg:             #0a0c10;
-            --surface:        #12151c;
-            --surface2:       #1a1e28;
-            --surface3:       #232936;
+            --surface:        #111318;
+            --surface2:       #181b22;
             --text-pure:      #ffffff;
             --text-primary:   #e2e8f0;
-            --text-secondary: #94a3b8;
-            --text-muted:     #64748b;
-            --border:         #1e293b;
-            --border-strong:  #334155;
-            --radius:         6px;
-            --radius-lg:      12px;
-            --max:            1280px;
-            --transition:     0.2s ease;
+            --text-secondary: #8892a4;
+            --text-muted:     #4a5568;
+            --border:         rgba(255,255,255,0.06);
+            --border-strong:  rgba(255,255,255,0.10);
+            --max:            1200px;
         }
 
         html { background: var(--bg); }
@@ -56,142 +54,192 @@ if (!isset($_SESSION['user_id'])) {
             padding-bottom: 80px;
         }
 
-        /* ── HERO BANNER ─────────────────────────────────────── */
-        .lib-hero {
-            background: linear-gradient(135deg, #0f1520 0%, #0a0c10 60%);
-            border-bottom: 1px solid var(--border);
-            padding: 40px 0 36px;
-            margin-bottom: 40px;
-        }
-        .lib-hero-inner {
+        /* ── PAGE HEADER ────────────────────────────────────────── */
+        .lib-header {
             max-width: var(--max);
             margin: 0 auto;
-            padding: 0 40px;
+            padding: 56px 40px 0;
             display: flex;
             align-items: flex-end;
             justify-content: space-between;
-            gap: 24px;
+            gap: 32px;
             flex-wrap: wrap;
         }
-        .lib-hero-title {
-            font-size: clamp(28px, 4vw, 42px);
+
+        .lib-header-left {}
+
+        .lib-eyebrow {
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: .12em;
+            text-transform: uppercase;
+            color: var(--accent);
+            margin-bottom: 10px;
+        }
+
+        .lib-title {
+            font-size: clamp(26px, 3.5vw, 38px);
             font-weight: 700;
             color: var(--text-pure);
-            letter-spacing: -.03em;
+            letter-spacing: -.025em;
             line-height: 1.1;
         }
-        .lib-hero-sub {
-            font-size: 14px;
-            color: var(--text-muted);
-            margin-top: 6px;
-        }
+
         .lib-stats {
             display: flex;
-            gap: 24px;
-            flex-shrink: 0;
+            gap: 32px;
+            padding-bottom: 4px;
         }
-        .lib-stat {
-            text-align: center;
-        }
+
+        .lib-stat {}
+
         .lib-stat-num {
-            font-size: 28px;
+            font-size: 24px;
             font-weight: 700;
             color: var(--text-pure);
+            letter-spacing: -.02em;
             line-height: 1;
         }
+
         .lib-stat-label {
             font-size: 11px;
+            font-weight: 500;
             color: var(--text-muted);
             text-transform: uppercase;
             letter-spacing: .08em;
-            margin-top: 4px;
+            margin-top: 5px;
         }
 
-        /* ── TABS ────────────────────────────────────────────── */
-        .lib-tabs-wrap {
+        /* ── DIVIDER ─────────────────────────────────────────────── */
+        .lib-divider {
             max-width: var(--max);
-            margin: 0 auto 36px;
+            margin: 28px auto 0;
             padding: 0 40px;
         }
+
+        .lib-divider-line {
+            height: 1px;
+            background: var(--border);
+        }
+
+        /* ── TABS ────────────────────────────────────────────────── */
+        .lib-tabs-wrap {
+            max-width: var(--max);
+            margin: 0 auto;
+            padding: 0 40px;
+        }
+
         .lib-tabs {
             display: flex;
-            gap: 4px;
+            gap: 0;
             border-bottom: 1px solid var(--border);
-            padding-bottom: 0;
         }
+
         .lib-tab {
             display: inline-flex;
             align-items: center;
-            gap: 8px;
+            gap: 7px;
             font-size: 13px;
-            font-weight: 600;
+            font-weight: 500;
             color: var(--text-muted);
             background: none;
             border: none;
             border-bottom: 2px solid transparent;
-            padding: 10px 16px 12px;
+            padding: 16px 20px 18px;
             cursor: pointer;
             font-family: inherit;
-            transition: color .2s ease, border-color .2s ease;
+            letter-spacing: .01em;
+            transition: color .18s ease, border-color .18s ease;
             margin-bottom: -1px;
         }
-        .lib-tab svg { width: 16px; height: 16px; flex-shrink: 0; }
-        .lib-tab:hover { color: var(--text-primary); }
+
+        .lib-tab svg {
+            width: 15px;
+            height: 15px;
+            flex-shrink: 0;
+            opacity: .6;
+            transition: opacity .18s ease;
+        }
+
+        .lib-tab:hover {
+            color: var(--text-secondary);
+        }
+
+        .lib-tab:hover svg { opacity: .8; }
+
         .lib-tab.active {
             color: var(--text-pure);
             border-bottom-color: var(--accent);
-        }
-        .lib-tab-count {
-            background: var(--surface3);
-            color: var(--text-secondary);
-            font-size: 10px;
-            font-weight: 700;
-            padding: 2px 6px;
-            border-radius: 10px;
-            line-height: 1.4;
-        }
-        .lib-tab.active .lib-tab-count {
-            background: var(--accent);
-            color: #fff;
+            font-weight: 600;
         }
 
-        /* ── CONTEUDO ─────────────────────────────────────────── */
+        .lib-tab.active svg { opacity: 1; }
+
+        .lib-tab-count {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-muted);
+            background: rgba(255,255,255,0.06);
+            padding: 2px 7px;
+            border-radius: 20px;
+            line-height: 1.5;
+            transition: background .18s ease, color .18s ease;
+        }
+
+        .lib-tab.active .lib-tab-count {
+            background: var(--accent-dim);
+            color: var(--accent);
+        }
+
+        /* ── CONTENT ─────────────────────────────────────────────── */
         .lib-content {
             max-width: var(--max);
-            margin: 0 auto;
+            margin: 40px auto 0;
             padding: 0 40px;
         }
 
-        /* ── PAINEL DE SEÇÃO ──────────────────────────────────── */
         .lib-panel { display: none; }
         .lib-panel.active { display: block; }
 
-        /* ── GRID DE CARDS ────────────────────────────────────── */
-        .lib-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
-            gap: 20px 14px;
+        /* ── HISTORY SECTION LABEL ───────────────────────────────── */
+        .lib-section-label {
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 18px;
+            margin-top: 32px;
         }
 
-        /* Card individual da biblioteca */
-        .lib-card {
-            position: relative;
-            cursor: pointer;
-            border-radius: var(--radius);
-            overflow: visible;
+        .lib-section-label:first-child { margin-top: 0; }
+
+        /* ── GRID ─────────────────────────────────────────────────── */
+        .lib-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 24px 16px;
         }
+
+        /* ── CARD ─────────────────────────────────────────────────── */
+        .lib-card {
+            cursor: pointer;
+        }
+
         .lib-card-thumb {
             position: relative;
             aspect-ratio: 2 / 3;
-            border-radius: var(--radius);
+            border-radius: 6px;
             overflow: hidden;
             background: var(--surface2);
-            transition: transform .25s ease, box-shadow .25s ease;
+            transition: transform .22s ease, box-shadow .22s ease;
         }
+
         .lib-card:hover .lib-card-thumb {
-            transform: scale(1.04);
-            box-shadow: 0 12px 32px rgba(0,0,0,.7);
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(0,0,0,.6);
         }
+
         .lib-card-img {
             width: 100%;
             height: 100%;
@@ -199,138 +247,164 @@ if (!isset($_SESSION['user_id'])) {
             object-position: center top;
             display: block;
         }
+
         .lib-card-overlay {
             position: absolute;
             inset: 0;
-            background: rgba(0,0,0,.35);
+            background: rgba(0,0,0,.5);
             display: flex;
             align-items: center;
             justify-content: center;
             opacity: 0;
-            transition: opacity .2s ease;
+            transition: opacity .18s ease;
         }
+
         .lib-card:hover .lib-card-overlay { opacity: 1; }
+
         .lib-card-play {
-            width: 48px; height: 48px;
-            background: rgba(255,255,255,.9);
+            width: 44px;
+            height: 44px;
+            background: rgba(255,255,255,.92);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            flex-shrink: 0;
         }
-        .lib-card-play svg { width: 20px; height: 20px; margin-left: 2px; }
 
-        .lib-card-badge {
+        .lib-card-play svg {
+            width: 18px;
+            height: 18px;
+            margin-left: 2px;
+        }
+
+        .lib-card-type {
             position: absolute;
-            top: 8px; left: 8px;
-            background: rgba(0,0,0,.7);
-            color: #fff;
+            top: 8px;
+            left: 8px;
             font-size: 9px;
             font-weight: 700;
-            letter-spacing: .06em;
+            letter-spacing: .08em;
             text-transform: uppercase;
-            padding: 3px 6px;
-            border-radius: 4px;
+            color: rgba(255,255,255,.75);
+            background: rgba(0,0,0,.55);
+            backdrop-filter: blur(4px);
+            padding: 3px 7px;
+            border-radius: 3px;
         }
+
+        .lib-card-info {
+            margin-top: 10px;
+        }
+
         .lib-card-title {
-            margin-top: 8px;
             font-size: 12px;
             font-weight: 500;
             color: var(--text-primary);
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            line-height: 1.4;
         }
-        .lib-card-meta {
+
+        .lib-card-year {
             font-size: 11px;
             color: var(--text-muted);
             margin-top: 2px;
         }
 
-        /* ── EMPTY STATE ──────────────────────────────────────── */
+        /* ── EMPTY STATE ─────────────────────────────────────────── */
         .lib-empty {
             display: flex;
             flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 80px 24px;
-            text-align: center;
-            gap: 16px;
-            color: var(--text-muted);
+            align-items: flex-start;
+            padding: 64px 0;
+            gap: 12px;
         }
-        .lib-empty svg { width: 48px; height: 48px; opacity: .3; }
+
+        .lib-empty-icon {
+            width: 32px;
+            height: 32px;
+            color: var(--text-muted);
+            opacity: .4;
+            margin-bottom: 4px;
+        }
+
         .lib-empty-title {
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 600;
             color: var(--text-secondary);
         }
+
         .lib-empty-sub {
             font-size: 13px;
             color: var(--text-muted);
-            max-width: 320px;
+            max-width: 280px;
+            line-height: 1.6;
         }
+
         .lib-empty-btn {
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 600;
-            color: #fff;
+            color: var(--text-pure);
             background: var(--accent);
             border: none;
-            border-radius: var(--radius);
-            padding: 10px 20px;
+            border-radius: 5px;
+            padding: 9px 18px;
             cursor: pointer;
             text-decoration: none;
-            margin-top: 4px;
-            transition: background .2s ease;
+            margin-top: 8px;
+            letter-spacing: .01em;
+            transition: opacity .18s ease;
         }
-        .lib-empty-btn:hover { background: var(--accent-hover); }
+
+        .lib-empty-btn:hover { opacity: .85; }
 
         /* ── LOADER ─────────────────────────────────────────────── */
         .lib-loader {
             display: flex;
-            justify-content: center;
-            padding: 60px 0;
+            align-items: center;
+            gap: 12px;
+            padding: 64px 0;
+            color: var(--text-muted);
+            font-size: 13px;
         }
+
         .lib-spinner {
-            width: 32px; height: 32px;
-            border: 3px solid var(--border);
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--border-strong);
             border-top-color: var(--accent);
             border-radius: 50%;
-            animation: spin .7s linear infinite;
+            animation: spin .65s linear infinite;
+            flex-shrink: 0;
         }
+
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* ── RESPONSIVO ───────────────────────────────────────── */
+        /* ── RESPONSIVE ─────────────────────────────────────────── */
         @media (max-width: 768px) {
-            .lib-hero-inner { padding: 0 20px; }
-            .lib-tabs-wrap  { padding: 0 16px; }
-            .lib-content    { padding: 0 16px; }
-            .lib-grid       { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 16px 10px; }
-            .lib-stats      { gap: 16px; }
-            .lib-stat-num   { font-size: 22px; }
+            .lib-header      { padding: 40px 20px 0; }
+            .lib-divider     { padding: 0 20px; }
+            .lib-tabs-wrap   { padding: 0 20px; }
+            .lib-content     { padding: 0 20px; margin-top: 32px; }
+            .lib-stats       { gap: 24px; }
+            .lib-stat-num    { font-size: 20px; }
+            .lib-grid        { grid-template-columns: repeat(4, 1fr); gap: 20px 12px; }
+            .lib-tab         { padding: 14px 14px 16px; font-size: 12px; }
         }
 
         @media (max-width: 480px) {
-            .lib-grid { grid-template-columns: repeat(3, 1fr); gap: 12px 8px; }
-            .lib-tabs { overflow-x: auto; scrollbar-width: none; }
+            .lib-header      { gap: 24px; }
+            .lib-stats       { gap: 20px; }
+            .lib-grid        { grid-template-columns: repeat(3, 1fr) !important; gap: 16px 10px; }
+            .lib-tabs        { overflow-x: auto; scrollbar-width: none; }
             .lib-tabs::-webkit-scrollbar { display: none; }
-            .lib-tab { white-space: nowrap; }
-        }
-
-        /* ── HISTORY DATE SEPARATOR ──────────────────────────── */
-        .lib-date-sep {
-            grid-column: 1 / -1;
-            font-size: 11px;
-            font-weight: 700;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: .1em;
-            padding: 8px 0 4px;
-            border-bottom: 1px solid var(--border);
-            margin-bottom: 4px;
+            .lib-tab         { white-space: nowrap; }
+            .lib-empty       { align-items: center; text-align: center; }
+            .lib-empty-sub   { max-width: 240px; }
         }
     </style>
 </head>
@@ -338,39 +412,41 @@ if (!isset($_SESSION['user_id'])) {
 
 <?php require_once __DIR__ . '/../components/Header.php'; ?>
 
-<!-- ── HERO ────────────────────────────────────────────── -->
-<div class="lib-hero">
-    <div class="lib-hero-inner">
-        <div>
-            <h1 class="lib-hero-title">Minha Lista</h1>
-            <p class="lib-hero-sub">Seus filmes e séries salvos, curtidos e assistidos.</p>
+<!-- ── PAGE HEADER ──────────────────────────────────────────── -->
+<div class="lib-header">
+    <div class="lib-header-left">
+        <div class="lib-eyebrow">Biblioteca</div>
+        <h1 class="lib-title">Minha Lista</h1>
+    </div>
+    <div class="lib-stats">
+        <div class="lib-stat">
+            <div class="lib-stat-num" id="stat-history">—</div>
+            <div class="lib-stat-label">Assistidos</div>
         </div>
-        <div class="lib-stats">
-            <div class="lib-stat">
-                <div class="lib-stat-num" id="stat-history">—</div>
-                <div class="lib-stat-label">Assistidos</div>
-            </div>
-            <div class="lib-stat">
-                <div class="lib-stat-num" id="stat-saved">—</div>
-                <div class="lib-stat-label">Salvos</div>
-            </div>
-            <div class="lib-stat">
-                <div class="lib-stat-num" id="stat-liked">—</div>
-                <div class="lib-stat-label">Curtidos</div>
-            </div>
+        <div class="lib-stat">
+            <div class="lib-stat-num" id="stat-saved">—</div>
+            <div class="lib-stat-label">Salvos</div>
+        </div>
+        <div class="lib-stat">
+            <div class="lib-stat-num" id="stat-liked">—</div>
+            <div class="lib-stat-label">Curtidos</div>
         </div>
     </div>
 </div>
 
-<!-- ── TABS ─────────────────────────────────────────────── -->
+<div class="lib-divider">
+    <div class="lib-divider-line"></div>
+</div>
+
+<!-- ── TABS ─────────────────────────────────────────────────── -->
 <div class="lib-tabs-wrap">
-    <div class="lib-tabs" role="tablist">
+    <nav class="lib-tabs" role="tablist">
         <button class="lib-tab active" role="tab" aria-selected="true"
                 onclick="Library.switchTab('history', this)">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
             </svg>
-            Continuar assistindo
+            Histórico
             <span class="lib-tab-count" id="cnt-history">0</span>
         </button>
         <button class="lib-tab" role="tab" aria-selected="false"
@@ -389,21 +465,20 @@ if (!isset($_SESSION['user_id'])) {
             Curtidos
             <span class="lib-tab-count" id="cnt-liked">0</span>
         </button>
-    </div>
+    </nav>
 </div>
 
-<!-- ── PAINEIS DE CONTEUDO ──────────────────────────────── -->
+<!-- ── CONTENT ─────────────────────────────��─────────────────── -->
 <div class="lib-content">
 
     <!-- Loader -->
     <div class="lib-loader" id="lib-loader">
         <div class="lib-spinner"></div>
+        <span>Carregando sua biblioteca...</span>
     </div>
 
     <!-- Histórico -->
-    <div class="lib-panel active" id="panel-history" role="tabpanel">
-        <div class="lib-grid" id="grid-history"></div>
-    </div>
+    <div class="lib-panel active" id="panel-history" role="tabpanel"></div>
 
     <!-- Salvos -->
     <div class="lib-panel" id="panel-saved" role="tabpanel">
@@ -417,7 +492,6 @@ if (!isset($_SESSION['user_id'])) {
 
 </div>
 
-<!-- ── TEMPLATES ────────────────────────────────────────── -->
 <?php require_once __DIR__ . '/../components/ContentCard.php'; ?>
 
 <script src="/assets/js/header.js"></script>
@@ -440,7 +514,7 @@ class Library {
 
         } catch (err) {
             document.getElementById('lib-loader').style.display = 'none';
-            document.getElementById('grid-history').innerHTML = this.emptyState(
+            document.getElementById('panel-history').innerHTML = this.emptyState(
                 'Não foi possível carregar sua lista.',
                 'Tente novamente mais tarde.', false
             );
@@ -451,10 +525,9 @@ class Library {
         document.getElementById('stat-history').textContent = this.data.history.length;
         document.getElementById('stat-saved').textContent   = this.data.saved.length;
         document.getElementById('stat-liked').textContent   = this.data.liked.length;
-
-        document.getElementById('cnt-history').textContent = this.data.history.length;
-        document.getElementById('cnt-saved').textContent   = this.data.saved.length;
-        document.getElementById('cnt-liked').textContent   = this.data.liked.length;
+        document.getElementById('cnt-history').textContent  = this.data.history.length;
+        document.getElementById('cnt-saved').textContent    = this.data.saved.length;
+        document.getElementById('cnt-liked').textContent    = this.data.liked.length;
     }
 
     static renderAll() {
@@ -464,17 +537,22 @@ class Library {
     }
 
     static renderGrid(type, items, emptyTitle, emptySub) {
-        const grid = document.getElementById(`grid-${type}`);
-        if (!items.length) {
-            grid.innerHTML = this.emptyState(emptyTitle, emptySub, true);
+        if (type === 'history') {
+            const panel = document.getElementById('panel-history');
+            if (!items.length) {
+                panel.innerHTML = this.emptyState(emptyTitle, emptySub, true);
+            } else {
+                panel.innerHTML = this.renderHistoryGrouped(items);
+            }
             return;
         }
 
-        if (type === 'history') {
-            grid.innerHTML = this.renderHistoryGrouped(items);
-        } else {
-            grid.innerHTML = items.map(item => this.cardHtml(item)).join('');
+        const grid = document.getElementById(`grid-${type}`);
+        if (!items.length) {
+            grid.closest('.lib-panel').innerHTML = this.emptyState(emptyTitle, emptySub, true);
+            return;
         }
+        grid.innerHTML = items.map(item => this.cardHtml(item)).join('');
     }
 
     static renderHistoryGrouped(items) {
@@ -486,43 +564,52 @@ class Library {
         });
 
         return Object.entries(groups).map(([label, group]) =>
-            `<div class="lib-date-sep">${this.esc(label)}</div>` +
-            group.map(item => this.cardHtml(item, 'history')).join('')
+            `<div class="lib-section-label">${this.esc(label)}</div>
+             <div class="lib-grid" style="margin-bottom: 40px">` +
+            group.map(item => this.cardHtml(item, 'history')).join('') +
+            `</div>`
         ).join('');
     }
 
     static cardHtml(item, type = '') {
-        const id      = item.content_id;
-        const ct      = item.content_type === 'serie' ? 'serie' : 'movie';
-        const href    = `/view?id=${id}&type=${ct}`;
-        const badge   = ct === 'serie' ? 'Série' : 'Filme';
-        const poster  = item.content_poster
+        const id     = item.content_id;
+        const ct     = item.content_type === 'serie' ? 'serie' : 'movie';
+        const href   = `/view?id=${id}&type=${ct}`;
+        const badge  = ct === 'serie' ? 'Série' : 'Filme';
+        const poster = item.content_poster
             ? item.content_poster
-            : `https://via.placeholder.com/148x222/12151c/64748b?text=${this.esc(item.content_title?.slice(0,2) || '?')}`;
-        const year    = item.content_year ? `<span class="lib-card-meta">${item.content_year}</span>` : '';
+            : `https://via.placeholder.com/140x210/111318/4a5568?text=${this.esc(item.content_title?.slice(0,2) || '?')}`;
+        const year   = item.content_year
+            ? `<div class="lib-card-year">${item.content_year}</div>`
+            : '';
 
         return `
-            <div class="lib-card" onclick="window.location.href='${href}'">
+            <div class="lib-card" onclick="window.location.href='${href}'" role="button" tabindex="0"
+                 onkeydown="if(event.key==='Enter')window.location.href='${href}'"
+                 aria-label="${this.esc(item.content_title)}">
                 <div class="lib-card-thumb">
-                    <img src="${this.esc(poster)}" alt="${this.esc(item.content_title)}"
-                         class="lib-card-img" loading="lazy"
-                         onerror="this.src='https://via.placeholder.com/148x222/1a1e28/64748b?text=?'">
-                    <div class="lib-card-overlay">
+                    <img src="${this.esc(poster)}"
+                         alt="${this.esc(item.content_title)}"
+                         class="lib-card-img"
+                         loading="lazy"
+                         onerror="this.src='https://via.placeholder.com/140x210/181b22/4a5568?text=?'">
+                    <div class="lib-card-overlay" aria-hidden="true">
                         <div class="lib-card-play">
                             <svg viewBox="0 0 24 24" fill="black"><path d="M8 5v14l11-7z"/></svg>
                         </div>
                     </div>
-                    <span class="lib-card-badge">${badge}</span>
+                    <span class="lib-card-type">${badge}</span>
                 </div>
-                <div class="lib-card-title">${this.esc(item.content_title)}</div>
-                ${year}
+                <div class="lib-card-info">
+                    <div class="lib-card-title">${this.esc(item.content_title)}</div>
+                    ${year}
+                </div>
             </div>`;
     }
 
     static switchTab(tab, btn) {
         this.currentTab = tab;
 
-        // Toggle tabs
         document.querySelectorAll('.lib-tab').forEach(t => {
             t.classList.remove('active');
             t.setAttribute('aria-selected', 'false');
@@ -530,7 +617,6 @@ class Library {
         btn.classList.add('active');
         btn.setAttribute('aria-selected', 'true');
 
-        // Toggle panels
         document.querySelectorAll('.lib-panel').forEach(p => p.classList.remove('active'));
         document.getElementById(`panel-${tab}`).classList.add('active');
     }
@@ -538,14 +624,16 @@ class Library {
     static emptyState(title, sub, showBtn = true) {
         const btn = showBtn
             ? `<a href="/home" class="lib-empty-btn">
-                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                       <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                   </svg>
                    Explorar catálogo
                </a>`
             : '';
         return `
             <div class="lib-empty">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                <svg class="lib-empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <rect x="2" y="3" width="20" height="14" rx="2"/>
                     <line x1="8" y1="21" x2="16" y2="21"/>
                     <line x1="12" y1="17" x2="12" y2="21"/>
                 </svg>
@@ -557,11 +645,11 @@ class Library {
 
     static dateGroupLabel(dateStr) {
         if (!dateStr) return 'Sem data';
-        const d     = new Date(dateStr.replace(' ', 'T'));
-        const now   = new Date();
-        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const d    = new Date(dateStr.replace(' ', 'T'));
+        const now  = new Date();
+        const tod  = new Date(now.getFullYear(), now.getMonth(), now.getDate());
         const itemD = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-        const diff  = Math.floor((today - itemD) / 86400000);
+        const diff = Math.floor((tod - itemD) / 86400000);
 
         if (diff === 0) return 'Hoje';
         if (diff === 1) return 'Ontem';

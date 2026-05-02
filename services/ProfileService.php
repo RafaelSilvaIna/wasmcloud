@@ -60,11 +60,37 @@ class ProfileService
                 return ['success' => false, 'message' => 'PIN incorreto.'];
             }
         }
+
+        // Verifica se o perfil já está em uso em outro dispositivo
+        $activeSession = $this->authModel->hasActiveSession($profileId);
+        $currentSessionId = session_id();
+
+        if ($activeSession) {
+            // Verifica se a sessão ativa é diferente da atual
+            $existingSession = $this->authModel->getActiveProfileSession($profileId);
+            if ($existingSession && $existingSession['session_id'] !== $currentSessionId) {
+                // Perfil em uso em outro dispositivo
+                return [
+                    'success' => false, 
+                    'message' => 'Este perfil já está sendo usado em outro dispositivo.',
+                    'code' => 'PROFILE_IN_USE'
+                ];
+            }
+        }
+
         $_SESSION['profile_id']       = $profile['id'];
         $_SESSION['profile_name']     = $profile['profile_name'];
         $_SESSION['profile_image']    = $profile['profile_image'];
         // Sempre atualiza is_kids — garante a troca correta entre perfis kids e não-kids
         $_SESSION['profile_is_kids']  = (bool)(int)$profile['is_kids'];
+
+        // Registra sessão ativa na tabela profile_active_sessions
+        $expiresAt = date('Y-m-d H:i:s', time() + 2592000);
+        $this->authModel->createActiveSession($profileId, (int)$_SESSION['user_id'], $currentSessionId, $expiresAt);
+
+        // Também atualiza o status na tabela profiles (compatibilidade)
+        $this->profileModel->updateWatchingStatus($profileId, true, $currentSessionId);
+
         return ['success' => true];
     }
 
@@ -133,6 +159,8 @@ class ProfileService
     public function stopWatching(int $profileId): void
     {
         $this->profileModel->updateWatchingStatus($profileId, false, null);
+        // Desativa sessão ativa na tabela profile_active_sessions
+        $this->authModel->deactivateProfileSessions($profileId);
     }
 
     public function updateProfile(array $data): array

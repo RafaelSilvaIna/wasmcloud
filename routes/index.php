@@ -16,7 +16,7 @@ if (strpos($requestUri, '/api/') === 0) {
         require_once __DIR__ . '/../services/AuthService.php';
         require_once __DIR__ . '/../controllers/AuthController.php';
 
-        $authModel = new AuthModel($pdoCineveo);
+        $authModel = new AuthModel($pdoCineveo, $pdo);
         $authService = new AuthService($authModel);
         $authController = new AuthController($authService);
 
@@ -26,6 +26,10 @@ if (strpos($requestUri, '/api/') === 0) {
         }
         if ($requestUri === '/api/auth/login' && $requestMethod === 'POST') {
             $authController->login();
+            exit;
+        }
+        if ($requestUri === '/api/auth/activate-profile' && $requestMethod === 'POST') {
+            $authController->activateProfile();
             exit;
         }
     }
