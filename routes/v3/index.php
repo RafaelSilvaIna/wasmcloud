@@ -6,7 +6,7 @@ declare(strict_types=1);
  * ROUTER — API v3 Pipocine
  *
  * Registra e despacha todas as rotas da v3.
- * Inclui o sistema de Comentários e Menções.
+ * Inclui o sistema de Comentários, Menções e Biblioteca.
  *
  * Acesso: /api/v3/*
  * Incluído por: routes/index.php
@@ -15,25 +15,31 @@ declare(strict_types=1);
 ini_set('display_errors', '0');
 error_reporting(E_ALL);
 
-// ── Dependências base ────────────────────────────────────────────
+// ── Dependências base ────────────────────────────────────────
 require_once __DIR__ . '/../../database/db.php';
 require_once __DIR__ . '/../../utils/v2/ResponseUtil.php';
 
-// ── Classes do sistema de comentários ───────────────────────────
+// ── Classes do sistema de comentários ───────────────────────
 require_once __DIR__ . '/../../models/v3/CommentModel.php';
 require_once __DIR__ . '/../../services/v3/CommentService.php';
 require_once __DIR__ . '/../../controllers/v3/CommentController.php';
 
+// ── Classes do sistema de biblioteca ─────────────────────────
+require_once __DIR__ . '/../../models/v3/LibraryModel.php';
+require_once __DIR__ . '/../../controllers/v3/LibraryController.php';
+
 use Models\V3\CommentModel;
 use Services\V3\CommentService;
 use Controllers\V3\CommentController;
+use Models\V3\LibraryModel;
+use Controllers\V3\LibraryController;
 
-// ── Inicia sessão (necessário para profile_id e user_id) ─────────
+// ── Inicia sessão ────────────────────────────────────────────
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// ── Cabeçalhos CORS / JSON ───────────────────────────────────────
+// ── Cabeçalhos CORS / JSON ───────────────────────────────────
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
@@ -44,15 +50,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
-// ── Extrai a sub-rota após /api/v3/ ─────────────────────────────
+// ── Extrai a sub-rota após /api/v3/ ─────────────────────────
 $requestUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $action     = ltrim(str_replace('/api/v3/', '', $requestUri), '/');
 $method     = $_SERVER['REQUEST_METHOD'];
 
-// ── Despacha ─────────────────────────────────────────────────────
+// ── Despacha ─────────────────────────────────────────────────
 try {
 
-    // ── Comentários ──────────────────────────────────────────────
+    // ── Comentários ──────────────────────────────────────────
     if (
         $action === 'comments'          ||
         $action === 'comments/replies'  ||
@@ -61,7 +67,6 @@ try {
         $action === 'comments/delete'   ||
         $action === 'comments/like'
     ) {
-        // $pdo = banco pipcine (comentários + perfis — tudo no mesmo banco)
         $model      = new CommentModel($pdo);
         $service    = new CommentService($model, $pdo);
         $controller = new CommentController($service);
@@ -69,7 +74,7 @@ try {
         exit;
     }
 
-    // ── Menções ──────────────────────────────────────────────────
+    // ── Menções ──────────────────────────────────────────────
     if (
         $action === 'mentions'              ||
         $action === 'mentions/unread-count' ||
@@ -82,7 +87,15 @@ try {
         exit;
     }
 
-    // ── Rota não encontrada ──────────────────────────────────────
+    // ── Biblioteca (saved / liked / history) ─────────────────
+    if (str_starts_with($action, 'library')) {
+        $model      = new LibraryModel($pdo);
+        $controller = new LibraryController($model);
+        $controller->handle($action, $method);
+        exit;
+    }
+
+    // ── Rota não encontrada ──────────────────────────────────
     ResponseUtil::json(['sucesso' => false, 'erro' => 'Rota v3 não encontrada.'], 404);
 
 } catch (Throwable $e) {

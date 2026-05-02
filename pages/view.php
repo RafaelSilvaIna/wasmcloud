@@ -338,6 +338,118 @@ if (!isset($_SESSION['user_id'])) {
             color: var(--text-pure);
         }
 
+        /* ─── BOTÕES ICÔNICOS (save / like / share / comments) ─ */
+        .btn-icon-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-icon {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            width: 52px;
+            height: 52px;
+            background: rgba(255,255,255,.08);
+            border: 1px solid rgba(255,255,255,.10);
+            border-radius: 50%;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: background .2s ease, color .2s ease, border-color .2s ease, transform .15s ease;
+            font-family: inherit;
+            text-decoration: none;
+            flex-shrink: 0;
+        }
+        .btn-icon svg { width: 20px; height: 20px; flex-shrink: 0; }
+        .btn-icon:hover {
+            background: rgba(255,255,255,.16);
+            color: var(--text-pure);
+            border-color: rgba(255,255,255,.22);
+            transform: translateY(-2px);
+        }
+        .btn-icon:active { transform: scale(.95); }
+
+        .btn-icon.active-save {
+            color: var(--accent);
+            border-color: var(--accent);
+            background: rgba(229,9,20,.12);
+        }
+        .btn-icon.active-like {
+            color: #60a5fa;
+            border-color: #60a5fa;
+            background: rgba(96,165,250,.12);
+        }
+
+        /* ─── META IMDB / CLASSIFICAÇÃO ──────────────────────── */
+        .meta-badge.imdb {
+            background: #f5c518;
+            color: #000;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: .04em;
+            gap: 3px;
+        }
+        .meta-badge.rating {
+            background: var(--accent);
+            color: #fff;
+            font-size: 10px;
+            font-weight: 800;
+        }
+        .meta-badge.duration {
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-weight: 400;
+            letter-spacing: 0;
+            padding: 0;
+            border: none;
+        }
+
+        /* ─── OVERVIEW EXPANDÍVEL ────────────────────────────── */
+        .hero-overview-wrap { position: relative; }
+        .btn-more-info {
+            background: none;
+            border: none;
+            color: var(--text-pure);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 4px 0 0;
+            display: block;
+            text-decoration: underline;
+            text-underline-offset: 2px;
+            font-family: inherit;
+        }
+        .btn-more-info:hover { color: var(--accent); }
+
+        /* ─── GENRES ────────────────────────────────────── */
+        .hero-genres {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: -4px;
+        }
+        .genre-tag {
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            background: rgba(255,255,255,.06);
+            border: 1px solid rgba(255,255,255,.08);
+            border-radius: 20px;
+            padding: 4px 10px;
+            letter-spacing: .02em;
+        }
+
+        /* ─── PIP REVEAL ─────────────────────────────────── */
+        .pip-reveal { opacity: 0; transform: translateY(12px); transition: opacity .5s ease, transform .5s ease; }
+        .pip-reveal.visible { opacity: 1; transform: translateY(0); }
+        .pip-reveal-1 { transition-delay: .05s; }
+        .pip-reveal-2 { transition-delay: .12s; }
+        .pip-reveal-3 { transition-delay: .20s; }
+
         /* ─── CONTEÚDO PRINCIPAL ───────────────────────── */
         #pip-main {
             background: var(--bg);
@@ -740,7 +852,12 @@ if (!isset($_SESSION['user_id'])) {
 
                 <div id="hero-meta" class="hero-meta pip-reveal pip-reveal-1"></div>
 
-                <p id="hero-overview" class="hero-overview pip-reveal pip-reveal-2"></p>
+                <div class="hero-overview-wrap pip-reveal pip-reveal-2">
+                    <p id="hero-overview" class="hero-overview"></p>
+                    <button class="btn-more-info" id="btn-more-info" style="display:none;" onclick="PipView.goToInfo()">Ver mais</button>
+                </div>
+
+                <div id="hero-genres" class="hero-genres pip-reveal pip-reveal-2"></div>
 
                 <div class="hero-actions pip-reveal pip-reveal-3">
                     <button class="btn-watch" id="btn-watch" onclick="PipView.startPlayback()">
@@ -751,6 +868,25 @@ if (!isset($_SESSION['user_id'])) {
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h9"/></svg>
                         Episódios
                     </button>
+                    <a class="btn-info" id="btn-more-details" href="#" style="display:none;">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                        Mais infos
+                    </a>
+
+                    <div class="btn-icon-group" style="margin-left:4px;">
+                        <!-- Salvar -->
+                        <button class="btn-icon" id="btn-save" aria-label="Salvar" onclick="PipView.toggleSave()">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        </button>
+                        <!-- Curtir -->
+                        <button class="btn-icon" id="btn-like" aria-label="Curtir" onclick="PipView.toggleLike()">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>
+                        </button>
+                        <!-- Comentários -->
+                        <button class="btn-icon" aria-label="Comentários" onclick="if(window.PipComments)PipComments.open()">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                        </button>
+                    </div>
                 </div>
             </div>
         </section>
@@ -874,6 +1010,8 @@ if (!isset($_SESSION['user_id'])) {
 
                 this.renderCast(id, type);
                 this.reveal();
+                this.loadLibraryStatus();
+                this.recordWatch();
 
             } catch (err) {
                 this.showError(err.message);
@@ -912,22 +1050,46 @@ if (!isset($_SESSION['user_id'])) {
             document.getElementById('hero-type-label').textContent =
                 isSerie ? 'Série · Pipocine' : 'Filme · Pipocine';
 
-            // Meta badges
-            const metaEl = document.getElementById('hero-meta');
-            const parts  = [];
-            if (meta.year)      parts.push(`<span class="meta-badge year">${meta.year}</span>`);
-            if (meta.genres?.length) {
-                const sep = `<span class="meta-sep"></span>`;
-                parts.push(sep + meta.genres.slice(0,3)
-                    .map(g => `<span class="meta-badge type">${this.esc(g)}</span>`)
-                    .join(''));
-            }
-            parts.push(`<span class="meta-sep"></span><span class="meta-badge quality">${playback?.quality || 'HD'}</span>`);
-            metaEl.innerHTML = parts.join('');
+            // Meta badges (gerado mais abaixo junto com vote_average e runtime)
 
             // Overview
             document.getElementById('hero-overview').textContent =
                 meta.overview || 'Sinopse não disponível.';
+
+            // Botão "Ver mais" (sempre visível se há sinopse)
+            if (meta.overview) {
+                document.getElementById('btn-more-info').style.display = 'block';
+            }
+
+            // Genres
+            const genresEl = document.getElementById('hero-genres');
+            if (meta.genres?.length) {
+                genresEl.innerHTML = meta.genres.slice(0, 4)
+                    .map(g => `<span class="genre-tag">${this.esc(g)}</span>`)
+                    .join('');
+                genresEl.style.display = 'flex';
+            }
+
+            // Remove genres do meta badges para não duplicar
+            const metaEl = document.getElementById('hero-meta');
+            const metaParts = [];
+            if (meta.vote_average) {
+                metaParts.push(`<span class="meta-badge imdb">IMDb ${parseFloat(meta.vote_average).toFixed(1)}</span>`);
+                metaParts.push(`<span class="meta-sep"></span>`);
+            }
+            if (meta.year) metaParts.push(`<span class="meta-badge year">${meta.year}</span>`);
+            if (meta.runtime) {
+                metaParts.push(`<span class="meta-sep"></span>`);
+                const h = Math.floor(meta.runtime / 60), m = meta.runtime % 60;
+                metaParts.push(`<span class="meta-badge duration">${h > 0 ? h + 'h ' : ''}${m}min</span>`);
+            }
+            metaParts.push(`<span class="meta-sep"></span><span class="meta-badge quality">${playback?.quality || 'HD'}</span>`);
+            metaEl.innerHTML = metaParts.join('');
+
+            // Botão "Mais infos" link para /info
+            const btnDetails = document.getElementById('btn-more-details');
+            btnDetails.href = `/info=${this.cfg.id}`;
+            btnDetails.style.display = 'inline-flex';
 
             // Botão episódios
             if (isSerie) document.getElementById('btn-episodes').style.display = 'inline-flex';
@@ -1057,6 +1219,10 @@ if (!isset($_SESSION['user_id'])) {
             setTimeout(() => {
                 loader.style.display = 'none';
                 page.style.display   = 'block';
+                // Anima elementos pip-reveal
+                requestAnimationFrame(() => {
+                    document.querySelectorAll('.pip-reveal').forEach(el => el.classList.add('visible'));
+                });
             }, 350);
         }
 
@@ -1073,6 +1239,95 @@ if (!isset($_SESSION['user_id'])) {
                     </a>
                 </div>
             `);
+        }
+
+        /* ── Biblioteca: status / toggle ───────────────────── */
+        static async loadLibraryStatus() {
+            try {
+                const { id, type } = this.cfg;
+                const ct = ['serie','series','tv'].includes(type) ? 'serie' : 'movie';
+                const res = await fetch(`/api/v3/library/status?content_id=${id}&content_type=${ct}`);
+                if (!res.ok) return;
+                const json = await res.json();
+                if (!json.sucesso) return;
+                const { saved, liked } = json.dados;
+                this.applyLibraryUI(saved, liked);
+            } catch {}
+        }
+
+        static applyLibraryUI(saved, liked) {
+            const btnSave = document.getElementById('btn-save');
+            const btnLike = document.getElementById('btn-like');
+            if (!btnSave || !btnLike) return;
+
+            btnSave.classList.toggle('active-save', !!saved);
+            btnSave.setAttribute('aria-label', saved ? 'Remover da lista' : 'Salvar');
+            btnSave.innerHTML = saved
+                ? `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>`
+                : `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`;
+
+            btnLike.classList.toggle('active-like', !!liked);
+            btnLike.setAttribute('aria-label', liked ? 'Descurtir' : 'Curtir');
+            btnLike.innerHTML = liked
+                ? `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>`
+                : `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>`;
+        }
+
+        static async toggleSave() {
+            if (!this.data) return;
+            const meta = this.buildMeta();
+            try {
+                const res  = await fetch('/api/v3/library/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(meta),
+                });
+                const json = await res.json();
+                if (json.sucesso) this.applyLibraryUI(json.dados.saved, document.getElementById('btn-like').classList.contains('active-like'));
+            } catch {}
+        }
+
+        static async toggleLike() {
+            if (!this.data) return;
+            const meta = this.buildMeta();
+            try {
+                const res  = await fetch('/api/v3/library/like', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(meta),
+                });
+                const json = await res.json();
+                if (json.sucesso) this.applyLibraryUI(document.getElementById('btn-save').classList.contains('active-save'), json.dados.liked);
+            } catch {}
+        }
+
+        static async recordWatch() {
+            if (!this.data) return;
+            const meta = { ...this.buildMeta(), season: this.cfg.s || null, episode: this.cfg.e || null };
+            try {
+                await fetch('/api/v3/library/watch', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(meta),
+                });
+            } catch {}
+        }
+
+        static buildMeta() {
+            const info = this.data?.content_info || {};
+            const type = ['serie','series','tv'].includes(this.cfg.type) ? 'serie' : 'movie';
+            return {
+                content_id:       parseInt(this.cfg.id),
+                content_type:     type,
+                content_title:    info.title    || '',
+                content_poster:   info.poster   ? `https://image.tmdb.org/t/p/w342${info.poster}`   : '',
+                content_backdrop: info.backdrop ? `https://image.tmdb.org/t/p/w780${info.backdrop}` : '',
+                content_year:     info.year     ? parseInt(info.year) : null,
+            };
+        }
+
+        static goToInfo() {
+            window.location.href = `/info=${this.cfg.id}`;
         }
 
         static esc(str) {

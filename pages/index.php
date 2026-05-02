@@ -69,6 +69,12 @@ if ($requestUri === '/info') {
     exit;
 }
 
+// ROTA: Minha Lista — biblioteca do perfil (histórico, salvos e curtidos)
+if ($requestUri === '/minha-lista') {
+    require_once __DIR__ . '/minha-lista.php';
+    exit;
+}
+
 // ROTA: Página de Plataforma (/plataforma?marca=netflix)
 if ($requestUri === '/plataforma') {
     require_once __DIR__ . '/plataforma.php';
