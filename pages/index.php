@@ -82,6 +82,12 @@ if ($requestUri === '/plataforma') {
     exit;
 }
 
+// ROTA: Busca de conteudo (/busca?q=...)
+if ($requestUri === '/busca') {
+    require_once __DIR__ . '/busca.php';
+    exit;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // ROTAS DO PLAYER — formatos alternativos de URL gerados pelo cineveo
 // ─────────────────────────────────────────────────────────────────────────────

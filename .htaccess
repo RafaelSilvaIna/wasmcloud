@@ -41,6 +41,7 @@ DirectoryIndex index.php index.html
     # Redirecionamento para páginas específicas
     RewriteRule ^home/?$ pages/index.php [L]
     RewriteRule ^minha-lista/?$ pages/index.php [L]
+    RewriteRule ^busca/?$ pages/index.php [L]
     RewriteRule ^view/?$ pages/index.php [L]
     RewriteRule ^player/?$ pages/index.php [L]
     RewriteRule ^info/?$ pages/index.php [L]

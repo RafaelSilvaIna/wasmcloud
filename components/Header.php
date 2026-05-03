@@ -57,12 +57,12 @@ checkProfileSessionConflictInHeader();
         </nav>
 
         <div class="header-actions">
-            <button class="search-btn" aria-label="Pesquisar">
+            <a href="/busca" class="search-btn" aria-label="Pesquisar" id="header-search-btn">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="11" cy="11" r="8"></circle>
                     <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                 </svg>
-            </button>
+            </a>
             <div class="user-menu" id="user-menu-container">
                 <div class="avatar-skeleton"></div>
             </div>
@@ -92,6 +92,13 @@ checkProfileSessionConflictInHeader();
             <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
         </svg>
         <span>Minha Lista</span>
+    </a>
+    <a href="/busca" class="mobile-nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <span>Buscar</span>
     </a>
     <a href="/canais" class="mobile-nav-item">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

@@ -32,6 +32,11 @@ require_once __DIR__ . '/../../models/v2/PlatformModel.php';
 require_once __DIR__ . '/../../services/v2/PlatformService.php';
 require_once __DIR__ . '/../../controllers/v2/PlatformController.php';
 
+// --- Classes da API de Busca ---
+require_once __DIR__ . '/../../models/v2/SearchModel.php';
+require_once __DIR__ . '/../../services/v2/SearchService.php';
+require_once __DIR__ . '/../../controllers/v2/SearchController.php';
+
 use Models\V2\ExhibitionModel;
 use Services\V2\ExhibitionService;
 use Controllers\V2\ExhibitionController;
@@ -39,6 +44,10 @@ use Controllers\V2\ExhibitionController;
 use Models\V2\InfoModel;
 use Services\V2\InfoService;
 use Controllers\V2\InfoController;
+
+use Models\V2\SearchModel;
+use Services\V2\SearchService;
+use Controllers\V2\SearchController;
 // ResponseUtil é uma classe global — sem namespace, acessível diretamente
 
 ApiHook::init();
@@ -85,6 +94,14 @@ try {
         $model      = new PlatformModel($pdoCineveo);
         $service    = new PlatformService($model);
         $controller = new PlatformController($service);
+        $controller->handle();
+
+    // Rota 7: Busca de conteudo por titulo com filtros
+    } elseif (strpos($requestUri, '/api/v2/busca') === 0) {
+        $model      = new SearchModel($pdoCineveo);
+        $tmdbHelper = new TMDBHelper();
+        $service    = new SearchService($model, $tmdbHelper);
+        $controller = new SearchController($service);
         $controller->handle();
 
     // Rota não encontrada
