@@ -28,9 +28,10 @@ class AuthController {
     public function login(): void {
         header('Content-Type: application/json');
         
-        $input = json_decode(file_get_contents('php://input'), true);
+        $input = json_decode(file_get_contents('php://input'), true) ?: [];
         $email = filter_var($input['email'] ?? '', FILTER_SANITIZE_EMAIL);
         $password = $input['password'] ?? '';
+        $deviceToken = $input['device_token'] ?? null;
         
         if (!$email || !$password) {
             http_response_code(400);
@@ -38,13 +39,41 @@ class AuthController {
             exit;
         }
         
-        $result = $this->authService->authenticate($email, $password);
+        $result = $this->authService->authenticate($email, $password, $deviceToken ? (string)$deviceToken : null);
         
         if ($result['success']) {
-            echo json_encode(['success' => true]);
+            echo json_encode($result);
         } else {
             http_response_code(401);
             echo json_encode(['success' => false, 'message' => $result['message']]);
+        }
+        exit;
+    }
+
+    /**
+     * Conclui login protegido por 2FA
+     */
+    public function verifyTwoFactorLogin(): void {
+        header('Content-Type: application/json');
+
+        $input = json_decode(file_get_contents('php://input'), true) ?: [];
+        $verifyToken = (string)($input['verify_token'] ?? $_COOKIE['cineveo_2fa_challenge'] ?? '');
+        $code = (string)($input['code'] ?? '');
+        $rememberDevice = !empty($input['remember_device']);
+        $deviceToken = $input['device_token'] ?? null;
+
+        $result = $this->authService->verifyTwoFactorLogin(
+            $verifyToken,
+            $code,
+            $rememberDevice,
+            $deviceToken ? (string)$deviceToken : null
+        );
+
+        if ($result['success']) {
+            echo json_encode($result);
+        } else {
+            http_response_code(!empty($result['blocked']) ? 429 : 400);
+            echo json_encode($result);
         }
         exit;
     }

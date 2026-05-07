@@ -94,6 +94,20 @@ document.addEventListener('DOMContentLoaded', () => {
         errorAlert.classList.remove('show');
     };
 
+    const getDeviceToken = () => {
+        const key = 'pipo_2fa_device_token';
+        let token = localStorage.getItem(key);
+
+        if (!token) {
+            const bytes = new Uint8Array(32);
+            crypto.getRandomValues(bytes);
+            token = Array.from(bytes, byte => byte.toString(16).padStart(2, '0')).join('');
+            localStorage.setItem(key, token);
+        }
+
+        return token;
+    };
+
     // ─── Estado de loading ──────────────────────────────────────────────────
     const setLoading = (active) => {
         if (active) {
@@ -146,12 +160,23 @@ document.addEventListener('DOMContentLoaded', () => {
                     'Content-Type': 'application/json',
                     'Accept': 'application/json'
                 },
-                body: JSON.stringify(data)
+                body: JSON.stringify({
+                    ...data,
+                    device_token: getDeviceToken()
+                })
             });
 
             const result = await response.json();
 
             if (result.success) {
+                if (result.requires_2fa && result.redirect) {
+                    localStorage.setItem('pipo_2fa_verify_token', result.verify_token || '');
+                    btnText.innerText = 'Verificação necessária';
+                    setTimeout(() => { window.location.href = result.redirect; }, 500);
+                    return;
+                }
+
+                localStorage.removeItem('pipo_2fa_verify_token');
                 setSuccess();
                 setTimeout(() => { window.location.href = '/home'; }, 900);
             } else {

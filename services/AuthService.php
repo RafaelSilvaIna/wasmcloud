@@ -1,18 +1,37 @@
 <?php
 class AuthService {
     private $authModel;
+    private $twoFactorService;
 
-    public function __construct(AuthModel $authModel) {
+    public function __construct(AuthModel $authModel, ?\Services\V4\TwoFactorService $twoFactorService = null) {
         $this->authModel = $authModel;
+        $this->twoFactorService = $twoFactorService;
     }
 
-    public function authenticate(string $email, string $password): array {
+    public function authenticate(string $email, string $password, ?string $deviceToken = null): array {
         $user = $this->authModel->getUserByEmail($email);
         $hash = !empty($user['password']) ? $user['password'] : ($user['password_hash'] ?? '');
         if (!$user || !$hash || !password_verify($password, $hash)) {
             return ['success' => false, 'message' => 'E-mail ou senha incorretos.'];
         }
-        
+
+        if ($this->twoFactorService) {
+            $userId = (int)$user['id'];
+            $twoFactorStatus = $this->twoFactorService->getStatus($userId);
+
+            if (!empty($twoFactorStatus['enabled'])) {
+                if ($deviceToken && $this->twoFactorService->isTrustedDevice($userId, $deviceToken)) {
+                    return $this->createAuthenticatedSession($user);
+                }
+
+                return $this->createTwoFactorChallenge($userId);
+            }
+        }
+
+        return $this->createAuthenticatedSession($user);
+    }
+
+    private function createAuthenticatedSession(array $user): array {
         $rawToken = bin2hex(random_bytes(32));
         $tokenHash = hash('sha256', $rawToken);
         $sessionId = session_id();
@@ -28,6 +47,113 @@ class AuthService {
             return ['success' => true];
         }
         return ['success' => false, 'message' => 'Erro ao criar sessão.'];
+    }
+
+    public function verifyTwoFactorLogin(string $verifyToken, string $code, bool $rememberDevice = false, ?string $deviceToken = null): array {
+        if (!$this->twoFactorService) {
+            return ['success' => false, 'message' => 'Verificacao em duas etapas indisponivel.'];
+        }
+
+        $verifyToken = trim($verifyToken);
+        $code = preg_replace('/\D+/', '', trim($code));
+
+        if ($verifyToken === '' || $code === '') {
+            return ['success' => false, 'message' => 'Token e codigo sao obrigatorios.'];
+        }
+
+        $tokenHash = hash('sha256', $verifyToken);
+        $challenge = $this->authModel->getTwoFactorChallenge($tokenHash);
+
+        if (!$challenge) {
+            $this->clearTwoFactorChallengeCookie();
+            return ['success' => false, 'message' => 'Verificacao expirada. Entre novamente.'];
+        }
+
+        $result = $this->twoFactorService->verifyLogin(
+            (int)$challenge['user_id'],
+            $code,
+            $this->getClientIp(),
+            $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown',
+            $rememberDevice ? $deviceToken : null
+        );
+
+        if (empty($result['success'])) {
+            return [
+                'success' => false,
+                'message' => $result['error'] ?? 'Codigo invalido.',
+                'blocked' => $result['blocked'] ?? false,
+                'remaining_attempts' => $result['remaining_attempts'] ?? null
+            ];
+        }
+
+        $user = $this->authModel->getUserData((int)$challenge['user_id']);
+        if (!$user) {
+            return ['success' => false, 'message' => 'Usuario nao encontrado.'];
+        }
+
+        $sessionResult = $this->createAuthenticatedSession($user);
+        if (empty($sessionResult['success'])) {
+            return $sessionResult;
+        }
+
+        $this->authModel->consumeTwoFactorChallenge($tokenHash);
+        $this->authModel->deleteTwoFactorChallenge($tokenHash);
+        $this->clearTwoFactorChallengeCookie();
+
+        return [
+            'success' => true,
+            'used_backup' => $result['used_backup'] ?? false
+        ];
+    }
+
+    private function createTwoFactorChallenge(int $userId): array {
+        $rawToken = bin2hex(random_bytes(32));
+        $tokenHash = hash('sha256', $rawToken);
+        $expiresAt = date('Y-m-d H:i:s', time() + 600);
+
+        if (!$this->authModel->createTwoFactorChallenge($userId, $tokenHash, $expiresAt)) {
+            return ['success' => false, 'message' => 'Erro ao iniciar verificacao em duas etapas.'];
+        }
+
+        unset($_SESSION['user_id'], $_SESSION['username'], $_SESSION['full_name'], $_SESSION['profile_pic_url'], $_SESSION['profile_id']);
+        setcookie('cineveo_token', '', time() - 3600, '/', '', false, true);
+        setcookie('cineveo_2fa_challenge', $rawToken, time() + 600, '/', '', false, true);
+
+        return [
+            'success' => true,
+            'requires_2fa' => true,
+            'verify_token' => $rawToken,
+            'redirect' => '/verify=' . rawurlencode($rawToken)
+        ];
+    }
+
+    private function clearTwoFactorChallengeCookie(): void {
+        setcookie('cineveo_2fa_challenge', '', time() - 3600, '/', '', false, true);
+    }
+
+    private function getClientIp(): string {
+        $headers = [
+            'HTTP_CF_CONNECTING_IP',
+            'HTTP_X_FORWARDED_FOR',
+            'HTTP_X_FORWARDED',
+            'HTTP_X_CLUSTER_CLIENT_IP',
+            'HTTP_FORWARDED_FOR',
+            'HTTP_FORWARDED',
+            'REMOTE_ADDR'
+        ];
+
+        foreach ($headers as $header) {
+            if (!empty($_SERVER[$header])) {
+                $ip = $_SERVER[$header];
+                if (strpos($ip, ',') !== false) {
+                    $parts = explode(',', $ip);
+                    $ip = trim($parts[0]);
+                }
+                return $ip;
+            }
+        }
+
+        return '0.0.0.0';
     }
 
     /**

@@ -12,12 +12,17 @@ if (strpos($requestUri, '/api/') === 0) {
     // ROTAS DE AUTENTICAÇÃOa
     // =========================================================
     if (strpos($requestUri, '/api/auth/') === 0) {
+        require_once __DIR__ . '/../helpers/GoogleAuthenticatorHelper.php';
         require_once __DIR__ . '/../models/AuthModel.php';
+        require_once __DIR__ . '/../models/v4/TwoFactorModel.php';
+        require_once __DIR__ . '/../services/v4/TwoFactorService.php';
         require_once __DIR__ . '/../services/AuthService.php';
         require_once __DIR__ . '/../controllers/AuthController.php';
 
         $authModel = new AuthModel($pdoCineveo, $pdo);
-        $authService = new AuthService($authModel);
+        $twoFactorModel = new \Models\V4\TwoFactorModel($pdo);
+        $twoFactorService = new \Services\V4\TwoFactorService($twoFactorModel);
+        $authService = new AuthService($authModel, $twoFactorService);
         $authController = new AuthController($authService);
 
         if ($requestUri === '/api/auth/status' && $requestMethod === 'GET') {
@@ -26,6 +31,10 @@ if (strpos($requestUri, '/api/') === 0) {
         }
         if ($requestUri === '/api/auth/login' && $requestMethod === 'POST') {
             $authController->login();
+            exit;
+        }
+        if ($requestUri === '/api/auth/verify-2fa' && $requestMethod === 'POST') {
+            $authController->verifyTwoFactorLogin();
             exit;
         }
         if ($requestUri === '/api/auth/activate-profile' && $requestMethod === 'POST') {
@@ -104,5 +113,10 @@ if (strpos($requestUri, '/api/') === 0) {
 // =========================================================
 if ($requestUri === '/manage-profiles') {
     require_once __DIR__ . '/../pages/manage-profiles.php';
+    exit;
+}
+
+if ($requestUri === '/settings') {
+    require_once __DIR__ . '/../pages/settings.php';
     exit;
 }

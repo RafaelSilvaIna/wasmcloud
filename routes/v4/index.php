@@ -11,6 +11,12 @@ declare(strict_types=1);
  * - Verificação de existência de PIN
  * - Alteração e remoção de PIN
  *
+ * Sistema de 2FA (Verificação em Duas Etapas)
+ * - Setup com Google Authenticator
+ * - Validação de códigos TOTP
+ * - Dispositivos confiáveis
+ * - Códigos de backup
+ *
  * Acesso: /api/v4/*
  * Incluído por: routes/index.php
  */
@@ -22,6 +28,9 @@ error_reporting(E_ALL);
 require_once __DIR__ . '/../../database/db.php';
 require_once __DIR__ . '/../../utils/v2/ResponseUtil.php';
 
+// ── Helper ───────────────────────────────────────────────────
+require_once __DIR__ . '/../../helpers/GoogleAuthenticatorHelper.php';
+
 // ── Middleware ───────────────────────────────────────────────
 require_once __DIR__ . '/../../middleware/PinRateLimitMiddleware.php';
 
@@ -30,10 +39,18 @@ require_once __DIR__ . '/../../models/v4/PinModel.php';
 require_once __DIR__ . '/../../services/v4/PinService.php';
 require_once __DIR__ . '/../../controllers/v4/PinController.php';
 
+// ── Classes do sistema de 2FA ────────────────────────────────
+require_once __DIR__ . '/../../models/v4/TwoFactorModel.php';
+require_once __DIR__ . '/../../services/v4/TwoFactorService.php';
+require_once __DIR__ . '/../../controllers/v4/TwoFactorController.php';
+
 use Middleware\PinRateLimitMiddleware;
 use Models\V4\PinModel;
 use Services\V4\PinService;
 use Controllers\V4\PinController;
+use Models\V4\TwoFactorModel;
+use Services\V4\TwoFactorService;
+use Controllers\V4\TwoFactorController;
 
 // ── Inicia sessão ────────────────────────────────────────────
 if (session_status() === PHP_SESSION_NONE) {
@@ -92,6 +109,16 @@ try {
                 exit;
             }
         }
+        
+        $controller->handle($action, $method);
+        exit;
+    }
+
+    // ── Rotas de 2FA ─────────────────────────────────────────
+    if (str_starts_with($action, '2fa')) {
+        $model      = new TwoFactorModel($pdo);
+        $service    = new TwoFactorService($model);
+        $controller = new TwoFactorController($service);
         
         $controller->handle($action, $method);
         exit;

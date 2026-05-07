@@ -472,6 +472,29 @@ if (!isset($_SESSION['user_id'])) {
 
 <body>
 
+    <!-- Header com ícone de configurações -->
+    <div style="position: fixed; top: 24px; right: 24px; z-index: 100;">
+        <button id="btn-settings" style="
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #fff;
+        " onmouseover="this.style.borderColor='rgba(255,255,255,0.4)';this.style.background='rgba(255,255,255,0.05)'" 
+        onmouseout="this.style.borderColor='rgba(255,255,255,0.2)';this.style.background='transparent'">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M12 1v6m0 6v6m4.22-10.22l4.24-4.24M6.34 6.34L2.1 2.1m17.8 17.8l-4.24-4.24M6.34 17.66l-4.24 4.24M23 12h-6m-6 0H1m20.07-4.93l-4.24 4.24M6.34 6.34l-4.24-4.24"/>
+            </svg>
+        </button>
+    </div>
+
     <div class="profiles-wrapper">
         <h1 class="main-title">Quem está assistindo?</h1>
 
@@ -600,7 +623,33 @@ if (!isset($_SESSION['user_id'])) {
     // Componente de aviso de PIN de segurança
     require_once __DIR__ . '/../components/PinWarning.php';
     PinWarning::render();
+    
+    // Modal de validação de PIN para acessar configurações
+    require_once __DIR__ . '/../components/PinValidateModal.php';
+    PinValidateModal::render();
     ?>
+
+    <script>
+        // Evento do botão de configurações
+        document.getElementById('btn-settings')?.addEventListener('click', function() {
+            if (window.PinValidateModal) {
+                window.PinValidateModal.show();
+            }
+        });
+        
+        // Verifica se veio de redirecionamento por falta de PIN
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('needs_pin') === '1') {
+            // Remove o parâmetro da URL
+            window.history.replaceState({}, document.title, window.location.pathname);
+            // Abre o modal automaticamente
+            setTimeout(() => {
+                if (window.PinValidateModal) {
+                    window.PinValidateModal.show();
+                }
+            }, 500);
+        }
+    </script>
 
 </body>
 

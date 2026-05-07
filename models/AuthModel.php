@@ -40,6 +40,92 @@ class AuthModel {
         return $stmt->execute([$tokenHash, $userId, $expiresAt]);
     }
 
+    public function createTwoFactorChallenge(int $userId, string $tokenHash, string $expiresAt): bool {
+        if (!$this->dbPipocine) return false;
+
+        $this->ensureTwoFactorChallengeTable();
+        $this->cleanupTwoFactorChallenges();
+
+        $stmt = $this->dbPipocine->prepare("
+            INSERT INTO two_factor_login_challenges
+            (user_id, token_hash, ip_address, user_agent, expires_at)
+            VALUES (?, ?, ?, ?, ?)
+        ");
+
+        return $stmt->execute([
+            $userId,
+            $tokenHash,
+            $_SERVER['REMOTE_ADDR'] ?? '',
+            substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 255),
+            $expiresAt
+        ]);
+    }
+
+    public function getTwoFactorChallenge(string $tokenHash): ?array {
+        if (!$this->dbPipocine) return null;
+
+        $this->ensureTwoFactorChallengeTable();
+
+        $stmt = $this->dbPipocine->prepare("
+            SELECT id, user_id, token_hash, expires_at
+            FROM two_factor_login_challenges
+            WHERE token_hash = ? AND expires_at > NOW() AND consumed_at IS NULL
+            LIMIT 1
+        ");
+        $stmt->execute([$tokenHash]);
+        $challenge = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $challenge ?: null;
+    }
+
+    public function consumeTwoFactorChallenge(string $tokenHash): bool {
+        if (!$this->dbPipocine) return false;
+
+        $stmt = $this->dbPipocine->prepare("
+            UPDATE two_factor_login_challenges
+            SET consumed_at = NOW()
+            WHERE token_hash = ? AND consumed_at IS NULL
+        ");
+        return $stmt->execute([$tokenHash]);
+    }
+
+    public function deleteTwoFactorChallenge(string $tokenHash): bool {
+        if (!$this->dbPipocine) return false;
+
+        $stmt = $this->dbPipocine->prepare("DELETE FROM two_factor_login_challenges WHERE token_hash = ?");
+        return $stmt->execute([$tokenHash]);
+    }
+
+    private function cleanupTwoFactorChallenges(): void {
+        if (!$this->dbPipocine) return;
+
+        $stmt = $this->dbPipocine->prepare("
+            DELETE FROM two_factor_login_challenges
+            WHERE expires_at < NOW() OR consumed_at IS NOT NULL
+        ");
+        $stmt->execute();
+    }
+
+    private function ensureTwoFactorChallengeTable(): void {
+        if (!$this->dbPipocine) return;
+
+        $this->dbPipocine->exec("
+            CREATE TABLE IF NOT EXISTS two_factor_login_challenges (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                user_id INT NOT NULL,
+                token_hash VARCHAR(64) NOT NULL,
+                ip_address VARCHAR(45) NULL,
+                user_agent VARCHAR(255) NULL,
+                expires_at DATETIME NOT NULL,
+                consumed_at DATETIME NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE KEY uk_token_hash (token_hash),
+                KEY idx_user_id (user_id),
+                KEY idx_expires_at (expires_at)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        ");
+    }
+
     public function getDbPipocine(): ?PDO {
         return $this->dbPipocine;
     }

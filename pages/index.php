@@ -39,6 +39,17 @@ if ($requestUri === '/login') {
     exit;
 }
 
+if (preg_match('/^\/verify=([a-fA-F0-9]{64})$/', $requestUri, $m)) {
+    $_GET['verify'] = $m[1];
+    require_once __DIR__ . '/verify.php';
+    exit;
+}
+
+if ($requestUri === '/verify') {
+    require_once __DIR__ . '/verify.php';
+    exit;
+}
+
 // ROTA: Seleção de Perfil
 if ($requestUri === '/select-profile') {
     require_once __DIR__ . '/select-profile.php';
@@ -48,6 +59,12 @@ if ($requestUri === '/select-profile') {
 // ROTA: Gerenciamento de Perfis
 if ($requestUri === '/manage-profiles') {
     require_once __DIR__ . '/manage-profiles.php';
+    exit;
+}
+
+// ROTA: Configurações (protegida por PIN)
+if ($requestUri === '/settings') {
+    require_once __DIR__ . '/settings.php';
     exit;
 }
 

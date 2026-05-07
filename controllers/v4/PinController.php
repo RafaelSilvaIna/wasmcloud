@@ -155,6 +155,12 @@ class PinController
 
         $result = $this->service->validatePin($userId, (string) $data['pin'], $ipAddress);
         
+        // Se PIN válido, marca sessão para acesso às configurações
+        if ($result['success'] && $result['valid']) {
+            $_SESSION['pin_validated'] = true;
+            $_SESSION['pin_validate_time'] = time();
+        }
+        
         $statusCode = 200;
         if (isset($result['blocked']) && $result['blocked']) {
             $statusCode = 429; // Too Many Requests
