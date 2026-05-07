@@ -57,15 +57,32 @@ class ExhibitionService {
         }
 
         // 4. Constrói o Payload Base
+        // Extrai ano de data_lancamento (ex: "2004-11-16" → 2004)
+        $year = null;
+        if (!empty($baseInfo['data_lancamento'])) {
+            $year = (int) substr($baseInfo['data_lancamento'], 0, 4);
+            if ($year === 0) $year = null;
+        }
+
+        // Gêneros: string separada por vírgula → array limpo
+        $genres = [];
+        if (!empty($baseInfo['generos'])) {
+            $genres = array_values(array_filter(array_map('trim', explode(',', $baseInfo['generos']))));
+        }
+
         $response = [
             'content_info' => [
-                'tmdb_id'  => $baseInfo['id_tmdb'],
-                'title'    => $baseInfo['titulo'],
-                'logo'     => $logo,
-                'overview' => $baseInfo['sinopse'],
-                'poster'   => $baseInfo['poster'],
-                'backdrop' => $baseInfo['capa'],
-                'type'     => $baseInfo['tipo']
+                'tmdb_id'      => $baseInfo['id_tmdb'],
+                'title'        => $baseInfo['titulo'],
+                'logo'         => $logo,
+                'overview'     => $baseInfo['sinopse'],
+                'poster'       => $baseInfo['poster'],
+                'backdrop'     => $baseInfo['capa'],
+                'type'         => $baseInfo['tipo'],
+                'year'         => $year,
+                'genres'       => $genres,
+                'vote_average' => !empty($baseInfo['nota']) ? (float) $baseInfo['nota'] : null,
+                'runtime'      => !empty($baseInfo['duracao']) ? (int) $baseInfo['duracao'] : null,
             ],
             'playback' => [
                 'is_available' => !empty($mainVideoUrl),

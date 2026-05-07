@@ -219,15 +219,18 @@ if (!isset($_SESSION['user_id'])) {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
             gap: 24px 16px;
+            align-items: start;
         }
 
         /* ── CARD ─────────────────────────────────────────────────── */
         .lib-card {
             cursor: pointer;
+            width: 100%;
         }
 
         .lib-card-thumb {
             position: relative;
+            width: 100%;
             aspect-ratio: 2 / 3;
             border-radius: 6px;
             overflow: hidden;
@@ -241,6 +244,9 @@ if (!isset($_SESSION['user_id'])) {
         }
 
         .lib-card-img {
+            position: absolute;
+            top: 0;
+            left: 0;
             width: 100%;
             height: 100%;
             object-fit: cover;

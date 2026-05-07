@@ -21,8 +21,14 @@ $requestUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 // ROTAS DE PÁGINAS (só chega aqui se NÃO for rota de API)
 // ─────────────────────────────────────────────────────────────────────────────
 
-// ROTA: Home / Raiz
-if ($requestUri === '/' || $requestUri === '/home') {
+// ROTA: Landing Page pública (Raiz)
+if ($requestUri === '/' || $requestUri === '/main') {
+    require_once __DIR__ . '/main.php';
+    exit;
+}
+
+// ROTA: Home (Dashboard autenticado)
+if ($requestUri === '/home') {
     require_once __DIR__ . '/home.php';
     exit;
 }

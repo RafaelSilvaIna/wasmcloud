@@ -162,9 +162,11 @@ if (!isset($_SESSION['user_id'])) {
         /* ─── HERO ─────────────────────────────────────── */
         #pip-hero {
             position: relative;
-            min-height: 100vh;
+            height: 100vh;
+            min-height: 520px;
+            max-height: 900px;
             display: flex;
-            align-items: flex-end;
+            align-items: center;
             overflow: hidden;
         }
 
@@ -174,99 +176,105 @@ if (!isset($_SESSION['user_id'])) {
         .hero-backdrop-img {
             width: 100%; height: 100%;
             object-fit: cover;
-            object-position: center 15%;
+            object-position: center top;
         }
         .hero-backdrop-gradient {
             position: absolute; inset: 0;
             background:
-                linear-gradient(to right,  rgba(10,12,16,.95) 30%, rgba(10,12,16,.2) 70%, transparent 100%),
-                linear-gradient(to bottom, transparent 30%, rgba(10,12,16,.7) 65%, var(--bg) 100%);
+                linear-gradient(to right, rgba(10,12,16,.97) 0%, rgba(10,12,16,.88) 35%, rgba(10,12,16,.5) 60%, rgba(10,12,16,.1) 80%, transparent 100%),
+                linear-gradient(to bottom, rgba(10,12,16,.3) 0%, transparent 30%, transparent 70%, rgba(10,12,16,.6) 90%, var(--bg) 100%);
         }
 
         .hero-content {
             position: relative; z-index: 2;
-            width: 100%;
-            max-width: var(--max);
-            margin: 0 auto;
-            padding: 120px 48px 80px;
+            max-width: 540px;
+            margin-left: 7vw;
             display: flex;
             flex-direction: column;
-            gap: 16px;
-            max-width: 620px;
-            margin-left: 0;
-            padding-left: 48px;
+            gap: 20px;
+            padding: 0;
+        }
+
+        /* Studio branding (Disney·Pixar style) */
+        .hero-studio {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: .18em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,.7);
+        }
+        .hero-studio-dot {
+            width: 3px; height: 3px;
+            border-radius: 50%;
+            background: rgba(255,255,255,.4);
         }
 
         /* Logo do conteúdo OU título */
         .hero-logo-img {
-            max-width: 280px;
-            max-height: 100px;
+            max-width: 300px;
+            max-height: 110px;
             width: auto;
             height: auto;
             object-fit: contain;
             object-position: left center;
-            margin-bottom: 4px;
-            filter: drop-shadow(0 2px 12px rgba(0,0,0,.7));
-        }
-
-        .hero-type-tag {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 11px;
-            font-weight: 600;
-            letter-spacing: .14em;
-            text-transform: uppercase;
-            color: var(--yellow);
-        }
-        .hero-type-tag .dot {
-            width: 4px; height: 4px;
-            border-radius: 50%;
-            background: var(--yellow);
+            filter: drop-shadow(0 2px 16px rgba(0,0,0,.8));
         }
 
         .hero-title {
-            font-size: clamp(28px, 5vw, 48px);
-            font-weight: 700;
+            font-size: clamp(32px, 5.5vw, 56px);
+            font-weight: 800;
             letter-spacing: -.03em;
-            line-height: 1.1;
+            line-height: 1.05;
             color: var(--text-pure);
-            text-shadow: 0 2px 20px rgba(0,0,0,.8);
+            text-shadow: 0 2px 24px rgba(0,0,0,.9);
+            margin: 0;
         }
 
+        /* ─── HERO META (ícones inline) ─────────────────── */
         .hero-meta {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 0;
             flex-wrap: wrap;
+            row-gap: 4px;
+        }
+        .meta-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 13px;
+            color: rgba(255,255,255,.75);
+            font-weight: 400;
+        }
+        .meta-item svg {
+            width: 14px; height: 14px;
+            flex-shrink: 0;
+            opacity: .7;
+        }
+        .meta-pipe {
+            width: 1px;
+            height: 13px;
+            background: rgba(255,255,255,.25);
+            margin: 0 10px;
+            flex-shrink: 0;
         }
         .meta-badge {
             display: inline-flex;
             align-items: center;
             font-size: 11px;
-            font-weight: 600;
+            font-weight: 700;
             letter-spacing: .06em;
             text-transform: uppercase;
-            padding: 3px 8px;
-            border-radius: 4px;
+            padding: 2px 7px;
+            border-radius: 3px;
         }
         .meta-badge.quality {
             background: var(--yellow);
             color: #000;
-        }
-        .meta-badge.type {
-            background: transparent;
-            border: 1px solid var(--border-strong);
-            color: var(--text-secondary);
-        }
-        .meta-badge.year {
-            background: transparent;
-            color: var(--text-secondary);
-            font-weight: 400;
-            font-size: 13px;
-            letter-spacing: 0;
-            padding: 0;
-            border: none;
+            margin-right: 4px;
         }
         .meta-sep {
             width: 4px; height: 4px;
@@ -275,45 +283,41 @@ if (!isset($_SESSION['user_id'])) {
         }
 
         .hero-overview {
-            font-size: 14px;
-            color: var(--text-secondary);
+            font-size: 14.5px;
+            color: rgba(255,255,255,.72);
             max-width: 480px;
             display: -webkit-box;
             -webkit-line-clamp: 3;
             -webkit-box-orient: vertical;
             overflow: hidden;
-            line-height: 1.6;
+            line-height: 1.7;
         }
 
         .hero-actions {
             display: flex;
-            gap: 10px;
-            margin-top: 6px;
+            gap: 12px;
             flex-wrap: wrap;
+            align-items: center;
+            margin-top: 4px;
         }
 
         .btn-watch {
             display: inline-flex;
             align-items: center;
-            gap: 8px;
+            gap: 9px;
             font-size: 15px;
             font-weight: 700;
-            letter-spacing: .01em;
-            color: #fff;
-            background: var(--accent);
+            color: #000;
+            background: #fff;
             border: none;
             border-radius: var(--radius);
-            padding: 12px 28px;
+            padding: 13px 30px;
             cursor: pointer;
-            transition: background var(--transition), transform var(--transition), box-shadow var(--transition);
-            box-shadow: var(--shadow-sm);
+            transition: background var(--transition), transform var(--transition);
+            letter-spacing: .01em;
         }
         .btn-watch svg { width: 18px; height: 18px; }
-        .btn-watch:hover {
-            background: var(--accent-hover);
-            transform: scale(1.02);
-            box-shadow: var(--glow-accent);
-        }
+        .btn-watch:hover { background: rgba(255,255,255,.88); transform: scale(1.02); }
         .btn-watch:active { transform: scale(.98); }
 
         .btn-info {
@@ -322,126 +326,64 @@ if (!isset($_SESSION['user_id'])) {
             gap: 8px;
             font-size: 14px;
             font-weight: 600;
-            letter-spacing: .01em;
-            color: var(--text-primary);
-            background: rgba(255,255,255,.1);
-            border: 1px solid rgba(255,255,255,.12);
+            color: #fff;
+            background: rgba(109,109,110,.7);
+            border: none;
             border-radius: var(--radius);
-            padding: 12px 24px;
+            padding: 13px 26px;
             cursor: pointer;
-            backdrop-filter: blur(6px);
-            transition: background var(--transition), color var(--transition);
+            backdrop-filter: blur(4px);
+            transition: background var(--transition);
+            letter-spacing: .01em;
+            text-decoration: none;
         }
         .btn-info svg { width: 16px; height: 16px; }
-        .btn-info:hover {
-            background: rgba(255,255,255,.18);
-            color: var(--text-pure);
+        .btn-info:hover { background: rgba(109,109,110,.9); }
+
+        .hero-divider {
+            width: 100%;
+            height: 1px;
+            background: rgba(255,255,255,.10);
+            margin: 4px 0;
         }
 
-        /* ─── BOTÕES ICÔNICOS (save / like / share / comments) ─ */
-        .btn-icon-group {
+        /* ─── AÇÕES SECUNDÁRIAS (flat text+icon) ────────── */
+        .hero-secondary-actions {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 28px;
+            flex-wrap: wrap;
         }
 
-        .btn-icon {
+        .btn-secondary {
             display: inline-flex;
-            flex-direction: column;
             align-items: center;
-            justify-content: center;
-            gap: 4px;
-            width: 52px;
-            height: 52px;
-            background: rgba(255,255,255,.08);
-            border: 1px solid rgba(255,255,255,.10);
-            border-radius: 50%;
-            color: var(--text-primary);
-            cursor: pointer;
-            transition: background .2s ease, color .2s ease, border-color .2s ease, transform .15s ease;
-            font-family: inherit;
-            text-decoration: none;
-            flex-shrink: 0;
-        }
-        .btn-icon svg { width: 20px; height: 20px; flex-shrink: 0; }
-        .btn-icon:hover {
-            background: rgba(255,255,255,.16);
-            color: var(--text-pure);
-            border-color: rgba(255,255,255,.22);
-            transform: translateY(-2px);
-        }
-        .btn-icon:active { transform: scale(.95); }
-
-        .btn-icon.active-save {
-            color: var(--accent);
-            border-color: var(--accent);
-            background: rgba(229,9,20,.12);
-        }
-        .btn-icon.active-like {
-            color: #60a5fa;
-            border-color: #60a5fa;
-            background: rgba(96,165,250,.12);
-        }
-
-        /* ─── META IMDB / CLASSIFICAÇÃO ──────────────────────── */
-        .meta-badge.imdb {
-            background: #f5c518;
-            color: #000;
-            font-size: 10px;
-            font-weight: 800;
-            letter-spacing: .04em;
-            gap: 3px;
-        }
-        .meta-badge.rating {
-            background: var(--accent);
-            color: #fff;
-            font-size: 10px;
-            font-weight: 800;
-        }
-        .meta-badge.duration {
-            background: transparent;
-            color: var(--text-secondary);
+            gap: 7px;
             font-size: 13px;
-            font-weight: 400;
-            letter-spacing: 0;
-            padding: 0;
+            font-weight: 500;
+            color: rgba(255,255,255,.75);
+            background: none;
             border: none;
+            cursor: pointer;
+            font-family: inherit;
+            transition: color var(--transition);
+            padding: 0;
+            text-decoration: none;
+        }
+        .btn-secondary svg { width: 18px; height: 18px; flex-shrink: 0; }
+        .btn-secondary:hover { color: #fff; }
+        .btn-secondary.active-save { color: var(--accent); }
+        .btn-secondary.active-like { color: #60a5fa; }
+        .btn-secondary-sub {
+            display: block;
+            font-size: 10px;
+            font-weight: 400;
+            color: rgba(255,255,255,.45);
+            margin-top: -2px;
         }
 
         /* ─── OVERVIEW EXPANDÍVEL ────────────────────────────── */
         .hero-overview-wrap { position: relative; }
-        .btn-more-info {
-            background: none;
-            border: none;
-            color: var(--text-pure);
-            font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
-            padding: 4px 0 0;
-            display: block;
-            text-decoration: underline;
-            text-underline-offset: 2px;
-            font-family: inherit;
-        }
-        .btn-more-info:hover { color: var(--accent); }
-
-        /* ─── GENRES ────────────────────────────────────── */
-        .hero-genres {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-top: -4px;
-        }
-        .genre-tag {
-            font-size: 11px;
-            font-weight: 500;
-            color: var(--text-secondary);
-            background: rgba(255,255,255,.06);
-            border: 1px solid rgba(255,255,255,.08);
-            border-radius: 20px;
-            padding: 4px 10px;
-            letter-spacing: .02em;
-        }
 
         /* ─── PIP REVEAL ─────────────────────────────────── */
         .pip-reveal { opacity: 0; transform: translateY(12px); transition: opacity .5s ease, transform .5s ease; }
@@ -464,8 +406,13 @@ if (!isset($_SESSION['user_id'])) {
 
         @media (max-width: 768px) {
             .pip-section { padding: 28px 20px 0; }
-            .hero-content { padding: 100px 20px 64px; }
             #pip-nav { padding: 0 20px; }
+            .hero-content { margin-left: 5vw; max-width: calc(100vw - 40px); gap: 16px; }
+            #pip-hero { align-items: flex-end; padding-bottom: 56px; height: auto; min-height: 100svh; }
+            .hero-overview { -webkit-line-clamp: 2; }
+            .hero-actions { flex-wrap: nowrap; gap: 10px; }
+            .btn-watch { padding: 12px 20px; font-size: 14px; white-space: nowrap; }
+            .btn-info { padding: 12px 18px; font-size: 13px; white-space: nowrap; }
         }
 
         .section-header {
@@ -684,6 +631,35 @@ if (!isset($_SESSION['user_id'])) {
             font-variant-numeric: tabular-nums;
         }
 
+        .ep-watched {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 18px;
+            height: 18px;
+            border-radius: 999px;
+            background: rgba(255,255,255,.06);
+            color: rgba(226,232,240,.85);
+            border: 1px solid rgba(148,163,184,.20);
+            box-shadow: 0 0 0 1px rgba(0,0,0,.25) inset;
+            transition: background .15s ease, border-color .15s ease, color .15s ease, transform .15s ease;
+        }
+
+        .ep-row:hover .ep-watched {
+            background: rgba(255,255,255,.08);
+            border-color: rgba(148,163,184,.30);
+            transform: translateY(-1px);
+        }
+
+        .ep-watched.is-on {
+            background: rgba(229,9,20,.14);
+            border-color: rgba(229,9,20,.45);
+            color: rgba(255,255,255,.95);
+        }
+
+        .ep-row.is-watched .ep-num { color: rgba(229,9,20,.95); }
+        .ep-row.is-watched .ep-thumb { outline: 2px solid rgba(229,9,20,.18); outline-offset: 2px; }
+
         @media (max-width: 640px) {
             .ep-row { grid-template-columns: 36px 120px 1fr; }
             .ep-duration { display: none; }
@@ -835,59 +811,61 @@ if (!isset($_SESSION['user_id'])) {
     <!-- ── PÁGINA PRINCIPAL (oculta até carregar) ───────── -->
     <div id="pip-page" style="display:none;">
 
-        <!-- Hero -->
         <section id="pip-hero" aria-label="Informações do conteúdo">
             <div class="hero-backdrop">
                 <img id="hero-backdrop-img" src="" alt="" class="hero-backdrop-img" loading="eager">
                 <div class="hero-backdrop-gradient"></div>
             </div>
             <div class="hero-content">
+
                 <!-- Logo do conteúdo (da API) ou título como fallback -->
                 <div id="hero-logo-wrap"></div>
 
-                <div id="hero-type-tag" class="hero-type-tag pip-reveal pip-reveal-1">
-                    <span class="dot"></span>
-                    <span id="hero-type-label"></span>
-                </div>
-
-                <div id="hero-meta" class="hero-meta pip-reveal pip-reveal-1"></div>
-
+                <!-- Sinopse -->
                 <div class="hero-overview-wrap pip-reveal pip-reveal-2">
                     <p id="hero-overview" class="hero-overview"></p>
-                    <button class="btn-more-info" id="btn-more-info" style="display:none;" onclick="PipView.goToInfo()">Ver mais</button>
                 </div>
 
-                <div id="hero-genres" class="hero-genres pip-reveal pip-reveal-2"></div>
+                <!-- Meta: ano | gêneros | nota -->
+                <div id="hero-meta" class="hero-meta pip-reveal pip-reveal-2"></div>
 
+                <!-- Botões principais -->
                 <div class="hero-actions pip-reveal pip-reveal-3">
                     <button class="btn-watch" id="btn-watch" onclick="PipView.startPlayback()">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
                         Assistir agora
                     </button>
-                    <button class="btn-info" id="btn-episodes" style="display:none;" onclick="PipView.scrollToEpisodes()">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h9"/></svg>
-                        Episódios
-                    </button>
                     <a class="btn-info" id="btn-more-details" href="#" style="display:none;">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                        Mais infos
+                        Mais informações
                     </a>
-
-                    <div class="btn-icon-group" style="margin-left:4px;">
-                        <!-- Salvar -->
-                        <button class="btn-icon" id="btn-save" aria-label="Salvar" onclick="PipView.toggleSave()">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                        </button>
-                        <!-- Curtir -->
-                        <button class="btn-icon" id="btn-like" aria-label="Curtir" onclick="PipView.toggleLike()">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>
-                        </button>
-                        <!-- Comentários -->
-                        <button class="btn-icon" aria-label="Comentários" onclick="if(window.PipComments)PipComments.open()">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                        </button>
-                    </div>
                 </div>
+
+                <!-- Divisor -->
+                <div class="hero-divider pip-reveal pip-reveal-3"></div>
+
+                <!-- Ações secundárias: Minha lista | Gostei | Reportar -->
+                <div class="hero-secondary-actions pip-reveal pip-reveal-3">
+                    <!-- Salvar (+ Minha lista) -->
+                    <button class="btn-secondary" id="btn-save" aria-label="Minha lista" onclick="PipView.toggleSave()">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        <span>Minha lista</span>
+                    </button>
+                    <!-- Curtir -->
+                    <button class="btn-secondary" id="btn-like" aria-label="Gostei" onclick="PipView.toggleLike()">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>
+                        <span>Gostei</span>
+                    </button>
+                    <!-- Reportar -->
+                    <button class="btn-secondary" aria-label="Reportar" onclick="if(window.PipComments)PipComments.open()">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+                        <span>
+                            Reportar
+                            <span class="btn-secondary-sub">Problema no conteúdo</span>
+                        </span>
+                    </button>
+                </div>
+
             </div>
         </section>
 
@@ -952,6 +930,7 @@ if (!isset($_SESSION['user_id'])) {
                 <span class="ep-desc">${overview}</span>
             </div>
             <span class="ep-duration">${runtime}</span>
+            ${watched_badge}
         </div>
     </template>
 
@@ -969,6 +948,7 @@ if (!isset($_SESSION['user_id'])) {
 
         static cfg  = {};
         static data = null;
+        static watchedMap = {};
 
         /* ── Inicialização ──────────────────────────────── */
         static async init() {
@@ -1006,7 +986,10 @@ if (!isset($_SESSION['user_id'])) {
                 this.renderHero(this.data.content_info, this.data.playback);
 
                 const isSerie = ['serie', 'series', 'tv'].includes(type);
-                if (isSerie) this.renderEpisodes(this.data);
+                if (isSerie) {
+                    await this.loadWatchedMap();
+                    this.renderEpisodes(this.data);
+                }
 
                 this.renderCast(id, type);
                 this.reveal();
@@ -1029,10 +1012,10 @@ if (!isset($_SESSION['user_id'])) {
                 document.getElementById('hero-backdrop-img').alt = meta.title;
             }
 
+
             // Logo do conteúdo OU título como fallback
             const logoWrap = document.getElementById('hero-logo-wrap');
             if (meta.logo) {
-                // logo vindo da API (ex: "logo": "/oJKousgd...png")
                 const logoSrc = meta.logo.startsWith('http')
                     ? meta.logo
                     : `https://image.tmdb.org/t/p/w500${meta.logo}`;
@@ -1046,53 +1029,67 @@ if (!isset($_SESSION['user_id'])) {
                 logoWrap.innerHTML = this.titleFallback(meta.title);
             }
 
-            // Tag tipo
-            document.getElementById('hero-type-label').textContent =
-                isSerie ? 'Série · Pipocine' : 'Filme · Pipocine';
-
-            // Meta badges (gerado mais abaixo junto com vote_average e runtime)
-
             // Overview
             document.getElementById('hero-overview').textContent =
                 meta.overview || 'Sinopse não disponível.';
 
-            // Botão "Ver mais" (sempre visível se há sinopse)
-            if (meta.overview) {
-                document.getElementById('btn-more-info').style.display = 'block';
-            }
-
-            // Genres
-            const genresEl = document.getElementById('hero-genres');
-            if (meta.genres?.length) {
-                genresEl.innerHTML = meta.genres.slice(0, 4)
-                    .map(g => `<span class="genre-tag">${this.esc(g)}</span>`)
-                    .join('');
-                genresEl.style.display = 'flex';
-            }
-
-            // Remove genres do meta badges para não duplicar
+            // Meta row: qualidade | ano | gêneros | nota estrela
             const metaEl = document.getElementById('hero-meta');
-            const metaParts = [];
-            if (meta.vote_average) {
-                metaParts.push(`<span class="meta-badge imdb">IMDb ${parseFloat(meta.vote_average).toFixed(1)}</span>`);
-                metaParts.push(`<span class="meta-sep"></span>`);
-            }
-            if (meta.year) metaParts.push(`<span class="meta-badge year">${meta.year}</span>`);
-            if (meta.runtime) {
-                metaParts.push(`<span class="meta-sep"></span>`);
-                const h = Math.floor(meta.runtime / 60), m = meta.runtime % 60;
-                metaParts.push(`<span class="meta-badge duration">${h > 0 ? h + 'h ' : ''}${m}min</span>`);
-            }
-            metaParts.push(`<span class="meta-sep"></span><span class="meta-badge quality">${playback?.quality || 'HD'}</span>`);
-            metaEl.innerHTML = metaParts.join('');
+            const parts = [];
 
-            // Botão "Mais infos" link para /info
+            // Ano
+            if (meta.year) {
+                if (parts.length) parts.push(`<span class="meta-pipe"></span>`);
+                parts.push(`
+                    <span class="meta-item">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                        </svg>
+                        ${meta.year}
+                    </span>
+                `);
+            }
+
+            // Gêneros
+            if (meta.genres?.length) {
+                const genreStr = meta.genres.slice(0, 2).join(' • ');
+                if (parts.length) parts.push(`<span class="meta-pipe"></span>`);
+                parts.push(`
+                    <span class="meta-item">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="17" y1="7" x2="22" y2="7"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="2" y1="17" x2="7" y2="17"/>
+                        </svg>
+                        ${this.esc(genreStr)}
+                    </span>
+                `);
+            }
+
+            // Nota (estrela)
+            if (meta.vote_average) {
+                if (parts.length) parts.push(`<span class="meta-pipe"></span>`);
+                parts.push(`
+                    <span class="meta-item">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                        </svg>
+                        ${parseFloat(meta.vote_average).toFixed(1)}
+                    </span>
+                `);
+            }
+
+            // Duração (filmes)
+            if (meta.runtime && !isSerie) {
+                if (parts.length) parts.push(`<span class="meta-pipe"></span>`);
+                const h = Math.floor(meta.runtime / 60), m = meta.runtime % 60;
+                parts.push(`<span class="meta-item">${h > 0 ? h + 'h ' : ''}${m}min</span>`);
+            }
+
+            metaEl.innerHTML = parts.join('');
+
+            // Botão "Mais informações" link para /info
             const btnDetails = document.getElementById('btn-more-details');
             btnDetails.href = `/info=${this.cfg.id}`;
             btnDetails.style.display = 'inline-flex';
-
-            // Botão episódios
-            if (isSerie) document.getElementById('btn-episodes').style.display = 'inline-flex';
 
             // Title da aba
             document.title = `${meta.title} — Pipocine`;
@@ -1142,6 +1139,14 @@ if (!isset($_SESSION['user_id'])) {
                 const isActive  = ep.episode === currentEp;
                 const runtime   = ep.runtime ? `${ep.runtime} min` : '';
                 const activeBar = isActive ? '<div class="ep-active-indicator"></div>' : '';
+                const watched   = !!this.watchedMap?.[ep.episode];
+                const watchedBadge = watched
+                    ? `<span class="ep-watched is-on" role="img" aria-label="Assistido" title="Assistido" onclick="PipView.toggleWatched(event, ${ep.season}, ${ep.episode})">
+                           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                       </span>`
+                    : `<span class="ep-watched" role="img" aria-label="Marcar como assistido" title="Marcar como assistido" onclick="PipView.toggleWatched(event, ${ep.season}, ${ep.episode})">
+                           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                       </span>`;
 
                 return tpl
                     .replaceAll('${season}',   ep.season)
@@ -1150,12 +1155,44 @@ if (!isset($_SESSION['user_id'])) {
                     .replaceAll('${name}',     this.esc(ep.name))
                     .replaceAll('${overview}', this.esc(ep.overview || 'Sinopse indisponível.'))
                     .replaceAll('${runtime}',  runtime)
+                    .replaceAll('${watched_badge}', watchedBadge)
                     .replaceAll('${active_bar}', activeBar)
                     .replace('class="ep-row"',
-                        `class="ep-row${isActive ? ' ep-active' : ''}"`)
+                        `class="ep-row${isActive ? ' ep-active' : ''}${watched ? ' is-watched' : ''}"`)
                     .replace('onclick="PipView.goToEpisode(${season}, ${ep_num})"',
                         `onclick="PipView.goToEpisode(${ep.season}, ${ep.episode})"`);
             }).join('');
+        }
+
+        static async loadWatchedMap() {
+            try {
+                const { id, s } = this.cfg;
+                const res = await fetch(`/api/v3/watched-episodes/map?serie_id=${id}&season=${s}`);
+                if (!res.ok) { this.watchedMap = {}; return; }
+                const json = await res.json();
+                if (!json.sucesso) { this.watchedMap = {}; return; }
+                this.watchedMap = json.dados?.watched || {};
+            } catch {
+                this.watchedMap = {};
+            }
+        }
+
+        static async toggleWatched(ev, season, episode) {
+            ev?.stopPropagation?.();
+            ev?.preventDefault?.();
+            try {
+                const res = await fetch('/api/v3/watched-episodes/toggle', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ serie_id: parseInt(this.cfg.id), season, episode }),
+                });
+                if (!res.ok) return;
+                const json = await res.json();
+                if (!json.sucesso) return;
+                if (json.dados?.watched) this.watchedMap[episode] = true;
+                else delete this.watchedMap[episode];
+                this.renderEpisodes(this.data);
+            } catch {}
         }
 
         /* ── Elenco ─────────────────────────────────────── */
@@ -1189,8 +1226,21 @@ if (!isset($_SESSION['user_id'])) {
         /* ── Navegação ──────────────────────────────────── */
         static goToEpisode(season, ep) {
             const { id, type } = this.cfg;
-            // Redireciona para o player com o episódio selecionado
-            window.location.href = `/player?id=${id}&type=${type}&s=${season}&e=${ep}`;
+            // Marca como assistido e redireciona para o player com o episódio selecionado
+            this.markWatchedBeforePlay(season, ep, id, type);
+        }
+
+        static async markWatchedBeforePlay(season, episode, id, type) {
+            try {
+                await fetch('/api/v3/watched-episodes/mark', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ serie_id: parseInt(id), season, episode }),
+                    keepalive: true,
+                });
+            } catch {}
+
+            window.location.href = `/player?id=${id}&type=${type}&s=${season}&e=${episode}`;
         }
 
         static changeSeason(s) {
@@ -1260,17 +1310,19 @@ if (!isset($_SESSION['user_id'])) {
             const btnLike = document.getElementById('btn-like');
             if (!btnSave || !btnLike) return;
 
+            // Salvar
             btnSave.classList.toggle('active-save', !!saved);
-            btnSave.setAttribute('aria-label', saved ? 'Remover da lista' : 'Salvar');
+            btnSave.setAttribute('aria-label', saved ? 'Remover da lista' : 'Minha lista');
             btnSave.innerHTML = saved
-                ? `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>`
-                : `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`;
+                ? `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg><span>Minha lista</span>`
+                : `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>Minha lista</span>`;
 
+            // Curtir
             btnLike.classList.toggle('active-like', !!liked);
-            btnLike.setAttribute('aria-label', liked ? 'Descurtir' : 'Curtir');
+            btnLike.setAttribute('aria-label', liked ? 'Descurtir' : 'Gostei');
             btnLike.innerHTML = liked
-                ? `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>`
-                : `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>`;
+                ? `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg><span>Gostei</span>`
+                : `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg><span>Gostei</span>`;
         }
 
         static async toggleSave() {

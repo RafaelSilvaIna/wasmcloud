@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 200" preserveAspectRatio="xMidYMid meet">
+  <defs>
+    <!-- Gradient for the animated paths -->
+    <linearGradient id="pathGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#e50914;stop-opacity:0" />
+      <stop offset="50%" style="stop-color:#e50914;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#e50914;stop-opacity:0" />
+    </linearGradient>
+    
+    <!-- Glow filter -->
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Background grid -->
+  <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+    <circle cx="20" cy="20" r="1" fill="rgba(229,9,20,0.1)"/>
+  </pattern>
+  <rect width="1200" height="200" fill="url(#grid)"/>
+  
+  <!-- Connection lines between platforms -->
+  <g stroke="url(#pathGradient)" stroke-width="2" fill="none" filter="url(#glow)">
+    <!-- Path 1: Netflix to Prime -->
+    <path d="M 100 100 Q 250 50 300 100">
+      <animate attributeName="stroke-dasharray" values="0,300;300,0" dur="2s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0;1;0" dur="2s" repeatCount="indefinite"/>
+    </path>
+    
+    <!-- Path 2: Prime to Disney -->
+    <path d="M 300 100 Q 450 150 500 100">
+      <animate attributeName="stroke-dasharray" values="0,300;300,0" dur="2s" begin="0.3s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0;1;0" dur="2s" begin="0.3s" repeatCount="indefinite"/>
+    </path>
+    
+    <!-- Path 3: Disney to HBO -->
+    <path d="M 500 100 Q 650 50 700 100">
+      <animate attributeName="stroke-dasharray" values="0,300;300,0" dur="2s" begin="0.6s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0;1;0" dur="2s" begin="0.6s" repeatCount="indefinite"/>
+    </path>
+    
+    <!-- Path 4: HBO to Paramount -->
+    <path d="M 700 100 Q 850 150 900 100">
+      <animate attributeName="stroke-dasharray" values="0,300;300,0" dur="2s" begin="0.9s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0;1;0" dur="2s" begin="0.9s" repeatCount="indefinite"/>
+    </path>
+    
+    <!-- Path 5: Paramount to Apple -->
+    <path d="M 900 100 Q 1050 50 1100 100">
+      <animate attributeName="stroke-dasharray" values="0,300;300,0" dur="2s" begin="1.2s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0;1;0" dur="2s" begin="1.2s" repeatCount="indefinite"/>
+    </path>
+  </g>
+  
+  <!-- Animated data packets flowing along paths -->
+  <circle r="4" fill="#e50914" filter="url(#glow)">
+    <animateMotion path="M 100 100 Q 250 50 300 100" dur="2s" repeatCount="indefinite"/>
+  </circle>
+  
+  <circle r="4" fill="#e50914" filter="url(#glow)">
+    <animateMotion path="M 300 100 Q 450 150 500 100" dur="2s" begin="0.3s" repeatCount="indefinite"/>
+  </circle>
+  
+  <circle r="4" fill="#e50914" filter="url(#glow)">
+    <animateMotion path="M 500 100 Q 650 50 700 100" dur="2s" begin="0.6s" repeatCount="indefinite"/>
+  </circle>
+  
+  <circle r="4" fill="#e50914" filter="url(#glow)">
+    <animateMotion path="M 700 100 Q 850 150 900 100" dur="2s" begin="0.9s" repeatCount="indefinite"/>
+  </circle>
+  
+  <circle r="4" fill="#e50914" filter="url(#glow)">
+    <animateMotion path="M 900 100 Q 1050 50 1100 100" dur="2s" begin="1.2s" repeatCount="indefinite"/>
+  </circle>
+  
+  <!-- Central hub pulsing circle -->
+  <circle cx="600" cy="100" r="30" fill="none" stroke="#e50914" stroke-width="2" opacity="0.5">
+    <animate attributeName="r" values="30;50;30" dur="3s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.5;0;0.5" dur="3s" repeatCount="indefinite"/>
+  </circle>
+  
+  <circle cx="600" cy="100" r="20" fill="none" stroke="#e50914" stroke-width="1" opacity="0.3">
+    <animate attributeName="r" values="20;40;20" dur="3s" begin="1s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.3;0;0.3" dur="3s" begin="1s" repeatCount="indefinite"/>
+  </circle>
+</svg>

@@ -596,6 +596,12 @@ if (!isset($_SESSION['user_id'])) {
         });
     </script>
 
+    <?php
+    // Componente de aviso de PIN de segurança
+    require_once __DIR__ . '/../components/PinWarning.php';
+    PinWarning::render();
+    ?>
+
 </body>
 
 </html>

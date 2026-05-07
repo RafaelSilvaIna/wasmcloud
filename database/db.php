@@ -174,8 +174,11 @@ if (!$pdoCineveo) {
     exit;
 }
 
-$pdo = createPDO(DB_PIPO['name'], DB_PIPO['user_primary'], DB_PIPO['pass'])
+$pdoPipocine = createPDO(DB_PIPO['name'], DB_PIPO['user_primary'], DB_PIPO['pass'])
     ?? createPDO(DB_PIPO['name'], DB_PIPO['user_fallback'], DB_PIPO['pass']);
+
+// Mantém compatibilidade: a v3 usa $pdo historicamente como conexão do Pipocine
+$pdo = $pdoPipocine;
 
 // AUTH
 if (!isset($_SESSION['user_id'])) {

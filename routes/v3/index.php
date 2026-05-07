@@ -32,6 +32,10 @@ require_once __DIR__ . '/../../controllers/v3/LibraryController.php';
 require_once __DIR__ . '/../../models/v3/WatchProgressModel.php';
 require_once __DIR__ . '/../../controllers/v3/WatchProgressController.php';
 
+// ── Classes de episódios assistidos ─────────────────────────
+require_once __DIR__ . '/../../models/v3/WatchedEpisodesModel.php';
+require_once __DIR__ . '/../../controllers/v3/WatchedEpisodesController.php';
+
 use Models\V3\CommentModel;
 use Services\V3\CommentService;
 use Controllers\V3\CommentController;
@@ -39,6 +43,8 @@ use Models\V3\LibraryModel;
 use Controllers\V3\LibraryController;
 use Models\V3\WatchProgressModel;
 use Controllers\V3\WatchProgressController;
+use Models\V3\WatchedEpisodesModel;
+use Controllers\V3\WatchedEpisodesController;
 
 // ── Inicia sessão ────────────────────────────────────────────
 if (session_status() === PHP_SESSION_NONE) {
@@ -105,6 +111,14 @@ try {
     if (str_starts_with($action, 'watch-progress')) {
         $model      = new WatchProgressModel($pdo);
         $controller = new WatchProgressController($model);
+        $controller->handle($action, $method);
+        exit;
+    }
+
+    // ── Episódios assistidos (por perfil) ─────────────────────
+    if (str_starts_with($action, 'watched-episodes')) {
+        $model      = new WatchedEpisodesModel($pdo);
+        $controller = new WatchedEpisodesController($model);
         $controller->handle($action, $method);
         exit;
     }

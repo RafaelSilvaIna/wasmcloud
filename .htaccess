@@ -31,14 +31,18 @@ DirectoryIndex index.php index.html
     # Roteamento da API
     RewriteRule ^api/v2/(.*)$ routes/v2/index.php [QSA,L]
     RewriteRule ^api/v3/(.*)$ routes/v3/index.php [QSA,L]
+    RewriteRule ^api/v4/(.*)$ routes/v4/index.php [QSA,L]
 
     # Bloqueio de pastas sensíveis
-    # Adicionada exceção para permitir o redirecionamento interno para os entrypoints da V2 e V3
+    # Adicionada exceção para permitir o redirecionamento interno para os entrypoints da V2, V3 e V4
     RewriteCond %{REQUEST_URI} !^/routes/v2/index.php
     RewriteCond %{REQUEST_URI} !^/routes/v3/index.php
-    RewriteRule ^(components/|controllers/|data/|database/|helpers/|hooks/|models/|routes/|services/|utils/)(/.*)?$ - [F,L]
+    RewriteCond %{REQUEST_URI} !^/routes/v4/index.php
+    RewriteRule ^(components/|controllers/|data/|database/|helpers/|hooks/|models/|routes/|services/|utils/|middleware/)(/.*)?$ - [F,L]
 
     # Redirecionamento para páginas específicas
+    RewriteRule ^developer/?$ pages/developer/index.php [L]
+    RewriteRule ^developer/([^/]+)/?$ pages/developer/index.php?action=$1 [QSA,L]
     RewriteRule ^home/?$ pages/index.php [L]
     RewriteRule ^minha-lista/?$ pages/index.php [L]
     RewriteRule ^busca/?$ pages/index.php [L]
