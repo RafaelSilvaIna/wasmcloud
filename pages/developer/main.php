@@ -1,7 +1,7 @@
 <?php
 /**
  * PipoCine Developer Portal
- * Apresentação minimalista da API para desenvolvedores
+ * Pagina comercial da API para desenvolvedores.
  */
 ?>
 <!DOCTYPE html>
@@ -9,563 +9,723 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="PipoCine API - A API mais segura para construir plataformas de streaming">
-    <title>PipoCine API — Segurança e Simplicidade</title>
-    
+    <meta name="description" content="PipoCine API - planos para desenvolvedores criarem experiencias de streaming.">
+    <title>PipoCine API - Planos para Desenvolvedores</title>
+
     <style>
+        :root {
+            --bg: #050507;
+            --surface: #0f1014;
+            --surface-2: #15161b;
+            --line: rgba(255, 255, 255, 0.1);
+            --line-soft: rgba(255, 255, 255, 0.065);
+            --text: #ffffff;
+            --muted: #a1a1aa;
+            --soft: #71717a;
+            --accent: #e50914;
+            --accent-2: #ff2631;
+            --success: #22c55e;
+        }
+
         * {
+            box-sizing: border-box;
             margin: 0;
             padding: 0;
-            box-sizing: border-box;
         }
-        
+
+        html {
+            scroll-behavior: smooth;
+        }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #050508;
-            color: #fff;
-            line-height: 1.7;
+            min-height: 100vh;
+            background: var(--bg);
+            color: var(--text);
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            line-height: 1.5;
         }
-        
+
+        a {
+            color: inherit;
+        }
+
         .container {
-            max-width: 1100px;
+            width: min(1120px, calc(100% - 48px));
             margin: 0 auto;
-            padding: 0 24px;
         }
-        
-        /* Navbar */
+
         .nav {
-            position: fixed;
+            position: sticky;
             top: 0;
-            left: 0;
-            right: 0;
-            padding: 20px 0;
-            background: rgba(5, 5, 8, 0.9);
-            backdrop-filter: blur(20px);
-            z-index: 100;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            z-index: 50;
+            background: rgba(5, 5, 7, 0.84);
+            border-bottom: 1px solid var(--line-soft);
+            backdrop-filter: blur(18px);
         }
-        
-        .nav .container {
+
+        .nav-inner {
+            min-height: 68px;
             display: flex;
             align-items: center;
             justify-content: space-between;
+            gap: 24px;
         }
-        
-        .logo {
-            display: flex;
+
+        .brand {
+            display: inline-flex;
             align-items: center;
             gap: 10px;
             text-decoration: none;
-            color: #fff;
-            font-weight: 700;
-            font-size: 18px;
-        }
-        
-        .logo-icon {
-            width: 36px;
-            height: 36px;
-            background: linear-gradient(135deg, #e50914, #ff6b6b);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .logo-dev {
-            color: #ff6b6b;
-            font-size: 13px;
-            font-weight: 500;
-            margin-left: 4px;
-        }
-        
-        .nav-cta {
-            padding: 10px 20px;
-            background: #e50914;
-            color: #fff;
-            text-decoration: none;
-            border-radius: 20px;
-            font-size: 14px;
-            font-weight: 600;
-            transition: all 0.2s;
-        }
-        
-        .nav-cta:hover {
-            background: #ff1a25;
-            transform: translateY(-1px);
-        }
-        
-        /* Hero */
-        .hero {
-            min-height: 90vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            padding: 140px 0 80px;
-            position: relative;
-        }
-        
-        .hero::before {
-            content: '';
-            position: absolute;
-            width: 500px;
-            height: 500px;
-            background: radial-gradient(circle, rgba(229, 9, 20, 0.2), transparent 70%);
-            border-radius: 50%;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 0;
-            animation: pulse 4s ease-in-out infinite;
-        }
-        
-        @keyframes pulse {
-            0%, 100% { opacity: 0.3; transform: translate(-50%, -50%) scale(1); }
-            50% { opacity: 0.6; transform: translate(-50%, -50%) scale(1.1); }
-        }
-        
-        .hero-content {
-            position: relative;
-            z-index: 1;
-            max-width: 700px;
-        }
-        
-        .hero-badge {
-            display: inline-block;
-            padding: 8px 16px;
-            background: rgba(229, 9, 20, 0.15);
-            border: 1px solid rgba(229, 9, 20, 0.3);
-            border-radius: 20px;
-            font-size: 13px;
-            color: #ff6b6b;
-            margin-bottom: 24px;
-        }
-        
-        .hero h1 {
-            font-size: clamp(2.5rem, 6vw, 4rem);
             font-weight: 800;
-            line-height: 1.1;
+            letter-spacing: 0;
+        }
+
+        .brand-mark {
+            width: 32px;
+            height: 32px;
+            display: grid;
+            place-items: center;
+            border-radius: 8px;
+            background: var(--accent);
+            font-weight: 900;
+        }
+
+        .brand span:last-child {
+            color: var(--muted);
+            font-size: 0.82rem;
+            font-weight: 700;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 22px;
+        }
+
+        .nav-links a {
+            color: var(--muted);
+            text-decoration: none;
+            font-size: 0.88rem;
+            font-weight: 600;
+        }
+
+        .nav-links a:hover {
+            color: #fff;
+        }
+
+        .nav-cta {
+            min-height: 38px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 16px;
+            color: #fff !important;
+            background: var(--accent);
+            border-radius: 8px;
+        }
+
+        .hero {
+            padding: 92px 0 64px;
+            border-bottom: 1px solid var(--line-soft);
+            background:
+                linear-gradient(180deg, rgba(229, 9, 20, 0.08), transparent 42%),
+                var(--bg);
+        }
+
+        .hero-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.65fr);
+            gap: 56px;
+            align-items: end;
+        }
+
+        .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            min-height: 28px;
+            padding: 0 10px;
+            border: 1px solid rgba(229, 9, 20, 0.24);
+            border-radius: 999px;
+            color: #ffb4b8;
+            background: rgba(229, 9, 20, 0.08);
+            font-size: 0.78rem;
+            font-weight: 800;
+            margin-bottom: 18px;
+        }
+
+        .hero h1 {
+            max-width: 720px;
+            font-size: 4.1rem;
+            line-height: 1.02;
+            font-weight: 850;
+            letter-spacing: 0;
             margin-bottom: 20px;
         }
-        
-        .hero h1 span {
-            color: #e50914;
-        }
-        
-        .hero p {
-            font-size: 18px;
-            color: rgba(255, 255, 255, 0.7);
-            margin-bottom: 40px;
-            max-width: 500px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-        
-        .hero-btn {
-            display: inline-block;
-            padding: 16px 40px;
-            background: #e50914;
-            color: #fff;
-            text-decoration: none;
-            border-radius: 30px;
-            font-size: 16px;
-            font-weight: 600;
-            transition: all 0.2s;
-        }
-        
-        .hero-btn:hover {
-            background: #ff1a25;
-            transform: translateY(-2px);
-            box-shadow: 0 10px 40px rgba(229, 9, 20, 0.3);
-        }
-        
-        /* Trust Section */
-        .trust {
-            padding: 60px 0;
-            background: #0a0a0f;
-            border-top: 1px solid rgba(255, 255, 255, 0.05);
-        }
-        
-        .trust-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 40px;
-            text-align: center;
-        }
-        
-        .trust-item h3 {
-            font-size: 14px;
-            font-weight: 600;
-            color: #fff;
-            margin-bottom: 8px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        
-        .trust-item p {
-            font-size: 14px;
-            color: rgba(255, 255, 255, 0.5);
-        }
-        
-        /* Pricing */
-        .pricing {
-            padding: 100px 0;
-            background: #050508;
-        }
-        
-        .section-header {
-            text-align: center;
-            margin-bottom: 60px;
-        }
-        
-        .section-header h2 {
-            font-size: clamp(1.8rem, 4vw, 2.5rem);
-            margin-bottom: 12px;
-        }
-        
-        .section-header p {
-            color: rgba(255, 255, 255, 0.6);
-            font-size: 16px;
-        }
-        
-        .pricing-card {
-            max-width: 420px;
-            margin: 0 auto;
-            background: #12151c;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 20px;
-            padding: 40px;
-            position: relative;
-        }
-        
-        .pricing-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 3px;
-            background: linear-gradient(90deg, #e50914, #ff6b6b);
-            border-radius: 20px 20px 0 0;
-        }
-        
-        .pricing-badge {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            padding: 6px 14px;
-            background: #e50914;
-            color: #fff;
-            font-size: 12px;
-            font-weight: 600;
-            border-radius: 6px;
-        }
-        
-        .pricing-header {
+
+        .hero-copy {
+            max-width: 650px;
+            color: var(--muted);
+            font-size: 1.06rem;
             margin-bottom: 30px;
         }
-        
-        .pricing-header h3 {
-            font-size: 24px;
-            margin-bottom: 4px;
+
+        .hero-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
         }
-        
-        .pricing-header p {
-            font-size: 14px;
-            color: rgba(255, 255, 255, 0.5);
+
+        .btn {
+            min-height: 44px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 18px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 0.93rem;
+            font-weight: 750;
+            border: 1px solid transparent;
         }
-        
+
+        .btn-primary {
+            color: #fff;
+            background: var(--accent);
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-2);
+        }
+
+        .btn-secondary {
+            color: #fff;
+            background: transparent;
+            border-color: var(--line);
+        }
+
+        .hero-summary {
+            background: rgba(15, 16, 20, 0.86);
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            overflow: hidden;
+        }
+
+        .summary-row {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 20px;
+            padding: 16px 18px;
+            border-bottom: 1px solid var(--line-soft);
+        }
+
+        .summary-row:last-child {
+            border-bottom: 0;
+        }
+
+        .summary-row span:first-child {
+            color: var(--muted);
+            font-size: 0.86rem;
+        }
+
+        .summary-row strong {
+            color: #fff;
+            font-size: 0.9rem;
+            text-align: right;
+        }
+
+        .section {
+            padding: 72px 0;
+        }
+
+        .section-heading {
+            display: flex;
+            align-items: end;
+            justify-content: space-between;
+            gap: 28px;
+            margin-bottom: 26px;
+        }
+
+        .section-heading h2 {
+            font-size: 2.25rem;
+            line-height: 1.12;
+            letter-spacing: 0;
+        }
+
+        .section-heading p {
+            max-width: 420px;
+            color: var(--muted);
+            font-size: 0.94rem;
+        }
+
+        .plan-grid {
+            display: grid;
+            grid-template-columns: 0.85fr 1.15fr;
+            gap: 18px;
+            align-items: stretch;
+        }
+
+        .plan-card {
+            display: flex;
+            flex-direction: column;
+            min-height: 100%;
+            padding: 24px;
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: 14px;
+        }
+
+        .plan-card.paid {
+            background: linear-gradient(180deg, rgba(229, 9, 20, 0.12), rgba(15, 16, 20, 0.98) 36%);
+            border-color: rgba(229, 9, 20, 0.36);
+        }
+
+        .plan-label {
+            color: var(--soft);
+            font-size: 0.75rem;
+            font-weight: 850;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 12px;
+        }
+
+        .plan-title-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+
+        .plan-card h3 {
+            font-size: 1.35rem;
+            line-height: 1.2;
+        }
+
+        .plan-badge {
+            color: #fff;
+            background: var(--accent);
+            border-radius: 999px;
+            padding: 5px 9px;
+            font-size: 0.68rem;
+            font-weight: 850;
+        }
+
+        .plan-description {
+            color: var(--muted);
+            font-size: 0.9rem;
+            min-height: 44px;
+            margin-bottom: 20px;
+        }
+
         .price {
             display: flex;
             align-items: baseline;
-            gap: 4px;
-            margin-bottom: 30px;
+            gap: 6px;
+            margin-bottom: 6px;
         }
-        
-        .price-currency {
-            font-size: 24px;
-            color: rgba(255, 255, 255, 0.6);
+
+        .price strong {
+            font-size: 2.5rem;
+            line-height: 1;
+            letter-spacing: 0;
         }
-        
-        .price-value {
-            font-size: 56px;
-            font-weight: 800;
-            color: #e50914;
+
+        .price span {
+            color: var(--muted);
+            font-weight: 700;
         }
-        
-        .price-period {
-            color: rgba(255, 255, 255, 0.5);
-        }
-        
+
         .price-note {
-            font-size: 13px;
-            color: rgba(255, 255, 255, 0.4);
-            margin-top: 8px;
+            color: var(--soft);
+            font-size: 0.82rem;
+            margin-bottom: 22px;
         }
-        
-        .pricing-cta {
-            display: block;
+
+        .plan-card .btn {
             width: 100%;
-            padding: 16px;
-            background: #e50914;
-            color: #fff;
-            text-decoration: none;
-            border-radius: 12px;
-            font-size: 16px;
-            font-weight: 600;
-            text-align: center;
-            margin-bottom: 30px;
-            transition: all 0.2s;
+            margin-top: auto;
+            margin-bottom: 22px;
         }
-        
-        .pricing-cta:hover {
-            background: #ff1a25;
-        }
-        
-        .features {
+
+        .plan-list {
             list-style: none;
-        }
-        
-        .features li {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 10px 0;
-            font-size: 14px;
-            color: rgba(255, 255, 255, 0.8);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-        }
-        
-        .features li:last-child {
-            border-bottom: none;
-        }
-        
-        .features li::before {
-            content: '✓';
-            width: 20px;
-            height: 20px;
-            background: rgba(34, 197, 94, 0.15);
-            color: #22c55e;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-            flex-shrink: 0;
-        }
-        
-        /* Simple */
-        .simple {
-            padding: 100px 0;
-            background: #0a0a0f;
-        }
-        
-        .simple-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 24px;
+            gap: 11px;
         }
-        
-        .simple-card {
-            background: #12151c;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 16px;
-            padding: 30px;
-            text-align: center;
-            transition: all 0.2s;
+
+        .plan-list li {
+            display: grid;
+            grid-template-columns: 18px minmax(0, 1fr);
+            gap: 10px;
+            color: #e4e4e7;
+            font-size: 0.9rem;
         }
-        
-        .simple-card:hover {
-            border-color: rgba(229, 9, 20, 0.3);
-            transform: translateY(-4px);
+
+        .check {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
+            color: var(--success);
+            background: rgba(34, 197, 94, 0.1);
+            font-size: 0.74rem;
+            font-weight: 900;
         }
-        
-        .simple-icon {
-            width: 56px;
-            height: 56px;
-            background: rgba(229, 9, 20, 0.1);
+
+        .comparison-wrap {
+            overflow-x: auto;
+            border: 1px solid var(--line);
             border-radius: 14px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 20px;
-            font-size: 24px;
+            background: var(--surface);
         }
-        
-        .simple-card h3 {
-            font-size: 18px;
-            margin-bottom: 10px;
+
+        .comparison {
+            width: 100%;
+            min-width: 720px;
+            border-collapse: collapse;
         }
-        
-        .simple-card p {
-            font-size: 14px;
-            color: rgba(255, 255, 255, 0.6);
-            line-height: 1.6;
+
+        .comparison th,
+        .comparison td {
+            padding: 16px 18px;
+            border-bottom: 1px solid var(--line-soft);
+            text-align: left;
+            vertical-align: middle;
+            font-size: 0.9rem;
         }
-        
-        /* Footer */
+
+        .comparison tr:last-child th,
+        .comparison tr:last-child td {
+            border-bottom: 0;
+        }
+
+        .comparison thead th {
+            color: #fff;
+            background: #111217;
+            font-size: 0.82rem;
+            font-weight: 850;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+
+        .comparison tbody th {
+            color: #fff;
+            font-weight: 700;
+            width: 36%;
+        }
+
+        .comparison td {
+            color: var(--muted);
+        }
+
+        .comparison td strong {
+            color: #fff;
+        }
+
+        .paid-col {
+            background: rgba(229, 9, 20, 0.045);
+        }
+
+        .included {
+            color: var(--success);
+            font-weight: 850;
+        }
+
+        .not-included {
+            color: #696973;
+        }
+
+        .feature-strip {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+
+        .feature {
+            padding: 20px;
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: 14px;
+        }
+
+        .feature h3 {
+            font-size: 1rem;
+            margin-bottom: 8px;
+        }
+
+        .feature p {
+            color: var(--muted);
+            font-size: 0.88rem;
+        }
+
         .footer {
-            padding: 40px 0;
-            background: #050508;
-            border-top: 1px solid rgba(255, 255, 255, 0.05);
-            text-align: center;
+            padding: 34px 0;
+            border-top: 1px solid var(--line-soft);
+            color: var(--soft);
+            font-size: 0.82rem;
         }
-        
-        .footer p {
-            font-size: 13px;
-            color: rgba(255, 255, 255, 0.4);
-        }
-        
-        /* Responsive */
-        @media (max-width: 768px) {
-            .trust-grid {
+
+        @media (max-width: 860px) {
+            .container {
+                width: min(100% - 32px, 1120px);
+            }
+
+            .nav-links a:not(.nav-cta) {
+                display: none;
+            }
+
+            .hero {
+                padding-top: 64px;
+            }
+
+            .hero-grid,
+            .plan-grid,
+            .feature-strip {
                 grid-template-columns: 1fr;
-                gap: 30px;
             }
-            
-            .pricing-card {
-                padding: 30px 20px;
+
+            .hero h1 {
+                font-size: 2.85rem;
             }
-            
-            .price-value {
-                font-size: 42px;
+
+            .section-heading h2 {
+                font-size: 1.9rem;
+            }
+
+            .section-heading {
+                align-items: start;
+                flex-direction: column;
+            }
+        }
+
+        @media (max-width: 520px) {
+            .hero h1 {
+                font-size: 2.25rem;
+            }
+
+            .section-heading h2 {
+                font-size: 1.65rem;
+            }
+
+            .hero-actions {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+            }
+
+            .plan-card {
+                padding: 20px;
+            }
+
+            .price strong {
+                font-size: 2.1rem;
             }
         }
     </style>
 </head>
 <body>
-
-    <!-- Nav -->
     <nav class="nav">
-        <div class="container">
-            <a href="/developer" class="logo">
-                <div class="logo-icon">P</div>
-                PipoCine<span class="logo-dev">API</span>
+        <div class="container nav-inner">
+            <a href="/developer" class="brand" aria-label="PipoCine API">
+                <span class="brand-mark">P</span>
+                <strong>PipoCine</strong>
+                <span>API</span>
             </a>
-            <a href="#planos" class="nav-cta">Começar</a>
+            <div class="nav-links">
+                <a href="#planos">Planos</a>
+                <a href="#comparacao">Comparacao</a>
+                <a href="#recursos">Recursos</a>
+                <a class="nav-cta" href="#planos">Ver planos</a>
+            </div>
         </div>
     </nav>
 
-    <!-- Hero -->
-    <section class="hero">
-        <div class="container">
-            <div class="hero-content">
-                <span class="hero-badge">Acesso Antecipado</span>
-                <h1>A API mais <span>segura</span> do mercado</h1>
-                <p>Construa sua plataforma de streaming com tranquilidade. Segurança de nível bancário, proteção de dados e infraestrutura confiável.</p>
-                <a href="#planos" class="hero-btn">Começar por R$ 20,99/mês</a>
-            </div>
-        </div>
-    </section>
+    <main>
+        <section class="hero">
+            <div class="container hero-grid">
+                <div>
+                    <span class="eyebrow">PipoCine para desenvolvedores</span>
+                    <h1>Crie produtos de streaming com uma API simples e previsivel.</h1>
+                    <p class="hero-copy">
+                        Escolha entre um plano gratuito para prototipos e um plano pago para apps em producao. Limites claros, recursos essenciais e sem informacao escondida.
+                    </p>
+                    <div class="hero-actions">
+                        <a href="#planos" class="btn btn-primary">Comparar planos</a>
+                        <a href="#comparacao" class="btn btn-secondary">Ver tabela completa</a>
+                    </div>
+                </div>
 
-    <!-- Trust -->
-    <section class="trust">
-        <div class="container">
-            <div class="trust-grid">
-                <div class="trust-item">
-                    <h3>🔒 Segurança First</h3>
-                    <p>Criptografia em todas as camadas</p>
-                </div>
-                <div class="trust-item">
-                    <h3>🛡️ Privacidade Zero</h3>
-                    <p>Seus dados são seus. Sempre.</p>
-                </div>
-                <div class="trust-item">
-                    <h3>⚡ Sempre Online</h3>
-                    <p>99.9% de disponibilidade garantida</p>
-                </div>
+                <aside class="hero-summary" aria-label="Resumo dos planos">
+                    <div class="summary-row">
+                        <span>Plano gratuito</span>
+                        <strong>Teste e prototipos</strong>
+                    </div>
+                    <div class="summary-row">
+                        <span>Plano pago</span>
+                        <strong>R$ 20,99 / mes</strong>
+                    </div>
+                    <div class="summary-row">
+                        <span>Upgrade</span>
+                        <strong>A qualquer momento</strong>
+                    </div>
+                </aside>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <!-- Pricing -->
-    <section class="pricing" id="planos">
-        <div class="container">
-            <div class="section-header">
-                <h2>Um plano. Tudo incluso.</h2>
-                <p>Sem complexidade. Sem surpresas. Comece em minutos.</p>
-            </div>
-            
-            <div class="pricing-card">
-                <span class="pricing-badge">POPULAR</span>
-                
-                <div class="pricing-header">
-                    <h3>Developer Pro</h3>
-                    <p>Perfeito para startups e projetos em crescimento</p>
+        <section class="section" id="planos">
+            <div class="container">
+                <div class="section-heading">
+                    <div>
+                        <h2>Planos separados por momento do projeto</h2>
+                    </div>
+                    <p>Use o gratuito para validar a integracao. Migre para o pago quando precisar de volume, dominios e suporte.</p>
                 </div>
-                
-                <div class="price">
-                    <span class="price-currency">R$</span>
-                    <span class="price-value">20,99</span>
-                    <span class="price-period">/mês</span>
-                </div>
-                <p class="price-note">Cancele quando quiser. Sem taxas ocultas.</p>
-                
-                <a href="#" class="pricing-cta" onclick="alert('Em breve!'); return false;">Criar Conta</a>
-                
-                <ul class="features">
-                    <li>2 projetos independentes</li>
-                    <li>3 chaves de API por projeto</li>
-                    <li>200 mil requisições mensais</li>
-                    <li>350 GB de tráfego</li>
-                    <li>2 domínios por projeto</li>
-                    <li>Dashboard completo</li>
-                    <li>Analytics em tempo real</li>
-                    <li>Autenticação integrada</li>
-                    <li>Proteção anti-abuso</li>
-                    <li>Logs detalhados</li>
-                    <li>Monitoramento 24/7</li>
-                    <li>Estatísticas por endpoint</li>
-                    <li>Suporte prioritário</li>
-                    <li>Espaço para crescer</li>
-                    <li>Infraestrutura de alta disponibilidade</li>
-                </ul>
-            </div>
-        </div>
-    </section>
 
-    <!-- Simple -->
-    <section class="simple">
-        <div class="container">
-            <div class="section-header">
-                <h2>Por que escolher a PipoCine API?</h2>
-                <p>Segurança e simplicidade em primeiro lugar</p>
-            </div>
-            
-            <div class="simple-grid">
-                <div class="simple-card">
-                    <div class="simple-icon">🔐</div>
-                    <h3>Segurança Enterprise</h3>
-                    <p>Criptografia de ponta a ponta. Seus dados e dos seus usuários protegidos com os mesmos padrões usados por bancos.</p>
-                </div>
-                
-                <div class="simple-card">
-                    <div class="simple-icon">🚀</div>
-                    <h3>Pronto para Escala</h3>
-                    <p>Cresça sem preocupações. Nossa infraestrutura acompanha seu sucesso automaticamente.</p>
-                </div>
-                
-                <div class="simple-card">
-                    <div class="simple-icon">📊</div>
-                    <h3>Controle Total</h3>
-                    <p>Dashboard intuitivo com métricas claras. Saiba exatamente como sua API está performando.</p>
-                </div>
-                
-                <div class="simple-card">
-                    <div class="simple-icon">💬</div>
-                    <h3>Suporte Humano</h3>
-                    <p>Dúvidas? Fale conosco. Suporte rápido e personalizado para ajudar seu projeto decolar.</p>
-                </div>
-            </div>
-        </div>
-    </section>
+                <div class="plan-grid">
+                    <article class="plan-card">
+                        <span class="plan-label">Gratuito</span>
+                        <div class="plan-title-row">
+                            <h3>Sandbox</h3>
+                        </div>
+                        <p class="plan-description">Para explorar a API, testar endpoints e montar uma prova de conceito.</p>
+                        <div class="price">
+                            <strong>R$ 0</strong>
+                            <span>/ mes</span>
+                        </div>
+                        <p class="price-note">Sem cartao. Limites reduzidos.</p>
+                        <a href="#" class="btn btn-secondary" onclick="alert('Em breve!'); return false;">Comecar gratis</a>
+                        <ul class="plan-list">
+                            <li><span class="check">✓</span><span>1 projeto</span></li>
+                            <li><span class="check">✓</span><span>1 chave de API</span></li>
+                            <li><span class="check">✓</span><span>5 mil requisicoes mensais</span></li>
+                            <li><span class="check">✓</span><span>Ambiente de testes</span></li>
+                        </ul>
+                    </article>
 
-    <!-- Footer -->
+                    <article class="plan-card paid">
+                        <span class="plan-label">Pago</span>
+                        <div class="plan-title-row">
+                            <h3>Developer Pro</h3>
+                            <span class="plan-badge">Recomendado</span>
+                        </div>
+                        <p class="plan-description">Para produtos em producao que precisam de escala, monitoramento e controle operacional.</p>
+                        <div class="price">
+                            <strong>R$ 20,99</strong>
+                            <span>/ mes</span>
+                        </div>
+                        <p class="price-note">Cancele quando quiser. Sem taxa de instalacao.</p>
+                        <a href="#" class="btn btn-primary" onclick="alert('Em breve!'); return false;">Assinar Pro</a>
+                        <ul class="plan-list">
+                            <li><span class="check">✓</span><span>2 projetos independentes</span></li>
+                            <li><span class="check">✓</span><span>3 chaves de API por projeto</span></li>
+                            <li><span class="check">✓</span><span>200 mil requisicoes mensais</span></li>
+                            <li><span class="check">✓</span><span>350 GB de trafego mensal</span></li>
+                            <li><span class="check">✓</span><span>Analytics, logs e suporte prioritario</span></li>
+                        </ul>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <section class="section" id="comparacao">
+            <div class="container">
+                <div class="section-heading">
+                    <div>
+                        <h2>Compare os recursos</h2>
+                    </div>
+                    <p>Uma tabela objetiva para decidir rapido, sem lista longa de itens repetidos.</p>
+                </div>
+
+                <div class="comparison-wrap">
+                    <table class="comparison">
+                        <thead>
+                            <tr>
+                                <th>Recurso</th>
+                                <th>Sandbox gratuito</th>
+                                <th class="paid-col">Developer Pro</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <th>Projetos</th>
+                                <td>1 projeto</td>
+                                <td class="paid-col"><strong>2 projetos</strong></td>
+                            </tr>
+                            <tr>
+                                <th>Chaves de API</th>
+                                <td>1 chave</td>
+                                <td class="paid-col"><strong>3 por projeto</strong></td>
+                            </tr>
+                            <tr>
+                                <th>Requisicoes mensais</th>
+                                <td>5 mil</td>
+                                <td class="paid-col"><strong>200 mil</strong></td>
+                            </tr>
+                            <tr>
+                                <th>Trafego mensal</th>
+                                <td>10 GB</td>
+                                <td class="paid-col"><strong>350 GB</strong></td>
+                            </tr>
+                            <tr>
+                                <th>Dominios autorizados</th>
+                                <td class="not-included">Nao incluso</td>
+                                <td class="paid-col"><strong>2 por projeto</strong></td>
+                            </tr>
+                            <tr>
+                                <th>Dashboard e analytics</th>
+                                <td>Basico</td>
+                                <td class="paid-col"><span class="included">Completo</span></td>
+                            </tr>
+                            <tr>
+                                <th>Logs detalhados</th>
+                                <td class="not-included">Nao incluso</td>
+                                <td class="paid-col"><span class="included">Incluso</span></td>
+                            </tr>
+                            <tr>
+                                <th>Suporte</th>
+                                <td>Comunidade</td>
+                                <td class="paid-col"><strong>Prioritario</strong></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <section class="section" id="recursos">
+            <div class="container">
+                <div class="section-heading">
+                    <div>
+                        <h2>O essencial para operar bem</h2>
+                    </div>
+                    <p>Recursos mantidos intencionalmente simples para reduzir configuracao e acelerar o desenvolvimento.</p>
+                </div>
+
+                <div class="feature-strip">
+                    <article class="feature">
+                        <h3>Autenticacao integrada</h3>
+                        <p>Controle de acesso para apps de streaming sem montar uma camada de autenticacao do zero.</p>
+                    </article>
+                    <article class="feature">
+                        <h3>Controle de uso</h3>
+                        <p>Limites claros por projeto, logs e visibilidade sobre consumo da API.</p>
+                    </article>
+                    <article class="feature">
+                        <h3>Protecao de producao</h3>
+                        <p>Dominios autorizados e protecao anti-abuso para manter seu produto estavel.</p>
+                    </article>
+                </div>
+            </div>
+        </section>
+    </main>
+
     <footer class="footer">
         <div class="container">
-            <p>© <?= date('Y') ?> PipoCine API. Construído com segurança e simplicidade.</p>
+            PipoCine API. Planos para desenvolvedores.
         </div>
     </footer>
-
 </body>
 </html>

@@ -43,6 +43,12 @@ require_once __DIR__ . '/../../controllers/v4/PinController.php';
 require_once __DIR__ . '/../../models/v4/TwoFactorModel.php';
 require_once __DIR__ . '/../../services/v4/TwoFactorService.php';
 require_once __DIR__ . '/../../controllers/v4/TwoFactorController.php';
+require_once __DIR__ . '/../../models/v4/PlatformUserModel.php';
+require_once __DIR__ . '/../../services/v4/PlatformAuthService.php';
+require_once __DIR__ . '/../../controllers/v4/PlatformAuthController.php';
+require_once __DIR__ . '/../../models/v4/QrLoginModel.php';
+require_once __DIR__ . '/../../services/v4/QrLoginService.php';
+require_once __DIR__ . '/../../controllers/v4/QrLoginController.php';
 
 use Middleware\PinRateLimitMiddleware;
 use Models\V4\PinModel;
@@ -51,6 +57,12 @@ use Controllers\V4\PinController;
 use Models\V4\TwoFactorModel;
 use Services\V4\TwoFactorService;
 use Controllers\V4\TwoFactorController;
+use Models\V4\PlatformUserModel;
+use Services\V4\PlatformAuthService;
+use Controllers\V4\PlatformAuthController;
+use Models\V4\QrLoginModel;
+use Services\V4\QrLoginService;
+use Controllers\V4\QrLoginController;
 
 // ── Inicia sessão ────────────────────────────────────────────
 if (session_status() === PHP_SESSION_NONE) {
@@ -72,6 +84,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 $requestUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $action     = ltrim(str_replace('/api/v4/', '', $requestUri), '/');
 $method     = $_SERVER['REQUEST_METHOD'];
+
+if (str_starts_with($action, 'auth/')) {
+    $userModel = new PlatformUserModel($pdo);
+    $twoFactorModel = new TwoFactorModel($pdo);
+    $twoFactorService = new TwoFactorService($twoFactorModel);
+    $service = new PlatformAuthService($userModel, $twoFactorService);
+    $controller = new PlatformAuthController($service);
+
+    $controller->handle($action, $method);
+    exit;
+}
+
+if (str_starts_with($action, 'qr-login/')) {
+    $qrModel = new QrLoginModel($pdo);
+    $userModel = new PlatformUserModel($pdo);
+    $service = new QrLoginService($qrModel, $userModel);
+    $controller = new QrLoginController($service);
+
+    $controller->handle($action, $method);
+    exit;
+}
 
 // ── Verifica autenticação ────────────────────────────────────
 if (empty($_SESSION['user_id'])) {

@@ -16,6 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const urlToken = tokenInput.value.trim();
     const storedToken = localStorage.getItem('pipo_2fa_verify_token') || '';
     const verifyToken = urlToken || storedToken;
+    const loginProvider = localStorage.getItem('pipo_login_provider') || 'cineveo';
 
     if (urlToken) {
         localStorage.setItem('pipo_2fa_verify_token', urlToken);
@@ -126,7 +127,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setLoading(true);
 
         try {
-            const response = await fetch('/api/auth/verify-2fa', {
+            const response = await fetch(loginProvider === 'platform' ? '/api/v4/auth/verify-2fa' : '/api/auth/verify-2fa', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -144,9 +145,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (result.success) {
                 localStorage.removeItem('pipo_2fa_verify_token');
+                localStorage.removeItem('pipo_login_provider');
                 showAlert('Acesso confirmado. Redirecionando...', true);
                 submitText.textContent = 'Acesso confirmado';
-                setTimeout(() => { window.location.href = '/home'; }, 650);
+                setTimeout(() => { window.location.href = loginProvider === 'platform' ? '/select-profile' : '/home'; }, 650);
                 return;
             }
 

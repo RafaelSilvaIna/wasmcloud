@@ -13,7 +13,7 @@ class ProfileHook {
             '/settings',
         ];
 
-        if (strpos($uri, '/api/') === 0 || in_array($uri, $exempt, true) || preg_match('/^\/verify=/', $uri)) {
+        if (strpos($uri, '/api/') === 0 || strpos($uri, '/login/') === 0 || in_array($uri, $exempt, true) || preg_match('/^\/verify=/', $uri)) {
             return;
         }
 

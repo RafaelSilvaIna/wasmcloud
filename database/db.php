@@ -139,6 +139,29 @@ function authenticateFromSessionToken(PDO $pdo): void
     } catch (Throwable $e) {}
 }
 
+function authenticateFromPipocineToken(PDO $pdo): void
+{
+    if (!isset($_COOKIE['pipocine_token'])) return;
+
+    try {
+        $hash = hash('sha256', $_COOKIE['pipocine_token']);
+
+        $stmt = $pdo->prepare("
+            SELECT u.id, u.email, u.phone, u.full_name, u.avatar_url
+            FROM platform_user_sessions s
+            JOIN platform_users u ON u.id = s.user_id
+            WHERE s.token_hash = ? AND s.expires_at > NOW()
+            LIMIT 1
+        ");
+        $stmt->execute([$hash]);
+
+        if ($user = $stmt->fetch()) {
+            applyPipocineUserToSession($user);
+        }
+
+    } catch (Throwable $e) {}
+}
+
 function setUserSession(PDO $pdo, int $userId): void
 {
     $stmt = $pdo->prepare("
@@ -152,12 +175,24 @@ function setUserSession(PDO $pdo, int $userId): void
     }
 }
 
+function applyPipocineUserToSession(array $user): void
+{
+    $_SESSION['user_id'] = $user['id'];
+    $_SESSION['username'] = $user['email'] ?: $user['phone'];
+    $_SESSION['user_email'] = $user['email'] ?? null;
+    $_SESSION['user_phone'] = $user['phone'] ?? null;
+    $_SESSION['full_name'] = $user['full_name'];
+    $_SESSION['profile_pic_url'] = $user['avatar_url'] ?? null;
+    $_SESSION['auth_provider'] = 'pipocine';
+}
+
 function applyUserToSession(array $user): void
 {
     $_SESSION['user_id'] = $user['id'];
     $_SESSION['username'] = $user['username'];
     $_SESSION['full_name'] = $user['full_name'] ?: $user['name'];
     $_SESSION['profile_pic_url'] = $user['profile_pic_url'];
+    $_SESSION['auth_provider'] = 'cineveo';
 }
 
 // ======================
@@ -182,6 +217,9 @@ $pdo = $pdoPipocine;
 
 // AUTH
 if (!isset($_SESSION['user_id'])) {
+    if ($pdoPipocine) {
+        authenticateFromPipocineToken($pdoPipocine);
+    }
     authenticateFromRememberMe($pdoCineveo);
     authenticateFromSessionToken($pdoCineveo);
 }

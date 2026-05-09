@@ -39,6 +39,11 @@ if ($requestUri === '/login') {
     exit;
 }
 
+if (strpos($requestUri, '/login/') === 0) {
+    require_once __DIR__ . '/login/index.php';
+    exit;
+}
+
 if (preg_match('/^\/verify=([a-fA-F0-9]{64})$/', $requestUri, $m)) {
     $_GET['verify'] = $m[1];
     require_once __DIR__ . '/verify.php';
