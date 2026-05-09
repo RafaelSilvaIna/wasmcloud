@@ -29,28 +29,34 @@ $displayIdentifier = $_SESSION['user_email'] ?? $_SESSION['user_phone'] ?? $_SES
     <meta name="theme-color" content="#0b0b0d">
     <title>PipoCine - Configuracoes</title>
     <link rel="icon" type="image/png" href="/assets/img/favicon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap">
     <style>
         :root {
-            --bg: #0b0b0d;
-            --panel: #141416;
-            --panel-soft: #19191c;
-            --line: rgba(255,255,255,.09);
-            --line-strong: rgba(255,255,255,.16);
-            --text: #fff;
-            --muted: #9ca3af;
-            --muted-2: #6b7280;
+            --bg: #070708;
+            --panel: rgba(255, 255, 255, .035);
+            --panel-strong: rgba(255, 255, 255, .06);
+            --line: rgba(255, 255, 255, .1);
+            --line-strong: rgba(255, 255, 255, .18);
+            --text: #ffffff;
+            --muted: rgba(255, 255, 255, .68);
+            --muted-2: rgba(255, 255, 255, .46);
             --accent: #e50914;
             --green: #22c55e;
             --yellow: #f59e0b;
+            --danger: #ff6b72;
         }
 
         * { box-sizing: border-box; }
+
+        html { min-height: 100%; }
 
         body {
             margin: 0;
             min-height: 100vh;
             background:
-                radial-gradient(circle at top right, rgba(229,9,20,.08), transparent 34%),
+                linear-gradient(115deg, rgba(229, 9, 20, .08), transparent 36%),
                 var(--bg);
             color: var(--text);
             font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -60,15 +66,15 @@ $displayIdentifier = $_SESSION['user_email'] ?? $_SESSION['user_phone'] ?? $_SES
 
         .shell {
             margin: 0 auto;
-            max-width: 1120px;
-            padding: 28px 22px 72px;
+            max-width: 1180px;
+            padding: 34px 24px 80px;
         }
 
         .topbar {
             align-items: center;
             display: flex;
             justify-content: space-between;
-            margin-bottom: 34px;
+            margin-bottom: 54px;
         }
 
         .back-link {
@@ -76,8 +82,8 @@ $displayIdentifier = $_SESSION['user_email'] ?? $_SESSION['user_phone'] ?? $_SES
             color: var(--muted);
             display: inline-flex;
             gap: 8px;
-            font-size: .92rem;
-            font-weight: 650;
+            font-size: .9rem;
+            font-weight: 750;
             text-decoration: none;
         }
 
@@ -85,126 +91,157 @@ $displayIdentifier = $_SESSION['user_email'] ?? $_SESSION['user_phone'] ?? $_SES
 
         .page-label {
             color: var(--muted-2);
-            font-size: .78rem;
-            font-weight: 800;
+            font-size: .72rem;
+            font-weight: 900;
             letter-spacing: .08em;
             text-transform: uppercase;
         }
 
         .hero {
-            align-items: end;
-            border-bottom: 1px solid var(--line);
+            align-items: start;
             display: grid;
-            gap: 24px;
+            gap: 28px;
             grid-template-columns: 1fr auto;
-            margin-bottom: 34px;
-            padding-bottom: 30px;
+            margin-bottom: 52px;
         }
 
         .hero h1 {
-            font-size: clamp(2rem, 5vw, 4rem);
+            font-size: clamp(2.4rem, 5vw, 4.35rem);
+            font-weight: 900;
             letter-spacing: 0;
             line-height: 1.02;
-            margin: 10px 0 12px;
+            margin: 12px 0 16px;
+            max-width: 720px;
         }
 
         .hero p {
             color: var(--muted);
-            font-size: 1rem;
+            font-size: 1.05rem;
+            font-weight: 600;
             line-height: 1.5;
             margin: 0;
+            max-width: 620px;
         }
 
         .account-pill {
-            background: rgba(255,255,255,.05);
+            background: var(--panel);
             border: 1px solid var(--line);
-            border-radius: 999px;
+            border-radius: 8px;
             color: var(--muted);
-            padding: 10px 14px;
+            font-size: .88rem;
+            font-weight: 700;
+            max-width: 360px;
+            overflow-wrap: anywhere;
+            padding: 12px 14px;
             white-space: nowrap;
         }
 
         .grid {
             display: grid;
-            gap: 18px;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0;
         }
 
         .section {
             display: grid;
-            gap: 12px;
+            gap: 30px;
+            grid-template-columns: 220px minmax(0, 1fr);
+            padding: 30px 0;
+            border-top: 1px solid var(--line);
         }
 
-        .section.wide { grid-column: 1 / -1; }
+        .section:first-child { padding-top: 0; border-top: 0; }
 
         .section-title {
-            color: var(--muted-2);
-            font-size: .78rem;
+            color: #ffffff;
+            font-size: 1rem;
             font-weight: 850;
-            letter-spacing: .08em;
-            margin: 12px 0 0;
-            text-transform: uppercase;
+            letter-spacing: 0;
+            margin: 3px 0 0;
+            text-transform: none;
+        }
+
+        .section-copy {
+            color: var(--muted-2);
+            font-size: .86rem;
+            font-weight: 650;
+            line-height: 1.45;
+            margin: 10px 0 0;
+            max-width: 180px;
         }
 
         .card {
-            background: linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,.02)), var(--panel);
+            background: var(--panel);
             border: 1px solid var(--line);
-            border-radius: 10px;
+            border-radius: 12px;
             overflow: hidden;
         }
 
         .row {
             align-items: center;
-            border-bottom: 1px solid rgba(255,255,255,.06);
+            border-bottom: 1px solid rgba(255, 255, 255, .075);
             display: flex;
-            gap: 18px;
+            gap: 24px;
             justify-content: space-between;
-            min-height: 78px;
-            padding: 18px;
+            min-height: 86px;
+            padding: 22px 24px;
         }
 
         .row:last-child { border-bottom: 0; }
 
+        .row > div:first-child {
+            min-width: 0;
+        }
+
         .row h3 {
-            font-size: .98rem;
-            font-weight: 760;
-            margin: 0 0 5px;
+            color: #ffffff;
+            font-size: 1rem;
+            font-weight: 800;
+            letter-spacing: 0;
+            margin: 0 0 6px;
         }
 
         .row p {
             color: var(--muted);
-            font-size: .86rem;
+            font-size: .9rem;
+            font-weight: 600;
             line-height: 1.45;
             margin: 0;
+            max-width: 520px;
         }
 
         .actions {
             align-items: center;
             display: flex;
             flex: 0 0 auto;
-            gap: 10px;
+            gap: 8px;
+            justify-content: flex-end;
         }
 
         .btn {
             align-items: center;
-            background: rgba(255,255,255,.06);
-            border: 1px solid var(--line-strong);
-            border-radius: 6px;
+            background: rgba(255, 255, 255, .055);
+            border: 1px solid var(--line);
+            border-radius: 8px;
             color: var(--text);
             cursor: pointer;
             display: inline-flex;
             font-size: .86rem;
-            font-weight: 760;
+            font-weight: 800;
             justify-content: center;
-            min-height: 38px;
+            min-height: 40px;
             padding: 0 14px;
             text-decoration: none;
-            transition: background .15s ease, border-color .15s ease, color .15s ease;
+            transition: background .15s ease, border-color .15s ease, color .15s ease, transform .15s ease;
         }
 
-        .btn:hover { background: rgba(255,255,255,.1); }
+        .btn:hover {
+            background: rgba(255, 255, 255, .09);
+            border-color: var(--line-strong);
+        }
+
         .btn.primary { background: var(--accent); border-color: var(--accent); }
-        .btn.danger { border-color: rgba(229,9,20,.55); color: #ffb4b8; }
+        .btn.primary:hover { background: #f6121d; border-color: #f6121d; }
+        .btn.danger { border-color: rgba(229, 9, 20, .4); color: var(--danger); }
         .btn.ghost { background: transparent; }
 
         .badge {
@@ -227,13 +264,13 @@ $displayIdentifier = $_SESSION['user_email'] ?? $_SESSION['user_phone'] ?? $_SES
             width: 7px;
         }
 
-        .badge.enabled { color: #bbf7d0; border-color: rgba(34,197,94,.28); }
+        .badge.enabled { color: #bbf7d0; border-color: rgba(34, 197, 94, .28); }
         .badge.enabled .dot { background: var(--green); }
-        .badge.warning { color: #fde68a; border-color: rgba(245,158,11,.28); }
+        .badge.warning { color: #fde68a; border-color: rgba(245, 158, 11, .28); }
         .badge.warning .dot { background: var(--yellow); }
 
         .toggle {
-            background: rgba(255,255,255,.16);
+            background: rgba(255, 255, 255, .16);
             border: 0;
             border-radius: 999px;
             cursor: pointer;
@@ -259,34 +296,38 @@ $displayIdentifier = $_SESSION['user_email'] ?? $_SESSION['user_phone'] ?? $_SES
 
         .subgrid {
             display: grid;
-            gap: 14px;
+            gap: 0;
             grid-template-columns: 1fr 1fr;
-            padding: 16px;
         }
 
         .subcard {
-            background: rgba(0,0,0,.18);
-            border: 1px solid rgba(255,255,255,.07);
-            border-radius: 8px;
-            min-height: 180px;
-            padding: 14px;
+            background: transparent;
+            border-right: 1px solid rgba(255, 255, 255, .075);
+            min-height: 190px;
+            padding: 22px 24px;
+        }
+
+        .subcard:last-child {
+            border-right: 0;
         }
 
         .subcard h4 {
-            font-size: .88rem;
-            margin: 0 0 12px;
+            color: #ffffff;
+            font-size: .9rem;
+            font-weight: 850;
+            margin: 0 0 14px;
         }
 
         .list {
             display: grid;
-            gap: 8px;
+            gap: 0;
             max-height: 270px;
             overflow: auto;
         }
 
         .list-item {
             align-items: center;
-            border-bottom: 1px solid rgba(255,255,255,.06);
+            border-bottom: 1px solid rgba(255, 255, 255, .07);
             display: flex;
             gap: 12px;
             justify-content: space-between;
@@ -297,26 +338,29 @@ $displayIdentifier = $_SESSION['user_email'] ?? $_SESSION['user_phone'] ?? $_SES
 
         .list-item strong {
             display: block;
-            font-size: .86rem;
-            margin-bottom: 3px;
+            font-size: .9rem;
+            font-weight: 800;
+            margin-bottom: 4px;
         }
 
         .list-item small {
             color: var(--muted);
             display: block;
-            font-size: .76rem;
+            font-size: .78rem;
+            font-weight: 600;
             line-height: 1.4;
         }
 
         .empty {
             color: var(--muted-2);
-            font-size: .84rem;
+            font-size: .86rem;
+            font-weight: 650;
             padding: 12px 0;
         }
 
         .modal-layer {
             align-items: center;
-            background: rgba(0,0,0,.76);
+            background: rgba(0, 0, 0, .76);
             display: none;
             inset: 0;
             justify-content: center;
@@ -328,12 +372,12 @@ $displayIdentifier = $_SESSION['user_email'] ?? $_SESSION['user_phone'] ?? $_SES
         .modal-layer.open { display: flex; }
 
         .modal {
-            background: #161618;
+            background: #111113;
             border: 1px solid var(--line-strong);
             border-radius: 12px;
-            box-shadow: 0 30px 90px rgba(0,0,0,.62);
-            max-width: 390px;
-            padding: 26px;
+            box-shadow: 0 30px 90px rgba(0, 0, 0, .62);
+            max-width: 380px;
+            padding: 24px;
             width: 100%;
         }
 
@@ -352,19 +396,22 @@ $displayIdentifier = $_SESSION['user_email'] ?? $_SESSION['user_phone'] ?? $_SES
         .pin-inputs {
             display: grid;
             gap: 10px;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(4, minmax(0, 1fr));
             margin: 18px 0 12px;
         }
 
         .pin-inputs input {
-            background: rgba(255,255,255,.05);
+            appearance: none;
+            background: rgba(255, 255, 255, .05);
             border: 1px solid var(--line-strong);
             border-radius: 8px;
             color: #fff;
             font-size: 1.4rem;
             height: 58px;
+            min-width: 0;
             outline: none;
             text-align: center;
+            width: 100%;
         }
 
         .pin-inputs input:focus { border-color: #fff; }
@@ -400,17 +447,34 @@ $displayIdentifier = $_SESSION['user_email'] ?? $_SESSION['user_phone'] ?? $_SES
 
         .toast.show { display: block; }
 
-        @media (max-width: 860px) {
-            .hero, .grid, .subgrid { grid-template-columns: 1fr; }
+        @media (max-width: 900px) {
+            .hero, .section, .subgrid { grid-template-columns: 1fr; }
             .hero { align-items: start; }
             .account-pill { white-space: normal; }
+            .section { gap: 14px; }
+            .section-copy { max-width: 520px; }
+            .subcard {
+                border-right: 0;
+                border-bottom: 1px solid rgba(255, 255, 255, .075);
+            }
+            .subcard:last-child { border-bottom: 0; }
         }
 
         @media (max-width: 560px) {
             .shell { padding: 20px 14px 56px; }
-            .row { align-items: flex-start; flex-direction: column; }
-            .actions { flex-wrap: wrap; width: 100%; }
+            .topbar { margin-bottom: 34px; }
+            .hero { margin-bottom: 34px; }
+            .hero h1 { font-size: 2.25rem; }
+            .section { padding: 24px 0; }
+            .row { align-items: flex-start; flex-direction: column; gap: 16px; padding: 18px; }
+            .actions { flex-wrap: wrap; justify-content: flex-start; width: 100%; }
             .btn { flex: 1; }
+            .badge { order: -1; }
+            .subcard { padding: 18px; }
+            .modal-layer { padding: 16px; }
+            .modal { max-width: 340px; padding: 22px; }
+            .pin-inputs { gap: 8px; }
+            .pin-inputs input { height: 52px; font-size: 1.25rem; }
             .modal-actions { grid-template-columns: 1fr; }
         }
     </style>
@@ -436,7 +500,10 @@ $displayIdentifier = $_SESSION['user_email'] ?? $_SESSION['user_phone'] ?? $_SES
 
         <div class="grid">
             <section class="section">
-                <h2 class="section-title">Protecao</h2>
+                <div>
+                    <h2 class="section-title">Protecao</h2>
+                    <p class="section-copy">Controle as camadas de seguranca usadas para entrar e alterar sua conta.</p>
+                </div>
                 <div class="card">
                     <div class="row">
                         <div>
@@ -473,7 +540,10 @@ $displayIdentifier = $_SESSION['user_email'] ?? $_SESSION['user_phone'] ?? $_SES
             </section>
 
             <section class="section">
-                <h2 class="section-title">Login por QR Code</h2>
+                <div>
+                    <h2 class="section-title">Login por QR Code</h2>
+                    <p class="section-copy">Autorize dispositivos novos usando uma sessao ativa do Pipocine.</p>
+                </div>
                 <div class="card">
                     <div class="row">
                         <div>
@@ -499,7 +569,10 @@ $displayIdentifier = $_SESSION['user_email'] ?? $_SESSION['user_phone'] ?? $_SES
             </section>
 
             <section class="section wide">
-                <h2 class="section-title">Dispositivos confiaveis 2FA</h2>
+                <div>
+                    <h2 class="section-title">Dispositivos confiaveis 2FA</h2>
+                    <p class="section-copy">Revise aparelhos que podem entrar sem pedir novo codigo.</p>
+                </div>
                 <div class="card">
                     <div class="row">
                         <div>
@@ -520,7 +593,10 @@ $displayIdentifier = $_SESSION['user_email'] ?? $_SESSION['user_phone'] ?? $_SES
             </section>
 
             <section class="section wide">
-                <h2 class="section-title">Conta</h2>
+                <div>
+                    <h2 class="section-title">Conta</h2>
+                    <p class="section-copy">Acoes gerais para sessoes e acesso da conta principal.</p>
+                </div>
                 <div class="card">
                     <div class="row">
                         <div>

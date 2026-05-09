@@ -2,16 +2,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('verify-form');
     const tokenInput = document.getElementById('verify-token');
     const codeInputs = Array.from(document.querySelectorAll('.code-input'));
-    const backupField = document.getElementById('backup-field');
-    const backupInput = document.getElementById('backup-code');
     const rememberDevice = document.getElementById('remember-device');
     const alertBox = document.getElementById('verify-alert');
     const submit = document.getElementById('verify-submit');
     const submitText = document.getElementById('verify-submit-text');
-    const lostCodeBtn = document.getElementById('lost-code-btn');
-    const copy = document.getElementById('verify-copy');
-
-    let backupMode = false;
 
     const urlToken = tokenInput.value.trim();
     const storedToken = localStorage.getItem('pipo_2fa_verify_token') || '';
@@ -51,17 +45,16 @@ document.addEventListener('DOMContentLoaded', () => {
         alertBox.classList.remove('show', 'success');
     };
 
-    const getCode = () => {
-        if (backupMode) {
-            return backupInput.value.replace(/\D/g, '').slice(0, 8);
-        }
-
-        return codeInputs.map(input => input.value).join('');
-    };
+    const getCode = () => codeInputs.map(input => input.value).join('');
 
     const focusFirstEmpty = () => {
         const firstEmpty = codeInputs.find(input => !input.value);
         (firstEmpty || codeInputs[codeInputs.length - 1]).focus();
+    };
+
+    const clearCode = () => {
+        codeInputs.forEach(input => { input.value = ''; });
+        focusFirstEmpty();
     };
 
     if (!verifyToken) {
@@ -89,29 +82,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
         input.addEventListener('paste', (event) => {
             event.preventDefault();
-            const pasted = (event.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '').slice(0, 6);
+            const pasted = (event.clipboardData || window.clipboardData)
+                .getData('text')
+                .replace(/\D/g, '')
+                .slice(0, 6);
+
             pasted.split('').forEach((char, pasteIndex) => {
-                if (codeInputs[pasteIndex]) codeInputs[pasteIndex].value = char;
+                if (codeInputs[pasteIndex]) {
+                    codeInputs[pasteIndex].value = char;
+                }
             });
+
             focusFirstEmpty();
         });
-    });
-
-    lostCodeBtn.addEventListener('click', () => {
-        backupMode = !backupMode;
-        backupField.classList.toggle('active', backupMode);
-        document.querySelector('.code-inputs').style.display = backupMode ? 'none' : 'grid';
-        lostCodeBtn.textContent = backupMode ? 'Usar autenticador' : 'Perdi o código';
-        copy.textContent = backupMode
-            ? 'Use um código de backup salvo quando você ativou a verificação.'
-            : 'Digite o código de 6 dígitos do Google Authenticator.';
-        hideAlert();
-
-        if (backupMode) {
-            backupInput.focus();
-        } else {
-            focusFirstEmpty();
-        }
     });
 
     form.addEventListener('submit', async (event) => {
@@ -119,8 +102,9 @@ document.addEventListener('DOMContentLoaded', () => {
         hideAlert();
 
         const code = getCode();
-        if (!verifyToken || !code || (!backupMode && code.length !== 6)) {
-            showAlert(backupMode ? 'Digite seu código de backup.' : 'Digite os 6 dígitos do autenticador.');
+        if (!verifyToken || code.length !== 6) {
+            showAlert('Digite os 6 digitos do autenticador.');
+            clearCode();
             return;
         }
 
@@ -131,12 +115,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Accept': 'application/json'
+                    Accept: 'application/json'
                 },
                 body: JSON.stringify({
                     verify_token: verifyToken,
                     code,
-                    remember_device: rememberDevice.checked,
+                    remember_device: rememberDevice?.checked || false,
                     device_token: getDeviceToken()
                 })
             });
@@ -148,16 +132,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 localStorage.removeItem('pipo_login_provider');
                 showAlert('Acesso confirmado. Redirecionando...', true);
                 submitText.textContent = 'Acesso confirmado';
-                setTimeout(() => { window.location.href = loginProvider === 'platform' ? '/select-profile' : '/home'; }, 650);
+                setTimeout(() => {
+                    window.location.href = loginProvider === 'platform' ? '/select-profile' : '/home';
+                }, 650);
                 return;
             }
 
-            showAlert(result.message || 'Código inválido. Tente novamente.');
-            codeInputs.forEach(input => { input.value = ''; });
-            backupInput.value = '';
-            if (!backupMode) focusFirstEmpty();
+            showAlert(result.message || 'Codigo invalido. Tente novamente.');
+            clearCode();
         } catch (error) {
-            showAlert('Servidor indisponível no momento.');
+            showAlert('Servidor indisponivel no momento.');
         } finally {
             setLoading(false);
         }

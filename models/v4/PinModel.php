@@ -115,6 +115,25 @@ class PinModel
     /**
      * Conta tentativas falhas nas últimas 30 minutos
      */
+    public function clearFailedAttempts(int $userId, ?string $ipAddress = null): bool
+    {
+        try {
+            if ($ipAddress !== null) {
+                $stmt = $this->pdo->prepare("DELETE FROM pin_attempts WHERE user_id = :user_id AND ip_address = :ip_address AND success = 0");
+                return $stmt->execute([
+                    ':user_id' => $userId,
+                    ':ip_address' => $ipAddress
+                ]);
+            }
+
+            $stmt = $this->pdo->prepare("DELETE FROM pin_attempts WHERE user_id = :user_id AND success = 0");
+            return $stmt->execute([':user_id' => $userId]);
+        } catch (PDOException $e) {
+            error_log("[PinModel] Erro ao limpar tentativas falhas: " . $e->getMessage());
+            return false;
+        }
+    }
+
     public function countFailedAttempts(int $userId, string $ipAddress, int $minutes = 30): int
     {
         try {

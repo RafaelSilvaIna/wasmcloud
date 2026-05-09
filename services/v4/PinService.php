@@ -47,6 +47,8 @@ class PinService
         $result = $this->model->createPin($userId, $pinHash);
         
         if ($result['success']) {
+            $this->model->clearFailedAttempts($userId);
+
             return [
                 'success' => true,
                 'message' => 'PIN criado com sucesso'
@@ -106,6 +108,8 @@ class PinService
         $this->model->logAttempt($userId, $ipAddress, $isValid);
         
         if ($isValid) {
+            $this->model->clearFailedAttempts($userId, $ipAddress);
+
             return [
                 'success' => true,
                 'valid' => true,
@@ -143,6 +147,8 @@ class PinService
         }
         
         if ($this->model->deletePin($userId)) {
+            $this->model->clearFailedAttempts($userId);
+
             return [
                 'success' => true,
                 'message' => 'PIN removido com sucesso'

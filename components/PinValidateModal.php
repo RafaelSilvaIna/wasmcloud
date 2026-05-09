@@ -369,9 +369,13 @@ class PinValidateModal
         titleEl.textContent = "Digite seu PIN";
         subtitleEl.textContent = "Insira seu PIN de 4 dígitos para acessar as configurações";
         btnValidate.textContent = "Acessar Configurações";
+        btnValidate.disabled = true;
         linkCreatePin.style.display = "none";
         btnValidate.style.display = "block";
         btnCancel.style.display = "block";
+        btnCancel.textContent = "Cancelar";
+        document.querySelector(".pin-validate-inputs").style.display = "flex";
+        attemptsEl.style.display = "block";
     }
     
     // Modo sem PIN
@@ -407,15 +411,18 @@ class PinValidateModal
     }
     
     // Reseta inputs
-    function resetInputs() {
+    function resetInputs(clearFeedback = true) {
         inputs.forEach(input => {
             input.value = "";
             input.classList.remove("filled", "error");
         });
         currentPin = "";
         btnValidate.disabled = true;
-        messageEl.textContent = "";
-        attemptsEl.textContent = "";
+        resetButton();
+        if (clearFeedback) {
+            messageEl.textContent = "";
+            attemptsEl.textContent = "";
+        }
         document.querySelector(".pin-validate-inputs").style.display = "flex";
     }
     
@@ -449,7 +456,7 @@ class PinValidateModal
                 const minutes = Math.ceil(data.remaining_seconds / 60);
                 showMessage(`Muitas tentativas. Aguarde ${minutes} minutos.`);
                 updateAttempts(0);
-                resetButton();
+                resetInputs(false);
                 return;
             }
             
@@ -470,12 +477,12 @@ class PinValidateModal
                 }, 400);
                 
                 // Limpa e foca no primeiro
-                resetInputs();
+                resetInputs(false);
                 inputs[0]?.focus();
             }
         } catch (error) {
             showMessage("Erro de conexão. Tente novamente.");
-            resetButton();
+            resetInputs(false);
         }
     }
     
