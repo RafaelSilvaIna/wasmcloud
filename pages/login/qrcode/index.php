@@ -23,19 +23,21 @@ if (isset($_SESSION['user_id'])) {
                 <p class="modal-eyebrow">Login por QR Code</p>
                 <h1>Escaneie para entrar</h1>
                 <p class="qr-copy">Abra a câmera em um dispositivo já conectado à sua conta Pipocine e aprove o acesso.</p>
-
-                <div class="qr-status" id="qr-status">Aguardando aprovação em outro dispositivo.</div>
-                <button class="btn-submit" id="qr-refresh" type="button">Gerar novo QR Code</button>
-                <div class="login-links">
-                    <a href="/login/plataforma/methods">Escolher outro método</a>
-                    <a href="/login">Voltar ao login</a>
-                </div>
             </div>
 
             <div class="qr-visual">
                 <div class="qr-card">
                     <img id="qr-image" class="qr-image" alt="QR Code de login">
                     <div class="qr-loading" id="qr-loading">Gerando QR Code...</div>
+                </div>
+            </div>
+
+            <div class="qr-actions">
+                <div class="qr-status" id="qr-status">Aguardando aprovação em outro dispositivo.</div>
+                <button class="btn-submit" id="qr-refresh" type="button">Gerar novo QR Code</button>
+                <div class="login-links">
+                    <a href="/login/plataforma/methods">Escolher outro método</a>
+                    <a href="/login">Voltar ao login</a>
                 </div>
             </div>
         </section>

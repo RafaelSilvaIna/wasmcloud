@@ -19,27 +19,27 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
 
             if (!data.success) {
-                statusBox.textContent = data.message || 'Nao foi possivel gerar o QR Code.';
+                statusBox.textContent = data.message || 'Não foi possível gerar o QR Code.';
                 loading.style.display = 'none';
                 return;
             }
 
             token = data.token;
-            statusBox.textContent = 'Aguardando aprovacao em outro dispositivo.';
+            statusBox.textContent = 'Aguardando aprovação em outro dispositivo.';
             qrImage.onload = () => {
                 loading.style.display = 'none';
                 qrImage.classList.add('ready');
             };
             qrImage.onerror = () => {
                 loading.style.display = 'none';
-                statusBox.textContent = 'Nao foi possivel carregar o QR Code. Gere um novo codigo.';
+                statusBox.textContent = 'Não foi possível carregar o QR Code. Gere um novo código.';
             };
             qrImage.src = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=12&format=png&data=${encodeURIComponent(data.approve_url)}`;
 
             pollTimer = setInterval(poll, 2200);
         } catch (error) {
             loading.style.display = 'none';
-            statusBox.textContent = 'Conexao instavel. Tente gerar o QR Code novamente.';
+            statusBox.textContent = 'Conexão instável. Tente gerar o QR Code novamente.';
         }
     }
 
@@ -64,9 +64,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             clearInterval(pollTimer);
-            statusBox.textContent = data.message || 'QR Code expirado. Gere um novo codigo.';
+            statusBox.textContent = data.message || 'QR Code expirado. Gere um novo código.';
         } catch (error) {
-            statusBox.textContent = 'Conexao instavel. Tentando novamente...';
+            statusBox.textContent = 'Conexão instável. Tentando novamente...';
         }
     }
 

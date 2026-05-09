@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../database/db.php';
 require_once __DIR__ . '/../hooks/ProfileHook.php';
+ProfileHook::redirectTvToQrLogin();
 ProfileHook::enforceProfile();
 
 $requestUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
