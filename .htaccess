@@ -45,6 +45,7 @@ DirectoryIndex index.php index.html
     RewriteRule ^developer/([^/]+)/?$ pages/developer/index.php?action=$1 [QSA,L]
     RewriteRule ^home/?$ pages/index.php [L]
     RewriteRule ^login(/.*)?$ pages/index.php [QSA,L]
+    RewriteRule ^plan(/.*)?$ pages/index.php [QSA,L]
     RewriteRule ^minha-lista/?$ pages/index.php [L]
     RewriteRule ^busca/?$ pages/index.php [L]
     RewriteRule ^view/?$ pages/index.php [L]

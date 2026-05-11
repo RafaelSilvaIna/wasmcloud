@@ -1,7 +1,9 @@
 <?php
 require_once __DIR__ . '/../database/db.php';
 require_once __DIR__ . '/../hooks/ProfileHook.php';
+require_once __DIR__ . '/../hooks/v4/SubscriptionHook.php';
 ProfileHook::redirectTvToQrLogin();
+\Hooks\V4\SubscriptionHook::enforcePlanAccess($pdo);
 ProfileHook::enforceProfile();
 
 $requestUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
@@ -124,5 +126,30 @@ if ($requestUri === '/manage-profiles') {
 
 if ($requestUri === '/settings') {
     require_once __DIR__ . '/../pages/settings.php';
+    exit;
+}
+
+if ($requestUri === '/plan' || $requestUri === '/plan/') {
+    require_once __DIR__ . '/../pages/plan/main.php';
+    exit;
+}
+
+if ($requestUri === '/plan/checkout') {
+    require_once __DIR__ . '/../pages/plan/checkout.php';
+    exit;
+}
+
+if ($requestUri === '/plan/pix') {
+    require_once __DIR__ . '/../pages/plan/pix.php';
+    exit;
+}
+
+if ($requestUri === '/plan/payment' || str_starts_with($requestUri, '/plan/payment/active=')) {
+    require_once __DIR__ . '/../pages/plan/payment.php';
+    exit;
+}
+
+if ($requestUri === '/plan/me') {
+    require_once __DIR__ . '/../pages/plan/me.php';
     exit;
 }

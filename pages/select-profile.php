@@ -42,6 +42,7 @@ if (!isset($_SESSION['user_id'])) {
             background-color: var(--profile-bg-base);
             margin: 0;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            overflow-x: hidden;
         }
 
         /* ============================================================
@@ -467,32 +468,291 @@ if (!isset($_SESSION['user_id'])) {
         .avatar-option:hover {
             border-color: rgba(255, 255, 255, 0.5);
         }
+
+        /* ============================================================
+           MENU DA CONTA
+           ============================================================ */
+        .account-header {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .account-settings-btn,
+        .account-menu-toggle {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            color: #fff;
+            cursor: pointer;
+            transition: border-color 0.2s, background-color 0.2s;
+        }
+
+        .account-settings-btn:hover,
+        .account-menu-toggle:hover,
+        .account-menu-toggle[aria-expanded="true"] {
+            border-color: rgba(255, 255, 255, 0.42);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .account-settings-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .account-settings-btn i {
+            width: 20px;
+            height: 20px;
+        }
+
+        .account-menu-wrap {
+            position: relative;
+        }
+
+        .account-menu-toggle {
+            min-height: 44px;
+            max-width: min(360px, calc(100vw - 96px));
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 5px 12px 5px 6px;
+        }
+
+        .account-user-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex: 0 0 auto;
+            background: rgba(255, 255, 255, 0.10);
+            color: #fff;
+            overflow: hidden;
+        }
+
+        .account-user-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .account-owner-name {
+            max-width: 220px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-size: 0.92rem;
+            font-weight: 600;
+            line-height: 1;
+        }
+
+        .account-chevron {
+            width: 16px;
+            height: 16px;
+            color: rgba(255, 255, 255, 0.68);
+            transition: transform 0.2s;
+        }
+
+        .account-menu-toggle[aria-expanded="true"] .account-chevron {
+            transform: rotate(180deg);
+        }
+
+        .account-menu-content {
+            position: absolute;
+            top: calc(100% + 12px);
+            right: 0;
+            width: min(292px, calc(100vw - 32px));
+            max-height: calc(100vh - 92px);
+            overflow-y: auto;
+            padding: 8px;
+            background: rgba(10, 10, 12, 0.98);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 14px;
+            box-shadow: 0 18px 54px rgba(0, 0, 0, 0.62);
+            backdrop-filter: blur(18px);
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-6px);
+            transition: opacity 0.18s ease, transform 0.18s ease, visibility 0.18s;
+            box-sizing: border-box;
+        }
+
+        .account-menu-content.open {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .account-menu-heading {
+            padding: 10px 10px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .account-menu-kicker {
+            color: var(--profile-text-muted);
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .account-menu-name {
+            color: var(--profile-text-pure);
+            font-size: 1rem;
+            font-weight: 700;
+            overflow-wrap: anywhere;
+        }
+
+        .account-menu-section {
+            margin-top: 2px;
+            padding-top: 7px;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .account-menu-label {
+            padding: 4px 10px 7px;
+            color: var(--profile-text-muted);
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .account-menu-item {
+            width: 100%;
+            min-height: 40px;
+            border: 1px solid transparent;
+            border-radius: 8px;
+            background: transparent;
+            color: var(--profile-text-pure);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px;
+            text-decoration: none;
+            font: inherit;
+            font-size: 0.94rem;
+            cursor: pointer;
+            box-sizing: border-box;
+            transition: background-color 0.16s;
+        }
+
+        .account-menu-item:hover,
+        .account-menu-item:focus-visible {
+            background: rgba(255, 255, 255, 0.07);
+            border-color: rgba(255, 255, 255, 0.06);
+            outline: none;
+        }
+
+        .account-menu-item i,
+        .account-menu-item svg {
+            width: 18px;
+            height: 18px;
+            flex: 0 0 auto;
+            color: rgba(255, 255, 255, 0.72);
+        }
+
+        @media (max-width: 560px) {
+            .account-header {
+                top: 14px;
+                right: 14px;
+                gap: 8px;
+            }
+
+            .account-owner-name {
+                display: none;
+            }
+
+            .account-menu-toggle {
+                padding-right: 8px;
+                max-width: none;
+            }
+
+            .account-menu-content {
+                position: fixed;
+                top: 66px;
+                right: 14px;
+                width: min(292px, calc(100vw - 28px));
+                max-height: calc(100vh - 86px);
+                border-radius: 12px;
+            }
+        }
     </style>
 </head>
 
 <body>
 
     <!-- Header com ícone de configurações -->
-    <div style="position: fixed; top: 24px; right: 24px; z-index: 100;">
-        <button id="btn-settings" style="
-            background: transparent;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 50%;
-            width: 44px;
-            height: 44px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.2s;
-            color: #fff;
-        " onmouseover="this.style.borderColor='rgba(255,255,255,0.4)';this.style.background='rgba(255,255,255,0.05)'" 
-        onmouseout="this.style.borderColor='rgba(255,255,255,0.2)';this.style.background='transparent'">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="3"/>
-                <path d="M12 1v6m0 6v6m4.22-10.22l4.24-4.24M6.34 6.34L2.1 2.1m17.8 17.8l-4.24-4.24M6.34 17.66l-4.24 4.24M23 12h-6m-6 0H1m20.07-4.93l-4.24 4.24M6.34 6.34l-4.24-4.24"/>
-            </svg>
+    <?php
+    $ownerName = trim($_SESSION['full_name'] ?? $_SESSION['username'] ?? 'Dono da conta');
+    $ownerAvatar = trim($_SESSION['profile_pic_url'] ?? '');
+    ?>
+
+    <div class="account-header" aria-label="Menu da conta">
+        <button id="btn-settings" class="account-settings-btn" type="button" aria-label="Abrir configurações">
+            <i data-lucide="settings" aria-hidden="true"></i>
         </button>
+
+        <div class="account-menu-wrap">
+            <button id="account-menu-toggle" class="account-menu-toggle" type="button" aria-haspopup="true"
+                aria-expanded="false" aria-controls="account-menu-content">
+                <span class="account-user-icon" aria-hidden="true">
+                    <?php if ($ownerAvatar !== ''): ?>
+                        <img src="<?= htmlspecialchars($ownerAvatar, ENT_QUOTES, 'UTF-8') ?>" alt="">
+                    <?php else: ?>
+                        <i data-lucide="user-round"></i>
+                    <?php endif; ?>
+                </span>
+                <span class="account-owner-name"><?= htmlspecialchars($ownerName, ENT_QUOTES, 'UTF-8') ?></span>
+                <i data-lucide="chevron-down" class="account-chevron" aria-hidden="true"></i>
+            </button>
+
+            <nav id="account-menu-content" class="account-menu-content" aria-label="Caminhos da conta">
+                <div class="account-menu-heading">
+                    <span class="account-menu-kicker">Dono da conta</span>
+                    <span class="account-menu-name"><?= htmlspecialchars($ownerName, ENT_QUOTES, 'UTF-8') ?></span>
+                </div>
+
+                <div class="account-menu-section" aria-label="Principal">
+                    <div class="account-menu-label">Configuração</div>
+                    <button type="button" class="account-menu-item" id="btn-settings-menu">
+                        <i data-lucide="settings" aria-hidden="true"></i>
+                        <span>Configurações</span>
+                    </button>
+                </div>
+
+                <div class="account-menu-section" aria-label="Conta">
+                    <div class="account-menu-label">Conta</div>
+                    <a class="account-menu-item" href="/plan/me">
+                        <i data-lucide="credit-card" aria-hidden="true"></i>
+                        <span>Minha Assinatura</span>
+                    </a>
+                    <a class="account-menu-item" href="/settings?section=support">
+                        <i data-lucide="life-buoy" aria-hidden="true"></i>
+                        <span>Suporte</span>
+                    </a>
+                    <a class="account-menu-item" href="/settings?section=data">
+                        <i data-lucide="database" aria-hidden="true"></i>
+                        <span>Dados</span>
+                    </a>
+                    <a class="account-menu-item" href="/settings?section=analytics">
+                        <i data-lucide="chart-no-axes-combined" aria-hidden="true"></i>
+                        <span>Analytics</span>
+                    </a>
+                </div>
+            </nav>
+        </div>
     </div>
 
     <div class="profiles-wrapper">
@@ -631,11 +891,42 @@ if (!isset($_SESSION['user_id'])) {
 
     <script>
         // Evento do botão de configurações
-        document.getElementById('btn-settings')?.addEventListener('click', function() {
+        const accountMenuToggle = document.getElementById('account-menu-toggle');
+        const accountMenuContent = document.getElementById('account-menu-content');
+
+        function setAccountMenu(open) {
+            if (!accountMenuToggle || !accountMenuContent) return;
+            accountMenuToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+            accountMenuContent.classList.toggle('open', open);
+        }
+
+        accountMenuToggle?.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const isOpen = accountMenuToggle.getAttribute('aria-expanded') === 'true';
+            setAccountMenu(!isOpen);
+        });
+
+        accountMenuContent?.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+
+        document.addEventListener('click', function() {
+            setAccountMenu(false);
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') setAccountMenu(false);
+        });
+
+        function openSettingsPinModal() {
+            setAccountMenu(false);
             if (window.PinValidateModal) {
                 window.PinValidateModal.show();
             }
-        });
+        }
+
+        document.getElementById('btn-settings')?.addEventListener('click', openSettingsPinModal);
+        document.getElementById('btn-settings-menu')?.addEventListener('click', openSettingsPinModal);
         
         // Verifica se veio de redirecionamento por falta de PIN
         const urlParams = new URLSearchParams(window.location.search);

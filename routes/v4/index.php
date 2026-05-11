@@ -49,6 +49,10 @@ require_once __DIR__ . '/../../controllers/v4/PlatformAuthController.php';
 require_once __DIR__ . '/../../models/v4/QrLoginModel.php';
 require_once __DIR__ . '/../../services/v4/QrLoginService.php';
 require_once __DIR__ . '/../../controllers/v4/QrLoginController.php';
+require_once __DIR__ . '/../../helpers/v4/EvoPayClient.php';
+require_once __DIR__ . '/../../models/v4/SubscriptionModel.php';
+require_once __DIR__ . '/../../services/v4/SubscriptionService.php';
+require_once __DIR__ . '/../../controllers/v4/SubscriptionController.php';
 
 use Middleware\PinRateLimitMiddleware;
 use Models\V4\PinModel;
@@ -63,6 +67,10 @@ use Controllers\V4\PlatformAuthController;
 use Models\V4\QrLoginModel;
 use Services\V4\QrLoginService;
 use Controllers\V4\QrLoginController;
+use Helpers\V4\EvoPayClient;
+use Models\V4\SubscriptionModel;
+use Services\V4\SubscriptionService;
+use Controllers\V4\SubscriptionController;
 
 // ── Inicia sessão ────────────────────────────────────────────
 if (session_status() === PHP_SESSION_NONE) {
@@ -154,6 +162,17 @@ try {
         $controller = new TwoFactorController($service);
         
         $controller->handle($action, $method);
+        exit;
+    }
+
+    if (str_starts_with($action, 'subscription/')) {
+        $model = new SubscriptionModel($pdo);
+        $userModel = new PlatformUserModel($pdo);
+        $evopay = new EvoPayClient(require __DIR__ . '/../../config/evopay.php');
+        $service = new SubscriptionService($model, $userModel, $evopay);
+        $controller = new SubscriptionController($service);
+
+        $controller->handle($action, $method, $userId);
         exit;
     }
 

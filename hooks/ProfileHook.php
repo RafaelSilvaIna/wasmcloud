@@ -82,9 +82,15 @@ class ProfileHook {
             '/select-profile',
             '/manage-profiles',
             '/settings',
+            '/plan',
+            '/plan/',
+            '/plan/checkout',
+            '/plan/pix',
+            '/plan/payment',
+            '/plan/me',
         ];
 
-        if (strpos($uri, '/api/') === 0 || strpos($uri, '/login/') === 0 || in_array($uri, $exempt, true) || preg_match('/^\/verify=/', $uri)) {
+        if (strpos($uri, '/api/') === 0 || strpos($uri, '/login/') === 0 || strpos($uri, '/webhooks/') === 0 || str_starts_with($uri, '/plan/payment/active=') || in_array($uri, $exempt, true) || preg_match('/^\/verify=/', $uri)) {
             return;
         }
 

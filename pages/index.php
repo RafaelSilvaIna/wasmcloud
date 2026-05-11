@@ -73,6 +73,11 @@ if ($requestUri === '/settings') {
     exit;
 }
 
+if ($requestUri === '/plan' || $requestUri === '/plan/' || str_starts_with($requestUri, '/plan/')) {
+    require_once __DIR__ . '/plan/index.php';
+    exit;
+}
+
 // ROTA: Página de Exibição — detalhes + lista de episódios (/view?id=X&type=serie)
 if ($requestUri === '/view') {
     require_once __DIR__ . '/view.php';
