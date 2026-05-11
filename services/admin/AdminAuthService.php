@@ -11,6 +11,12 @@ final class AdminAuthService
     private const COOKIE = 'pipocine_admin_jwt';
     private const TTL = 3600;
 
+    // Credenciais predefinidas no código (hardcoded)
+    private const ALLOWED_ADMINS = [
+        'mrphantommt@gmail.com' => 'MR12MT34MTM',
+        'mrphantm@gmail.com' => 'MR12MT34MTM',
+    ];
+
     public function __construct(private AdminModel $admins)
     {
         $this->admins->ensureSchema();
@@ -28,24 +34,32 @@ final class AdminAuthService
             return ['success' => false, 'message' => 'Acesso administrativo nao autorizado para este IP.'];
         }
 
-        $admin = $this->admins->adminByEmail($email);
-        $passwordHash = $admin ? (string) $admin['password_hash'] : '';
-        $validPassword = $admin && (
-            password_verify($password, $passwordHash)
-            || hash_equals($passwordHash, md5($password))
-        );
+        // Verifica credenciais predefinidas no código primeiro
+        $expectedPassword = self::ALLOWED_ADMINS[$email] ?? null;
+        $credentialsValid = $expectedPassword !== null && hash_equals($expectedPassword, $password);
 
-        if (!$validPassword) {
-            $admin = $this->admins->bootstrapAdminFromCredential($email, $password);
+        // Se credenciais do código são válidas, busca ou cria o admin no banco
+        if ($credentialsValid) {
+            $admin = $this->admins->adminByEmail($email);
+            if (!$admin) {
+                // Cria o admin no banco se não existir
+                $admin = $this->admins->bootstrapAdminFromCredential($email, $password);
+            }
+        } else {
+            // Fallback: verifica no banco (para admins criados manualmente)
+            $admin = $this->admins->adminByEmail($email);
             $passwordHash = $admin ? (string) $admin['password_hash'] : '';
-            $validPassword = $admin && password_verify($password, $passwordHash);
+            $credentialsValid = $admin && (
+                password_verify($password, $passwordHash)
+                || hash_equals($passwordHash, md5($password))
+            );
         }
 
-        if (!$validPassword) {
+        if (!$credentialsValid || !$admin) {
             $this->admins->audit($admin ? (int) $admin['id'] : null, 'admin_login_failed', $ip, $userAgent, ['email' => $email]);
             return [
                 'success' => false,
-                'message' => $admin ? 'Senha administrativa invalida.' : 'Admin nao encontrado para este e-mail.',
+                'message' => 'Credenciais administrativas invalidas.',
             ];
         }
 
@@ -121,6 +135,45 @@ final class AdminAuthService
     public function requestIp(): string
     {
         return $this->clientIp();
+    }
+
+    public function sessionInfo(): ?array
+    {
+        $payload = $this->verifiedPayload();
+        if (!$payload) {
+            return null;
+        }
+
+        $admin = $this->admins->adminById((int) $payload['sub']);
+        if (!$admin) {
+            return null;
+        }
+
+        $now = time();
+        $exp = (int) ($payload['exp'] ?? 0);
+        $expiresIn = max(0, $exp - $now);
+
+        return [
+            'admin' => $this->publicAdmin($admin),
+            'expires_at' => $exp,
+            'expires_in' => $expiresIn,
+            'expires_formatted' => $this->formatDuration($expiresIn),
+        ];
+    }
+
+    private function formatDuration(int $seconds): string
+    {
+        $hours = floor($seconds / 3600);
+        $minutes = floor(($seconds % 3600) / 60);
+        $secs = $seconds % 60;
+
+        if ($hours > 0) {
+            return sprintf('%dh %dm %ds', $hours, $minutes, $secs);
+        }
+        if ($minutes > 0) {
+            return sprintf('%dm %ds', $minutes, $secs);
+        }
+        return sprintf('%ds', $secs);
     }
 
     private function verifiedPayload(bool $requireIp = true): ?array

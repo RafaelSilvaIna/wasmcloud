@@ -32,6 +32,17 @@ final class AdminController
             $this->json($this->auth->logout());
         }
 
+        if ($action === 'session' && $method === 'GET') {
+            $sessionInfo = $this->auth->sessionInfo();
+            if (!$sessionInfo) {
+                $this->json(['success' => false, 'error' => 'Sessao nao encontrada.'], 401);
+            }
+            $this->json([
+                'success' => true,
+                'session' => $sessionInfo,
+            ]);
+        }
+
         if ($action === 'dashboard' && $method === 'GET') {
             try {
                 $admin = $this->auth->requireAdmin();
