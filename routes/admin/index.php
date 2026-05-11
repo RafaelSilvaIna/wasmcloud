@@ -7,12 +7,16 @@ error_reporting(E_ALL);
 require_once __DIR__ . '/../../database/db.php';
 require_once __DIR__ . '/../../helpers/admin/AdminJwt.php';
 require_once __DIR__ . '/../../models/admin/AdminModel.php';
+require_once __DIR__ . '/../../models/admin/AdminUserModerationModel.php';
 require_once __DIR__ . '/../../services/admin/AdminAuthService.php';
+require_once __DIR__ . '/../../services/admin/AdminUserModerationService.php';
 require_once __DIR__ . '/../../controllers/admin/AdminController.php';
 
 use Controllers\Admin\AdminController;
 use Models\Admin\AdminModel;
+use Models\Admin\AdminUserModerationModel;
 use Services\Admin\AdminAuthService;
+use Services\Admin\AdminUserModerationService;
 
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
@@ -34,7 +38,8 @@ try {
 
     $model = new AdminModel($pdo);
     $auth = new AdminAuthService($model);
-    $controller = new AdminController($auth, $model);
+    $moderation = new AdminUserModerationService(new AdminUserModerationModel($pdo));
+    $controller = new AdminController($auth, $model, $moderation);
     $controller->handle($action, $method);
 } catch (Throwable $e) {
     error_log('[API Admin] ' . $e->getMessage());

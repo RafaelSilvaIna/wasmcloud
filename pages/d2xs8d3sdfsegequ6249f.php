@@ -7,6 +7,7 @@ require_once __DIR__ . '/../models/admin/AdminModel.php';
 require_once __DIR__ . '/../services/admin/AdminAuthService.php';
 require_once __DIR__ . '/../components/admin/AdminHeader.php';
 require_once __DIR__ . '/../components/admin/AdminSidebar.php';
+require_once __DIR__ . '/../components/admin/AdminUsersPanel.php';
 
 use Models\Admin\AdminModel;
 use Services\Admin\AdminAuthService;
@@ -17,6 +18,7 @@ $ipAllowed = $adminAuth ? $adminAuth->isRequestAllowed() : false;
 $admin = ($ipAllowed && $adminAuth) ? $adminAuth->currentAdmin() : null;
 $databaseReady = (bool) $adminAuth;
 $detectedIp = $adminAuth ? $adminAuth->requestIp() : 'indisponivel';
+$adminRoute = preg_replace('/[^a-z0-9_-]/i', '', (string) ($_GET['route'] ?? 'overview')) ?: 'overview';
 ?>
 <!doctype html>
 <html lang="pt-br">
@@ -249,16 +251,21 @@ $detectedIp = $adminAuth ? $adminAuth->requestIp() : 'indisponivel';
         <main class="admin-main">
             <?php AdminHeader::render(); ?>
             <section class="admin-content">
-                <div class="admin-grid" id="admin-stats">
-                    <article class="admin-card"><span>Usuarios</span><strong data-stat="users">-</strong></article>
-                    <article class="admin-card"><span>Perfis</span><strong data-stat="profiles">-</strong></article>
-                    <article class="admin-card"><span>Pagamentos</span><strong data-stat="payments">-</strong></article>
-                    <article class="admin-card"><span>Sessoes admin</span><strong data-stat="active_admin_sessions">-</strong></article>
-                </div>
-                <article class="admin-panel">
-                    <h2>Base segura criada</h2>
-                    <p>O painel ja esta separado da autenticacao de usuario comum, protegido por IP, cookie administrativo proprio e JWT de 1 hora.</p>
-                </article>
+                <section data-admin-route="overview" class="admin-route-panel">
+                    <div class="admin-grid" id="admin-stats">
+                        <article class="admin-card"><span>Usuarios</span><strong data-stat="users">-</strong></article>
+                        <article class="admin-card"><span>Perfis</span><strong data-stat="profiles">-</strong></article>
+                        <article class="admin-card"><span>Suspensos</span><strong data-stat="suspended_users">-</strong></article>
+                        <article class="admin-card"><span>Banidos</span><strong data-stat="banned_users">-</strong></article>
+                        <article class="admin-card"><span>Pagamentos</span><strong data-stat="payments">-</strong></article>
+                        <article class="admin-card"><span>Sessoes admin</span><strong data-stat="active_admin_sessions">-</strong></article>
+                    </div>
+                    <article class="admin-panel">
+                        <h2>Central administrativa</h2>
+                        <p>Use a rota Usuarios para consultar contas, perfis, logs recentes e aplicar suspensoes ou banimentos com auditoria.</p>
+                    </article>
+                </section>
+                <?php AdminUsersPanel::render(); ?>
             </section>
         </main>
     </div>
@@ -311,7 +318,39 @@ $detectedIp = $adminAuth ? $adminAuth->requestIp() : 'indisponivel';
         });
     }
 
+    function setAdminRoute(route) {
+        route = route || 'overview';
+        document.querySelectorAll('.admin-route-panel').forEach(panel => {
+            panel.hidden = panel.dataset.adminRoute !== route;
+        });
+        document.querySelectorAll('[data-admin-nav]').forEach(link => {
+            link.classList.toggle('active', link.dataset.adminNav === route);
+            const url = new URL(link.href, window.location.origin);
+            url.searchParams.set('route', link.dataset.adminNav);
+            link.href = url.pathname + url.search;
+        });
+        if (route === 'users' && window.AdminUsersPanel) {
+            window.AdminUsersPanel.load();
+        }
+    }
+
+    document.addEventListener('click', function (event) {
+        const link = event.target.closest('[data-admin-nav]');
+        if (!link) return;
+        event.preventDefault();
+        const route = link.dataset.adminNav || 'overview';
+        const url = new URL(window.location.href);
+        url.searchParams.set('route', route);
+        history.pushState({ route }, '', url.pathname + url.search);
+        setAdminRoute(route);
+    });
+
+    window.addEventListener('popstate', function () {
+        setAdminRoute(new URL(window.location.href).searchParams.get('route') || 'overview');
+    });
+
     loadAdminDashboard();
+    setAdminRoute(<?= json_encode($adminRoute) ?>);
 </script>
 </body>
 </html>

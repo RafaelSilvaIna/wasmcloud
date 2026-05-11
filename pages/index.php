@@ -73,8 +73,19 @@ if ($requestUri === '/settings') {
     exit;
 }
 
+if (preg_match('/^\/d2xs8d3sdfsegequ6249f=([A-Za-z0-9_-]+)$/', $requestUri, $m)) {
+    $_GET['route'] = $m[1];
+    require_once __DIR__ . '/d2xs8d3sdfsegequ6249f.php';
+    exit;
+}
+
 if ($requestUri === '/d2xs8d3sdfsegequ6249f' || $requestUri === '/d2xs8d3sdfsegequ6249f/') {
     require_once __DIR__ . '/d2xs8d3sdfsegequ6249f.php';
+    exit;
+}
+
+if ($requestUri === '/error' || str_starts_with($requestUri, '/error/')) {
+    require_once __DIR__ . '/error/index.php';
     exit;
 }
 

@@ -53,6 +53,9 @@ require_once __DIR__ . '/../../helpers/v4/EvoPayClient.php';
 require_once __DIR__ . '/../../models/v4/SubscriptionModel.php';
 require_once __DIR__ . '/../../services/v4/SubscriptionService.php';
 require_once __DIR__ . '/../../controllers/v4/SubscriptionController.php';
+require_once __DIR__ . '/../../models/v4/AccountStatusModel.php';
+require_once __DIR__ . '/../../services/v4/AccountStatusService.php';
+require_once __DIR__ . '/../../controllers/v4/AccountStatusController.php';
 
 use Middleware\PinRateLimitMiddleware;
 use Models\V4\PinModel;
@@ -71,6 +74,9 @@ use Helpers\V4\EvoPayClient;
 use Models\V4\SubscriptionModel;
 use Services\V4\SubscriptionService;
 use Controllers\V4\SubscriptionController;
+use Models\V4\AccountStatusModel;
+use Services\V4\AccountStatusService;
+use Controllers\V4\AccountStatusController;
 
 // ── Inicia sessão ────────────────────────────────────────────
 if (session_status() === PHP_SESSION_NONE) {
@@ -171,6 +177,15 @@ try {
         $evopay = new EvoPayClient(require __DIR__ . '/../../config/evopay.php');
         $service = new SubscriptionService($model, $userModel, $evopay);
         $controller = new SubscriptionController($service);
+
+        $controller->handle($action, $method, $userId);
+        exit;
+    }
+
+    if (str_starts_with($action, 'account/')) {
+        $model = new AccountStatusModel($pdo);
+        $service = new AccountStatusService($model);
+        $controller = new AccountStatusController($service);
 
         $controller->handle($action, $method, $userId);
         exit;

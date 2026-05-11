@@ -5,10 +5,15 @@ namespace Controllers\Admin;
 
 use Models\Admin\AdminModel;
 use Services\Admin\AdminAuthService;
+use Services\Admin\AdminUserModerationService;
 
 final class AdminController
 {
-    public function __construct(private AdminAuthService $auth, private AdminModel $model)
+    public function __construct(
+        private AdminAuthService $auth,
+        private AdminModel $model,
+        private ?AdminUserModerationService $moderation = null
+    )
     {
     }
 
@@ -59,6 +64,65 @@ final class AdminController
                 ],
                 'stats' => $this->model->dashboardStats(),
             ]);
+        }
+
+        if (str_starts_with($action, 'users') && $this->moderation) {
+            try {
+                $admin = $this->auth->requireAdmin();
+            } catch (\RuntimeException) {
+                $this->json(['success' => false, 'error' => 'Admin nao autenticado.'], 401);
+            }
+
+            if ($action === 'users' && $method === 'GET') {
+                $this->json($this->moderation->list((string) ($_GET['q'] ?? '')));
+            }
+
+            if (preg_match('/^users\/(\d+)$/', $action, $m) && $method === 'GET') {
+                $result = $this->moderation->details((int) $m[1]);
+                $this->json($result, !empty($result['success']) ? 200 : 404);
+            }
+
+            if (preg_match('/^users\/(\d+)\/suspend$/', $action, $m) && $method === 'POST') {
+                $data = $this->input();
+                $result = $this->moderation->suspend(
+                    (int) $m[1],
+                    (int) $admin['id'],
+                    (string) ($data['reason'] ?? ''),
+                    (int) ($data['duration_minutes'] ?? 0)
+                );
+                if (!empty($result['success'])) {
+                    $this->model->audit((int) $admin['id'], 'admin_user_suspended', $this->auth->requestIp(), $_SERVER['HTTP_USER_AGENT'] ?? '', [
+                        'user_id' => (int) $m[1],
+                        'reason' => (string) ($data['reason'] ?? ''),
+                        'duration_minutes' => (int) ($data['duration_minutes'] ?? 0),
+                    ]);
+                }
+                $this->json($result, !empty($result['success']) ? 200 : 400);
+            }
+
+            if (preg_match('/^users\/(\d+)\/ban$/', $action, $m) && $method === 'POST') {
+                $data = $this->input();
+                $result = $this->moderation->ban((int) $m[1], (int) $admin['id'], (string) ($data['reason'] ?? ''));
+                if (!empty($result['success'])) {
+                    $this->model->audit((int) $admin['id'], 'admin_user_banned', $this->auth->requestIp(), $_SERVER['HTTP_USER_AGENT'] ?? '', [
+                        'user_id' => (int) $m[1],
+                        'reason' => (string) ($data['reason'] ?? ''),
+                    ]);
+                }
+                $this->json($result, !empty($result['success']) ? 200 : 400);
+            }
+
+            if (preg_match('/^users\/(\d+)\/reactivate$/', $action, $m) && $method === 'POST') {
+                $data = $this->input();
+                $result = $this->moderation->reactivate((int) $m[1], (int) $admin['id'], (string) ($data['reason'] ?? ''));
+                if (!empty($result['success'])) {
+                    $this->model->audit((int) $admin['id'], 'admin_user_reactivated', $this->auth->requestIp(), $_SERVER['HTTP_USER_AGENT'] ?? '', [
+                        'user_id' => (int) $m[1],
+                        'reason' => (string) ($data['reason'] ?? ''),
+                    ]);
+                }
+                $this->json($result, !empty($result['success']) ? 200 : 400);
+            }
         }
 
         $this->json(['success' => false, 'error' => 'Rota admin nao encontrada.'], 404);

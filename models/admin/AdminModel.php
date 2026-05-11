@@ -165,6 +165,8 @@ final class AdminModel
             'profiles' => $this->countTable('profiles'),
             'payments' => $this->countTable('subscription_payments'),
             'active_admin_sessions' => $this->countWhere('admin_sessions', 'expires_at > NOW() AND revoked_at IS NULL'),
+            'suspended_users' => $this->countWhere('platform_users', "moderation_status = 'suspended' AND (moderation_until IS NULL OR moderation_until > NOW())"),
+            'banned_users' => $this->countWhere('platform_users', "moderation_status = 'banned'"),
         ];
     }
 

@@ -68,6 +68,10 @@ class PlatformAuthService
             return ['success' => false, 'message' => 'Nao foi possivel criar sua conta.'];
         }
 
+        $this->users->logActivity($userId, 'account_registered', [
+            'identifier_type' => $parsed['type'],
+        ]);
+
         return $this->createAuthenticatedSession($user, true);
     }
 
@@ -82,6 +86,18 @@ class PlatformAuthService
 
         if (($user['status'] ?? 'active') !== 'active') {
             return ['success' => false, 'message' => 'Sua conta esta indisponivel no momento.'];
+        }
+
+        $restriction = $this->restrictionForUser($user);
+        if ($restriction) {
+            $this->users->logActivity((int) $user['id'], 'login_blocked_moderation', $restriction);
+            return [
+                'success' => false,
+                'message' => $restriction['status'] === 'banned'
+                    ? 'Sua conta foi banida da plataforma.'
+                    : 'Sua conta esta suspensa temporariamente.',
+                'restriction' => $restriction,
+            ];
         }
 
         $userId = (int) $user['id'];
@@ -124,6 +140,10 @@ class PlatformAuthService
         );
 
         if (empty($result['success'])) {
+            $this->users->logActivity((int) $challenge['user_id'], '2fa_code_failed', [
+                'blocked' => $result['blocked'] ?? false,
+            ]);
+
             return [
                 'success' => false,
                 'message' => $result['error'] ?? 'Codigo invalido.',
@@ -141,6 +161,10 @@ class PlatformAuthService
             return $session;
         }
 
+        $this->users->logActivity((int) $challenge['user_id'], '2fa_code_verified', [
+            'remember_device' => $rememberDevice,
+        ]);
+
         $this->users->consumeTwoFactorChallenge($tokenHash);
         $this->clearTwoFactorChallengeCookie();
 
@@ -155,6 +179,10 @@ class PlatformAuthService
         if (!$this->users->createSession((int) $user['id'], hash('sha256', $rawToken), $expiresAt)) {
             return ['success' => false, 'message' => 'Erro ao criar sessao.'];
         }
+
+        $this->users->logActivity((int) $user['id'], $created ? 'account_created_session_started' : 'login_success', [
+            'expires_at' => $expiresAt,
+        ]);
 
         $_SESSION['user_id'] = (int) $user['id'];
         $_SESSION['username'] = $user['email'] ?: $user['phone'];
@@ -183,6 +211,10 @@ class PlatformAuthService
             return ['success' => false, 'message' => 'Erro ao iniciar verificacao em duas etapas.'];
         }
 
+        $this->users->logActivity($userId, '2fa_challenge_created', [
+            'expires_at' => $expiresAt,
+        ]);
+
         unset($_SESSION['user_id'], $_SESSION['username'], $_SESSION['full_name'], $_SESSION['profile_pic_url'], $_SESSION['profile_id']);
         setcookie('pipocine_token', '', time() - 3600, '/', '', false, true);
         setcookie('pipocine_2fa_challenge', $rawToken, time() + 600, '/', '', false, true);
@@ -198,6 +230,28 @@ class PlatformAuthService
     private function normalizeEmail(string $email): string
     {
         return strtolower(trim($email));
+    }
+
+    private function restrictionForUser(array $user): ?array
+    {
+        $status = (string) ($user['moderation_status'] ?? 'active');
+
+        if ($status === 'suspended') {
+            $until = (string) ($user['moderation_until'] ?? '');
+            if ($until !== '' && strtotime($until) <= time()) {
+                return null;
+            }
+        }
+
+        if (!in_array($status, ['suspended', 'banned'], true)) {
+            return null;
+        }
+
+        return [
+            'status' => $status,
+            'reason' => $user['moderation_reason'] ?: 'Violacao das regras da plataforma.',
+            'until' => $user['moderation_until'] ?? null,
+        ];
     }
 
     private function isValidEmail(string $email): bool
