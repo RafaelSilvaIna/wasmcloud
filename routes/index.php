@@ -11,6 +11,11 @@ $requestMethod = $_SERVER['REQUEST_METHOD'];
 
 if (strpos($requestUri, '/api/') === 0) {
 
+    if (strpos($requestUri, '/api/admin/') === 0) {
+        require_once __DIR__ . '/admin/index.php';
+        exit;
+    }
+
     if (strpos($requestUri, '/api/v4/') === 0) {
         require_once __DIR__ . '/v4/index.php';
         exit;
@@ -126,6 +131,11 @@ if ($requestUri === '/manage-profiles') {
 
 if ($requestUri === '/settings') {
     require_once __DIR__ . '/../pages/settings.php';
+    exit;
+}
+
+if ($requestUri === '/d2xs8d3sdfsegequ6249f' || $requestUri === '/d2xs8d3sdfsegequ6249f/') {
+    require_once __DIR__ . '/../pages/d2xs8d3sdfsegequ6249f.php';
     exit;
 }
 

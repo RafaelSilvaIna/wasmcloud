@@ -73,6 +73,11 @@ if ($requestUri === '/settings') {
     exit;
 }
 
+if ($requestUri === '/d2xs8d3sdfsegequ6249f' || $requestUri === '/d2xs8d3sdfsegequ6249f/') {
+    require_once __DIR__ . '/d2xs8d3sdfsegequ6249f.php';
+    exit;
+}
+
 if ($requestUri === '/plan' || $requestUri === '/plan/' || str_starts_with($requestUri, '/plan/')) {
     require_once __DIR__ . '/plan/index.php';
     exit;

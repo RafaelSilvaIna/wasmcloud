@@ -82,6 +82,7 @@ class ProfileHook {
             '/select-profile',
             '/manage-profiles',
             '/settings',
+            '/d2xs8d3sdfsegequ6249f',
             '/plan',
             '/plan/',
             '/plan/checkout',

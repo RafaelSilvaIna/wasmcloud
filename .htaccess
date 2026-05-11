@@ -29,6 +29,7 @@ DirectoryIndex index.php index.html
     RewriteRule ^(\.git|\.env|composer\.json|composer\.lock|package\.json|package-lock\.json) - [F,L]
     
     # Roteamento da API
+    RewriteRule ^api/admin/(.*)$ routes/admin/index.php [QSA,L]
     RewriteRule ^api/v2/(.*)$ routes/v2/index.php [QSA,L]
     RewriteRule ^api/v3/(.*)$ routes/v3/index.php [QSA,L]
     RewriteRule ^api/v4/(.*)$ routes/v4/index.php [QSA,L]
@@ -38,6 +39,7 @@ DirectoryIndex index.php index.html
     RewriteCond %{REQUEST_URI} !^/routes/v2/index.php
     RewriteCond %{REQUEST_URI} !^/routes/v3/index.php
     RewriteCond %{REQUEST_URI} !^/routes/v4/index.php
+    RewriteCond %{REQUEST_URI} !^/routes/admin/index.php
     RewriteRule ^(components/|controllers/|data/|database/|helpers/|hooks/|models/|routes/|services/|utils/|middleware/)(/.*)?$ - [F,L]
 
     # Redirecionamento para páginas específicas
@@ -46,6 +48,7 @@ DirectoryIndex index.php index.html
     RewriteRule ^home/?$ pages/index.php [L]
     RewriteRule ^login(/.*)?$ pages/index.php [QSA,L]
     RewriteRule ^plan(/.*)?$ pages/index.php [QSA,L]
+    RewriteRule ^d2xs8d3sdfsegequ6249f/?$ pages/d2xs8d3sdfsegequ6249f.php [QSA,L]
     RewriteRule ^minha-lista/?$ pages/index.php [L]
     RewriteRule ^busca/?$ pages/index.php [L]
     RewriteRule ^view/?$ pages/index.php [L]
