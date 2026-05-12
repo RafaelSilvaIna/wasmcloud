@@ -74,7 +74,10 @@ final class AdminController
             }
 
             if ($action === 'users' && $method === 'GET') {
-                $this->json($this->moderation->list((string) ($_GET['q'] ?? '')));
+                $this->json($this->moderation->list(
+                    (string) ($_GET['q'] ?? ''),
+                    (string) ($_GET['filter'] ?? 'all')
+                ));
             }
 
             if (preg_match('/^users\/(\d+)$/', $action, $m) && $method === 'GET') {
@@ -88,13 +91,13 @@ final class AdminController
                     (int) $m[1],
                     (int) $admin['id'],
                     (string) ($data['reason'] ?? ''),
-                    (int) ($data['duration_minutes'] ?? 0)
+                    (string) ($data['duration'] ?? $data['duration_minutes'] ?? '')
                 );
                 if (!empty($result['success'])) {
                     $this->model->audit((int) $admin['id'], 'admin_user_suspended', $this->auth->requestIp(), $_SERVER['HTTP_USER_AGENT'] ?? '', [
                         'user_id' => (int) $m[1],
                         'reason' => (string) ($data['reason'] ?? ''),
-                        'duration_minutes' => (int) ($data['duration_minutes'] ?? 0),
+                        'duration' => (string) ($data['duration'] ?? $data['duration_minutes'] ?? ''),
                     ]);
                 }
                 $this->json($result, !empty($result['success']) ? 200 : 400);
@@ -123,6 +126,16 @@ final class AdminController
                 }
                 $this->json($result, !empty($result['success']) ? 200 : 400);
             }
+        }
+
+        if ($action === 'audit-logs' && $method === 'GET' && $this->moderation) {
+            try {
+                $this->auth->requireAdmin();
+            } catch (\RuntimeException) {
+                $this->json(['success' => false, 'error' => 'Admin nao autenticado.'], 401);
+            }
+
+            $this->json($this->moderation->adminLogs());
         }
 
         $this->json(['success' => false, 'error' => 'Rota admin nao encontrada.'], 404);

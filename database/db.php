@@ -2,6 +2,10 @@
 
 declare(strict_types=1);
 
+if (!defined('PIPOCINE_REQUEST_STARTED_AT')) {
+    define('PIPOCINE_REQUEST_STARTED_AT', $_SERVER['REQUEST_TIME_FLOAT'] ?? microtime(true));
+}
+
 // ======================
 // CONFIG
 // ======================
@@ -214,6 +218,12 @@ $pdoPipocine = createPDO(DB_PIPO['name'], DB_PIPO['user_primary'], DB_PIPO['pass
 
 // Mantém compatibilidade: a v3 usa $pdo historicamente como conexão do Pipocine
 $pdo = $pdoPipocine;
+
+if ($pdoPipocine) {
+    require_once __DIR__ . '/../models/admin/AdminUsageMetricsModel.php';
+    require_once __DIR__ . '/../hooks/admin/UsageMetricsHook.php';
+    \Hooks\Admin\UsageMetricsHook::register($pdoPipocine);
+}
 
 // AUTH
 if (!isset($_SESSION['user_id'])) {

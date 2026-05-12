@@ -101,7 +101,8 @@ final class AdminSidebar
             <nav class="admin-nav" aria-label="Navegacao administrativa">
                 <a class="active" href="?route=overview" data-admin-nav="overview"><i data-lucide="layout-dashboard"></i><span>Visao geral</span></a>
                 <a href="?route=users" data-admin-nav="users"><i data-lucide="users"></i><span>Usuarios</span></a>
-                <a href="#payments"><i data-lucide="credit-card"></i><span>Pagamentos</span></a>
+                <a href="?route=subscriptions" data-admin-nav="subscriptions"><i data-lucide="credit-card"></i><span>Assinaturas</span></a>
+                <a href="?route=metrics" data-admin-nav="metrics"><i data-lucide="chart-no-axes-combined"></i><span>Metricas de uso</span></a>
                 <a href="#security"><i data-lucide="shield-check"></i><span>Seguranca</span></a>
             </nav>
         </aside>

@@ -8,6 +8,8 @@ require_once __DIR__ . '/../services/admin/AdminAuthService.php';
 require_once __DIR__ . '/../components/admin/AdminHeader.php';
 require_once __DIR__ . '/../components/admin/AdminSidebar.php';
 require_once __DIR__ . '/../components/admin/AdminUsersPanel.php';
+require_once __DIR__ . '/../components/admin/magner/AdminUsageMetricsPanel.php';
+require_once __DIR__ . '/../components/admin/subscriptions/AdminSubscriptionsPanel.php';
 
 use Models\Admin\AdminModel;
 use Services\Admin\AdminAuthService;
@@ -266,6 +268,8 @@ $adminRoute = preg_replace('/[^a-z0-9_-]/i', '', (string) ($_GET['route'] ?? 'ov
                     </article>
                 </section>
                 <?php AdminUsersPanel::render(); ?>
+                <?php AdminSubscriptionsPanel::render(); ?>
+                <?php AdminUsageMetricsPanel::render(); ?>
             </section>
         </main>
     </div>
@@ -331,6 +335,12 @@ $adminRoute = preg_replace('/[^a-z0-9_-]/i', '', (string) ($_GET['route'] ?? 'ov
         });
         if (route === 'users' && window.AdminUsersPanel) {
             window.AdminUsersPanel.load();
+        }
+        if (route === 'metrics' && window.AdminMetricsPanel) {
+            window.AdminMetricsPanel.load();
+        }
+        if (route === 'subscriptions' && window.AdminSubscriptionsPanel) {
+            window.AdminSubscriptionsPanel.load();
         }
     }
 

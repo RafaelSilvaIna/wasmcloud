@@ -42,7 +42,8 @@ class SubscriptionService
             return ['success' => false, 'code' => 'USER_NOT_FOUND', 'message' => 'Usuario nao encontrado. Entre novamente.'];
         }
 
-        if ($this->subscriptions->activeSubscription($userId)) {
+        $active = $this->subscriptions->activeSubscription($userId);
+        if ($active && (($active['source'] ?? 'paid') === 'paid')) {
             return ['success' => false, 'code' => 'SUBSCRIPTION_ACTIVE', 'message' => 'Sua assinatura ja esta ativa.'];
         }
 
@@ -151,7 +152,8 @@ class SubscriptionService
             return ['success' => false, 'message' => 'Token expirado, ja utilizado ou nao pertence a esta sessao.'];
         }
 
-        if (!empty($this->subscriptions->activeSubscription($userId))) {
+        $activeSubscription = $this->subscriptions->activeSubscription($userId);
+        if ($activeSubscription && (($activeSubscription['source'] ?? 'paid') === 'paid')) {
             return ['success' => true, 'already_active' => true, 'redirect' => '/plan/me'];
         }
 

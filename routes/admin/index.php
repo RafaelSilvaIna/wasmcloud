@@ -4,19 +4,33 @@ declare(strict_types=1);
 ini_set('display_errors', '0');
 error_reporting(E_ALL);
 
-require_once __DIR__ . '/../../database/db.php';
-require_once __DIR__ . '/../../helpers/admin/AdminJwt.php';
-require_once __DIR__ . '/../../models/admin/AdminModel.php';
-require_once __DIR__ . '/../../models/admin/AdminUserModerationModel.php';
-require_once __DIR__ . '/../../services/admin/AdminAuthService.php';
-require_once __DIR__ . '/../../services/admin/AdminUserModerationService.php';
-require_once __DIR__ . '/../../controllers/admin/AdminController.php';
+$rootDir = dirname(__DIR__, 2);
+
+require_once $rootDir . '/database/db.php';
+require_once $rootDir . '/helpers/admin/AdminJwt.php';
+require_once $rootDir . '/models/admin/AdminModel.php';
+require_once $rootDir . '/models/admin/AdminUserModerationModel.php';
+require_once $rootDir . '/models/admin/AdminUsageMetricsModel.php';
+require_once $rootDir . '/models/admin/AdminSubscriptionModel.php';
+require_once $rootDir . '/services/admin/AdminAuthService.php';
+require_once $rootDir . '/services/admin/AdminUserModerationService.php';
+require_once $rootDir . '/services/admin/AdminUsageMetricsService.php';
+require_once $rootDir . '/services/admin/AdminSubscriptionService.php';
+require_once $rootDir . '/controllers/admin/AdminController.php';
+require_once $rootDir . '/controllers/admin/AdminUsageMetricsController.php';
+require_once $rootDir . '/controllers/admin/AdminSubscriptionController.php';
 
 use Controllers\Admin\AdminController;
+use Controllers\Admin\AdminSubscriptionController;
+use Controllers\Admin\AdminUsageMetricsController;
 use Models\Admin\AdminModel;
+use Models\Admin\AdminSubscriptionModel;
 use Models\Admin\AdminUserModerationModel;
+use Models\Admin\AdminUsageMetricsModel;
 use Services\Admin\AdminAuthService;
+use Services\Admin\AdminSubscriptionService;
 use Services\Admin\AdminUserModerationService;
+use Services\Admin\AdminUsageMetricsService;
 
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
@@ -38,6 +52,20 @@ try {
 
     $model = new AdminModel($pdo);
     $auth = new AdminAuthService($model);
+    if (str_starts_with($action, 'metrics/')) {
+        $metrics = new AdminUsageMetricsService(new AdminUsageMetricsModel($pdo));
+        $metricsController = new AdminUsageMetricsController($auth, $metrics);
+        $metricsController->handle($action, $method);
+        exit;
+    }
+
+    if (str_starts_with($action, 'subscriptions')) {
+        $subscriptions = new AdminSubscriptionService(new AdminSubscriptionModel($pdo));
+        $subscriptionController = new AdminSubscriptionController($auth, $subscriptions);
+        $subscriptionController->handle($action, $method);
+        exit;
+    }
+
     $moderation = new AdminUserModerationService(new AdminUserModerationModel($pdo));
     $controller = new AdminController($auth, $model, $moderation);
     $controller->handle($action, $method);

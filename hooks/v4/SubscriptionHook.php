@@ -31,8 +31,9 @@ class SubscriptionHook
         $model->expireOldSubscriptions();
 
         $active = $model->activeSubscription((int) $_SESSION['user_id']);
+        $isPaidActive = $active && (($active['source'] ?? 'paid') === 'paid');
 
-        if ($active && (in_array($uri, ['/plan', '/plan/', '/plan/checkout', '/plan/pix', '/plan/payment'], true) || str_starts_with($uri, '/plan/payment/active='))) {
+        if ($isPaidActive && (in_array($uri, ['/plan', '/plan/', '/plan/checkout', '/plan/pix', '/plan/payment'], true) || str_starts_with($uri, '/plan/payment/active='))) {
             header('Location: /plan/me');
             exit;
         }

@@ -186,6 +186,12 @@ body.plan-body {
     font-weight: 800;
 }
 
+.plan-pill.courtesy {
+    border: 1px solid rgba(245, 158, 11, .28);
+    background: rgba(245, 158, 11, .12);
+    color: #fde68a;
+}
+
 .plan-price {
     display: flex;
     align-items: baseline;
@@ -231,6 +237,12 @@ body.plan-body {
 .plan-action.gold {
     color: #ffffff;
     background: var(--plan-gold);
+}
+
+.plan-action.compact {
+    width: auto;
+    min-width: 190px;
+    padding: 0 18px;
 }
 
 .plan-action.disabled {
@@ -456,6 +468,94 @@ body.plan-body {
     gap: 18px;
 }
 
+.me-grid .plan-panel {
+    border-radius: 8px;
+    background:
+        linear-gradient(180deg, rgba(255,255,255,.025), rgba(255,255,255,0)),
+        var(--plan-panel);
+    box-shadow: 0 18px 48px rgba(0,0,0,.18);
+}
+
+.me-panel-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 8px;
+}
+
+.me-panel-head h2 {
+    margin: 4px 0 0;
+}
+
+.me-panel-eyebrow {
+    display: block;
+    color: var(--plan-muted);
+    font-size: .72rem;
+    font-weight: 850;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.plan-origin {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: 7px 10px;
+    font-size: .72rem;
+    font-weight: 850;
+    white-space: nowrap;
+}
+
+.plan-origin.paid {
+    color: #bbf7d0;
+    background: rgba(16, 185, 129, .12);
+    border: 1px solid rgba(16, 185, 129, .24);
+}
+
+.plan-origin.courtesy {
+    color: #fde68a;
+    background: rgba(245, 158, 11, .12);
+    border: 1px solid rgba(245, 158, 11, .24);
+}
+
+.plan-courtesy-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    border: 1px solid rgba(245, 158, 11, .26);
+    border-radius: 8px;
+    background: linear-gradient(135deg, rgba(245, 158, 11, .14), rgba(229, 9, 20, .08));
+    padding: 18px;
+    margin: 0 0 18px;
+}
+
+.plan-courtesy-banner span {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    color: #fde68a;
+    font-size: .78rem;
+    font-weight: 850;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+}
+
+.plan-courtesy-banner strong {
+    display: block;
+    margin-top: 8px;
+    color: #fff;
+    font-size: 1.12rem;
+}
+
+.plan-courtesy-banner p {
+    max-width: 680px;
+    margin: 6px 0 0;
+    color: var(--plan-muted);
+    line-height: 1.5;
+}
+
 .metric-grid {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -464,9 +564,9 @@ body.plan-body {
 }
 
 .metric {
-    border: 1px solid rgba(255,255,255,.1);
-    border-radius: 14px;
-    background: rgba(255,255,255,.04);
+    border: 1px solid rgba(255,255,255,.09);
+    border-radius: 8px;
+    background: rgba(255,255,255,.035);
     padding: 16px;
 }
 
@@ -483,6 +583,31 @@ body.plan-body {
     display: block;
     margin-top: 8px;
     font-size: 1.15rem;
+}
+
+.plan-benefits-link {
+    min-height: 50px;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 22px;
+    border: 1px solid rgba(229, 9, 20, .35);
+    border-radius: 8px;
+    padding: 0 14px;
+    color: #fff;
+    background: rgba(229, 9, 20, .08);
+    text-decoration: none;
+    font-weight: 850;
+}
+
+.plan-benefits-link:hover {
+    background: rgba(229, 9, 20, .16);
+}
+
+.plan-benefits-link svg {
+    width: 18px;
+    height: 18px;
+    color: var(--plan-gold);
 }
 
 .history-table {
@@ -504,6 +629,17 @@ body.plan-body {
     font-size: .75rem;
     text-transform: uppercase;
     letter-spacing: .08em;
+}
+
+.payment-status-paid {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: 5px 9px;
+    color: #bbf7d0;
+    background: rgba(16, 185, 129, .12);
+    font-size: .78rem;
+    font-weight: 850;
 }
 
 .plan-pix-shell {
@@ -721,6 +857,14 @@ body.plan-body {
 
     .metric-grid {
         grid-template-columns: 1fr;
+    }
+
+    .plan-courtesy-banner {
+        display: grid;
+    }
+
+    .plan-action.compact {
+        width: 100%;
     }
 
     .plan-topbar {
