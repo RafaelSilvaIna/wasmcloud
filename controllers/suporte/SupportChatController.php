@@ -17,11 +17,12 @@ final class SupportChatController
 
         try {
             match ($action) {
-                'chat/create' => $this->create($method),
-                'chat/status' => $this->status($method),
-                'chat/sync'   => $this->sync($method),
-                'chat/read'   => $this->read($method),
-                default       => $this->notFound(),
+                'chat/create'         => $this->create($method),
+                'chat/status'         => $this->status($method),
+                'chat/sync'           => $this->sync($method),
+                'chat/read'           => $this->read($method),
+                'chat/token-for-user' => $this->tokenForUser($method),
+                default               => $this->notFound(),
             };
         } catch (\Throwable $e) {
             http_response_code(500);
@@ -97,6 +98,44 @@ final class SupportChatController
 
         $this->chatService->markRead((int) $chat['id'], 'user');
         echo json_encode(['success' => true]);
+    }
+
+    /**
+     * GET /api/suporte/chat/token-for-user?chat_id=X
+     * Returns the session_token for a chat that belongs to the authenticated user.
+     * Used by the client when navigating directly to /suporte?view=chat&id=X without a localStorage token.
+     */
+    private function tokenForUser(string $method): void
+    {
+        if ($method !== 'GET') { $this->methodNotAllowed(); return; }
+
+        $userId = SupportSession::authenticatedUserId();
+        if (!$userId) {
+            http_response_code(401);
+            echo json_encode(['success' => false, 'error' => 'Autenticacao necessaria.']);
+            return;
+        }
+
+        $chatId = (int) ($_GET['chat_id'] ?? 0);
+        if (!$chatId) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => 'chat_id ausente.']);
+            return;
+        }
+
+        $chat = $this->chatService->resolveByIdAndUser($chatId, $userId);
+        if (!$chat) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'error' => 'Acesso negado.']);
+            return;
+        }
+
+        echo json_encode([
+            'success'       => true,
+            'session_token' => $chat['session_token'],
+            'status'        => $chat['status'],
+            'subject'       => $chat['subject'],
+        ]);
     }
 
     private function body(): array

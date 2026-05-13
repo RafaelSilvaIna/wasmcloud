@@ -43,6 +43,14 @@ final class SupportChatModel
         return $stmt->fetch() ?: null;
     }
 
+    /** Find chat by ID belonging to a specific authenticated user. */
+    public function findByIdAndUserId(int $id, int $userId): ?array
+    {
+        $stmt = $this->db->prepare("SELECT * FROM support_chats WHERE id = ? AND user_id = ? LIMIT 1");
+        $stmt->execute([$id, $userId]);
+        return $stmt->fetch() ?: null;
+    }
+
     /** Assign an authenticated user_id to a previously anonymous chat. */
     public function syncUser(int $chatId, int $userId, string $guestName): void
     {

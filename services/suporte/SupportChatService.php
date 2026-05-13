@@ -44,6 +44,12 @@ final class SupportChatService
         return $this->chatModel->findById($id);
     }
 
+    /** Resolve a chat by ID only if it belongs to the given authenticated user. */
+    public function resolveByIdAndUser(int $id, int $userId): ?array
+    {
+        return $this->chatModel->findByIdAndUserId($id, $userId);
+    }
+
     /**
      * Sync a previously anonymous chat to an authenticated user.
      * Called after login when localStorage contains a session_token.

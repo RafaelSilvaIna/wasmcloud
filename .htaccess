@@ -45,7 +45,7 @@ DirectoryIndex index.php index.html
     RewriteRule ^(components/|controllers/|data/|database/|helpers/|hooks/|models/|routes/|services/|utils/|middleware/)(/.*)?$ - [F,L]
 
     # Redirecionamento para páginas específicas
-    RewriteRule ^suporte/?$ pages/suporte.php [QSA,L]
+    RewriteRule ^suporte/?$ pages/suporte/index.php [QSA,L]
     RewriteRule ^developer/?$ pages/developer/index.php [L]
     RewriteRule ^developer/([^/]+)/?$ pages/developer/index.php?action=$1 [QSA,L]
     RewriteRule ^home/?$ pages/index.php [L]
