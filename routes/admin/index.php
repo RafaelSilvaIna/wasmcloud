@@ -11,26 +11,32 @@ require_once $rootDir . '/helpers/admin/AdminJwt.php';
 require_once $rootDir . '/models/admin/AdminModel.php';
 require_once $rootDir . '/models/admin/AdminUserModerationModel.php';
 require_once $rootDir . '/models/admin/AdminUsageMetricsModel.php';
+require_once $rootDir . '/models/admin/AdminApiMetricsModel.php';
 require_once $rootDir . '/models/admin/AdminSubscriptionModel.php';
 require_once $rootDir . '/services/admin/AdminAuthService.php';
 require_once $rootDir . '/services/admin/AdminUserModerationService.php';
 require_once $rootDir . '/services/admin/AdminUsageMetricsService.php';
+require_once $rootDir . '/services/admin/AdminApiMetricsService.php';
 require_once $rootDir . '/services/admin/AdminSubscriptionService.php';
 require_once $rootDir . '/controllers/admin/AdminController.php';
 require_once $rootDir . '/controllers/admin/AdminUsageMetricsController.php';
+require_once $rootDir . '/controllers/admin/AdminApiMetricsController.php';
 require_once $rootDir . '/controllers/admin/AdminSubscriptionController.php';
 
 use Controllers\Admin\AdminController;
 use Controllers\Admin\AdminSubscriptionController;
 use Controllers\Admin\AdminUsageMetricsController;
+use Controllers\Admin\AdminApiMetricsController;
 use Models\Admin\AdminModel;
 use Models\Admin\AdminSubscriptionModel;
 use Models\Admin\AdminUserModerationModel;
 use Models\Admin\AdminUsageMetricsModel;
+use Models\Admin\AdminApiMetricsModel;
 use Services\Admin\AdminAuthService;
 use Services\Admin\AdminSubscriptionService;
 use Services\Admin\AdminUserModerationService;
 use Services\Admin\AdminUsageMetricsService;
+use Services\Admin\AdminApiMetricsService;
 
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
@@ -56,6 +62,13 @@ try {
         $metrics = new AdminUsageMetricsService(new AdminUsageMetricsModel($pdo));
         $metricsController = new AdminUsageMetricsController($auth, $metrics);
         $metricsController->handle($action, $method);
+        exit;
+    }
+
+    if (str_starts_with($action, 'api-metrics/')) {
+        $apiMetrics = new AdminApiMetricsService(new AdminApiMetricsModel($pdo));
+        $apiMetricsController = new AdminApiMetricsController($auth, $apiMetrics);
+        $apiMetricsController->handle($action, $method);
         exit;
     }
 

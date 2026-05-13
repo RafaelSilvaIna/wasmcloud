@@ -9,6 +9,7 @@ require_once __DIR__ . '/../components/admin/AdminHeader.php';
 require_once __DIR__ . '/../components/admin/AdminSidebar.php';
 require_once __DIR__ . '/../components/admin/AdminUsersPanel.php';
 require_once __DIR__ . '/../components/admin/magner/AdminUsageMetricsPanel.php';
+require_once __DIR__ . '/../components/admin/magner/AdminApiMetricsPanel.php';
 require_once __DIR__ . '/../components/admin/subscriptions/AdminSubscriptionsPanel.php';
 
 use Models\Admin\AdminModel;
@@ -270,6 +271,7 @@ $adminRoute = preg_replace('/[^a-z0-9_-]/i', '', (string) ($_GET['route'] ?? 'ov
                 <?php AdminUsersPanel::render(); ?>
                 <?php AdminSubscriptionsPanel::render(); ?>
                 <?php AdminUsageMetricsPanel::render(); ?>
+                <?php AdminApiMetricsPanel::render(); ?>
             </section>
         </main>
     </div>
@@ -338,6 +340,9 @@ $adminRoute = preg_replace('/[^a-z0-9_-]/i', '', (string) ($_GET['route'] ?? 'ov
         }
         if (route === 'metrics' && window.AdminMetricsPanel) {
             window.AdminMetricsPanel.load();
+        }
+        if (route === 'api-metrics' && window.AdminApiMetricsPanel) {
+            window.AdminApiMetricsPanel.load();
         }
         if (route === 'subscriptions' && window.AdminSubscriptionsPanel) {
             window.AdminSubscriptionsPanel.load();
