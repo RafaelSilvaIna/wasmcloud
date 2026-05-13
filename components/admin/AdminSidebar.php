@@ -104,6 +104,7 @@ final class AdminSidebar
                 <a href="?route=subscriptions" data-admin-nav="subscriptions"><i data-lucide="credit-card"></i><span>Assinaturas</span></a>
                 <a href="?route=metrics" data-admin-nav="metrics"><i data-lucide="chart-no-axes-combined"></i><span>Metricas de uso</span></a>
                 <a href="?route=api-metrics" data-admin-nav="api-metrics"><i data-lucide="code-xml"></i><span>Metricas de API</span></a>
+                <a href="?route=suporte" data-admin-nav="suporte"><i data-lucide="headphones"></i><span>Suporte</span></a>
                 <a href="#security"><i data-lucide="shield-check"></i><span>Seguranca</span></a>
             </nav>
         </aside>

@@ -30,6 +30,7 @@ DirectoryIndex index.php index.html
     
     # Roteamento da API
     RewriteRule ^api/admin/(.*)$ routes/admin/index.php [QSA,L]
+    RewriteRule ^api/suporte/(.*)$ routes/suporte/index.php [QSA,L]
     RewriteRule ^api/v2/(.*)$ routes/v2/index.php [QSA,L]
     RewriteRule ^api/v3/(.*)$ routes/v3/index.php [QSA,L]
     RewriteRule ^api/v4/(.*)$ routes/v4/index.php [QSA,L]
@@ -40,9 +41,11 @@ DirectoryIndex index.php index.html
     RewriteCond %{REQUEST_URI} !^/routes/v3/index.php
     RewriteCond %{REQUEST_URI} !^/routes/v4/index.php
     RewriteCond %{REQUEST_URI} !^/routes/admin/index.php
+    RewriteCond %{REQUEST_URI} !^/routes/suporte/index.php
     RewriteRule ^(components/|controllers/|data/|database/|helpers/|hooks/|models/|routes/|services/|utils/|middleware/)(/.*)?$ - [F,L]
 
     # Redirecionamento para páginas específicas
+    RewriteRule ^suporte/?$ pages/suporte.php [QSA,L]
     RewriteRule ^developer/?$ pages/developer/index.php [L]
     RewriteRule ^developer/([^/]+)/?$ pages/developer/index.php?action=$1 [QSA,L]
     RewriteRule ^home/?$ pages/index.php [L]
