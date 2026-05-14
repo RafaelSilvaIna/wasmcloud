@@ -44,91 +44,86 @@ function brMoney($value): string {
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" defer></script>
 </head>
 <body class="plan-body">
-    <main class="plan-shell">
-        <header class="plan-topbar plan-topbar-minimal">
-            <span class="plan-pill <?= $isCourtesy ? 'courtesy' : '' ?>">
-                <i data-lucide="<?= $isCourtesy ? 'gift' : 'calendar-clock' ?>"></i>
-                <?= $isCourtesy ? 'Cortesia temporaria' : 'Lembrete mensal ativo' ?>
-            </span>
+    <main class="me-shell">
+
+        <header class="me-header">
+            <div>
+                <p class="me-eyebrow">Minha assinatura</p>
+                <h1 class="me-heading"><?= htmlspecialchars($active['plan_name'] ?? 'Plano Gold', ENT_QUOTES, 'UTF-8') ?></h1>
+            </div>
+            <?php if ($isCourtesy): ?>
+                <a class="plan-action gold compact" href="/plan">
+                    <i data-lucide="arrow-up-right"></i>Assinar plano real
+                </a>
+            <?php endif; ?>
         </header>
 
-        <section class="plan-hero">
-            <div>
-                <p class="plan-kicker">Minha assinatura</p>
-                <h1 class="plan-title"><?= htmlspecialchars($active['plan_name'] ?? 'Plano Gold', ENT_QUOTES, 'UTF-8') ?></h1>
-                <p class="plan-subtitle">
-                    <?= $isCourtesy
-                        ? 'Seu acesso atual foi concedido como cortesia administrativa. A cortesia e temporaria e nao substitui uma assinatura real.'
-                        : 'Acompanhe validade, dados do plano e historico de pagamentos confirmados. Renovacoes sao mensais via Pix.' ?>
+        <?php if ($isCourtesy): ?>
+            <div class="me-notice">
+                <i data-lucide="sparkles"></i>
+                <p>
+                    <strong>Cortesia ativa &mdash; termina em <?= $daysLeft !== null ? $daysLeft . ' dia' . ($daysLeft === 1 ? '' : 's') : 'breve' ?>.</strong>
+                    Para manter o acesso, assine o plano real do PipoCine.
                 </p>
             </div>
-        </section>
-
-        <?php if ($isCourtesy): ?>
-            <section class="plan-courtesy-banner">
-                <div>
-                    <span><i data-lucide="sparkles"></i>Cortesia ativa</span>
-                    <strong>Este plano termina em <?= $daysLeft !== null ? $daysLeft . ' dia' . ($daysLeft === 1 ? '' : 's') : 'breve' ?>.</strong>
-                    <p>Para manter todos os recursos sem depender de uma liberacao temporaria, assine o plano real do PipoCine.</p>
-                </div>
-                <a class="plan-action gold compact" href="/plan"><i data-lucide="arrow-up-right"></i>Assinar plano real</a>
-            </section>
         <?php endif; ?>
 
-        <section class="me-grid">
-            <article class="plan-panel">
-                <div class="me-panel-head">
-                    <div>
-                        <span class="me-panel-eyebrow">Plano atual</span>
-                        <h2>Status do plano</h2>
-                    </div>
+        <div class="me-grid">
+
+            <section class="plan-panel me-status-panel">
+                <div class="me-section-label">
+                    Status do plano
                     <span class="plan-origin <?= $isCourtesy ? 'courtesy' : 'paid' ?>">
-                        <?= $isCourtesy ? 'Cortesia' : 'Assinatura real' ?>
+                        <?= $isCourtesy ? 'Cortesia' : 'Ativo' ?>
                     </span>
                 </div>
-                <div class="metric-grid">
-                    <div class="metric"><span>Status</span><strong>Ativo</strong></div>
-                    <div class="metric"><span>Tipo</span><strong><?= $isCourtesy ? 'Cortesia' : 'Pago' ?></strong></div>
-                    <div class="metric"><span>Inicio</span><strong><?= brDate($active['started_at'] ?? null) ?></strong></div>
-                    <div class="metric"><span>Validade</span><strong><?= brDate($active['expires_at'] ?? null) ?></strong></div>
-                    <div class="metric"><span>Valor pago</span><strong><?= brMoney($active['amount_paid'] ?? 0) ?></strong></div>
-                    <div class="metric"><span>Dispositivos</span><strong><?= (int) ($active['device_limit'] ?? 4) ?></strong></div>
-                    <div class="metric"><span>Perfis</span><strong><?= (int) ($active['profile_limit'] ?? 8) ?></strong></div>
-                </div>
+
+                <ul class="me-stat-list">
+                    <li>
+                        <span>Validade</span>
+                        <strong><?= brDate($active['expires_at'] ?? null) ?></strong>
+                    </li>
+                    <li>
+                        <span>Dispositivos</span>
+                        <strong><?= (int) ($active['device_limit'] ?? 4) ?></strong>
+                    </li>
+                    <li>
+                        <span>Perfis</span>
+                        <strong><?= (int) ($active['profile_limit'] ?? 8) ?></strong>
+                    </li>
+                    <?php if (!$isCourtesy): ?>
+                    <li>
+                        <span>Valor mensal</span>
+                        <strong><?= brMoney($active['amount_paid'] ?? 0) ?></strong>
+                    </li>
+                    <?php endif; ?>
+                </ul>
 
                 <a class="plan-benefits-link" href="/plan">
                     <i data-lucide="external-link"></i>
-                    <span>Conheca seus beneficios</span>
+                    <span>Ver beneficios do plano</span>
                 </a>
-            </article>
+            </section>
 
-            <article class="plan-panel">
-                <div class="me-panel-head">
-                    <div>
-                        <span class="me-panel-eyebrow">Somente pagamentos confirmados</span>
-                        <h2>Historico de pagamentos</h2>
-                    </div>
-                </div>
-                <table class="history-table">
-                    <thead>
-                        <tr><th>Data</th><th>Status</th><th>Valor</th><th>TXID</th></tr>
-                    </thead>
-                    <tbody>
-                    <?php foreach ($paidPayments as $payment): ?>
-                        <tr>
-                            <td><?= brDate($payment['paid_at'] ?? $payment['created_at'] ?? null) ?></td>
-                            <td><span class="payment-status-paid">Pago</span></td>
-                            <td><?= brMoney($payment['amount'] ?? 0) ?></td>
-                            <td><?= htmlspecialchars(substr((string) ($payment['provider_txid'] ?? '-'), 0, 18), ENT_QUOTES, 'UTF-8') ?></td>
-                        </tr>
-                    <?php endforeach; ?>
-                    <?php if (empty($paidPayments)): ?>
-                        <tr><td colspan="4">Nenhum pagamento confirmado registrado.</td></tr>
-                    <?php endif; ?>
-                    </tbody>
-                </table>
-            </article>
-        </section>
+            <section class="plan-panel me-history-panel">
+                <div class="me-section-label">Historico de pagamentos</div>
+
+                <?php if (empty($paidPayments)): ?>
+                    <p class="me-empty">Nenhum pagamento confirmado ainda.</p>
+                <?php else: ?>
+                    <ul class="me-payment-list">
+                        <?php foreach ($paidPayments as $payment): ?>
+                            <li>
+                                <span class="me-pay-date"><?= brDate($payment['paid_at'] ?? $payment['created_at'] ?? null) ?></span>
+                                <span class="payment-status-paid">Pago</span>
+                                <span class="me-pay-amount"><?= brMoney($payment['amount'] ?? 0) ?></span>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                <?php endif; ?>
+            </section>
+
+        </div>
     </main>
     <script>document.addEventListener('DOMContentLoaded',()=>{ if (typeof lucide !== 'undefined') lucide.createIcons(); });</script>
 </body>

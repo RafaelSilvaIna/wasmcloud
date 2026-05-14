@@ -132,31 +132,6 @@ if ($isAuthenticated && isset($pdo)) {
             <p class="sp-info-card-desc">Somente em<br><strong>pipocine.site/suporte</strong></p>
         </div>
 
-        <div class="sp-info-card">
-            <div class="sp-info-card-icon" aria-hidden="true">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
-                     fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
-                    <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
-                </svg>
-            </div>
-            <h2 class="sp-info-card-title">Evite golpes</h2>
-            <p class="sp-info-card-desc">Nunca pedimos senhas<br>ou dados de pagamento no chat.</p>
-        </div>
-
-        <div class="sp-info-card">
-            <div class="sp-info-card-icon" aria-hidden="true">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
-                     fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="10"/>
-                    <line x1="12" y1="8" x2="12" y2="12"/>
-                    <line x1="12" y1="16" x2="12.01" y2="16"/>
-                </svg>
-            </div>
-            <h2 class="sp-info-card-title">Diretrizes</h2>
-            <p class="sp-info-card-desc">Seja respeitoso. Spam ou<br>ofensas resultam em bloqueio.</p>
-        </div>
-
     </section>
 
     <!-- ---- NEW CHAT CTA ---- -->
