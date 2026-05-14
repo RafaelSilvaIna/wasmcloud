@@ -83,10 +83,33 @@ class ProfileController {
         echo json_encode(['success' => true]);
     }
 
-    // NOVA FUNÇÃO: Rota de receção dos dados para atualização
     public function update(): void {
         header('Content-Type: application/json');
         $data = json_decode(file_get_contents('php://input'), true);
         echo json_encode($this->profileService->updateProfile($data));
+    }
+
+    public function delete(): void {
+        header('Content-Type: application/json');
+        $data      = json_decode(file_get_contents('php://input'), true);
+        $profileId = (int) ($data['id'] ?? 0);
+        echo json_encode($this->profileService->deleteProfile($profileId));
+    }
+
+    public function issueCreationToken(): void {
+        header('Content-Type: application/json');
+        echo json_encode($this->profileService->issueCreationToken());
+    }
+
+    public function issueEditToken(): void {
+        header('Content-Type: application/json');
+        $profileId = (int) ($_GET['profile_id'] ?? 0);
+        echo json_encode($this->profileService->issueEditToken($profileId));
+    }
+
+    public function createWithToken(): void {
+        header('Content-Type: application/json');
+        $data = json_decode(file_get_contents('php://input'), true);
+        echo json_encode($this->profileService->addNewProfileWithToken($data));
     }
 }

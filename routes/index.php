@@ -114,6 +114,23 @@ if (strpos($requestUri, '/api/') === 0) {
             $profileController->update();
             exit;
         }
+        if ($requestUri === '/api/profiles/delete' && $requestMethod === 'POST') {
+            $profileController->delete();
+            exit;
+        }
+        if ($requestUri === '/api/profiles/issue-creation-token' && $requestMethod === 'POST') {
+            $profileController->issueCreationToken();
+            exit;
+        }
+        if ($requestUri === '/api/profiles/issue-edit-token' && $requestMethod === 'GET') {
+            $profileController->issueEditToken();
+            exit;
+        }
+        // Rota de criação com token (substitui /api/profiles/create para o novo fluxo)
+        if ($requestUri === '/api/profiles/create-with-token' && $requestMethod === 'POST') {
+            $profileController->createWithToken();
+            exit;
+        }
     }
 
     // Se a rota da API não for encontrada

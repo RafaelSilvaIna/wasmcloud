@@ -663,6 +663,45 @@ if (!isset($_SESSION['user_id'])) {
             color: rgba(255, 255, 255, 0.72);
         }
 
+        /* ── PIN dots (reusados no modal de PIN do perfil) ── */
+        .cp-pin-dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            border: 2px solid var(--profile-text-muted);
+            transition: background .15s, border-color .15s;
+        }
+        .cp-pin-dot.filled {
+            background: var(--profile-text-pure);
+            border-color: var(--profile-text-pure);
+        }
+        #access-pin-dots.shake {
+            animation: pin-shake .4s ease;
+        }
+        @keyframes pin-shake {
+            0%,100% { transform: translateX(0); }
+            20%      { transform: translateX(-6px); }
+            40%      { transform: translateX(6px); }
+            60%      { transform: translateX(-4px); }
+            80%      { transform: translateX(4px); }
+        }
+        /* Numpad no modal de PIN */
+        .cp-num-key {
+            background: var(--profile-bg-input);
+            border: 1px solid rgba(255,255,255,.08);
+            border-radius: 10px;
+            color: var(--profile-text-pure);
+            font-size: 1.2rem;
+            font-weight: 600;
+            padding: 14px 8px;
+            cursor: pointer;
+            transition: background .15s;
+            text-align: center;
+        }
+        .cp-num-key:hover { background: rgba(255,255,255,.1); }
+        .cp-num-key.empty { background: transparent; border-color: transparent; cursor: default; }
+        .cp-num-key.del   { font-size: .95rem; }
+
         @media (max-width: 560px) {
             .account-header {
                 top: 14px;
@@ -775,12 +814,11 @@ if (!isset($_SESSION['user_id'])) {
                     <span class="profile-name">Ana</span>
                 </div>
 
-                <div class="profile-item add-profile-btn"
-                    onclick="document.getElementById('pipo-profile-modal').classList.add('open')">
+                <div class="profile-item add-profile-btn" id="trigger-add-profile">
                     <div class="add-icon-wrapper">
                         <i data-lucide="plus" style="width: 48px; height: 48px;"></i>
                     </div>
-                    <span class="profile-name">Adicionar</span>
+                    <span class="profile-name">Adicionar Perfil</span>
                 </div>
 
             </div>
@@ -792,91 +830,98 @@ if (!isset($_SESSION['user_id'])) {
         </div>
     </div>
 
-    <div class="profile-modal" id="pipo-profile-modal" role="dialog" aria-modal="true">
-        <div class="modal-content-dark">
-
+    <!-- ── Modal PIN de acesso ao perfil ──────────────────────────── -->
+    <div class="profile-modal" id="pipo-pin-modal" role="dialog" aria-modal="true" aria-label="Inserir PIN do perfil">
+        <div class="modal-content-dark" style="max-width:360px;">
             <div class="modal-header-dark">
-                <button type="button" class="btn-cancel-dark pipo-modal-cancel"
-                    onclick="document.getElementById('pipo-profile-modal').classList.remove('open')">Cancelar</button>
-                <h2 class="title-dark">Criar Perfil</h2>
-                <div style="width: 65px;"></div>
+                <button type="button" class="btn-cancel-dark" id="btn-cancel-pin">Cancelar</button>
+                <h2 class="title-dark" id="pin-modal-name">PIN do Perfil</h2>
+                <div style="width:60px;"></div>
             </div>
-
-            <form id="profile-form" class="form-dark" novalidate>
-
-                <div class="avatar-section-dark" id="avatar-picker-trigger" tabindex="0"
-                    onclick="document.getElementById('pipo-avatar-modal').classList.add('open')">
-                    <div class="avatar-circle-dark">
-                        <img src="https://api.dicebear.com/7.x/adventurer/svg?seed=Pipo" alt="Avatar atual"
-                            id="current-avatar-img">
-                    </div>
-                    <input type="hidden" id="selected-avatar-url" name="image"
-                        value="https://api.dicebear.com/7.x/adventurer/svg?seed=Pipo">
-                    <span class="avatar-hint-dark">Toque para escolher um avatar</span>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:20px;">
+                <div id="access-pin-dots" style="display:flex;gap:16px;">
+                    <div class="cp-pin-dot pin-dot"></div>
+                    <div class="cp-pin-dot pin-dot"></div>
+                    <div class="cp-pin-dot pin-dot"></div>
+                    <div class="cp-pin-dot pin-dot"></div>
                 </div>
-
-                <div class="inputs-container-dark">
-                    <div class="input-group-dark">
-                        <input type="text" name="name" id="pro_name" class="input-dark" placeholder="Nome do perfil"
-                            required autocomplete="off">
-                    </div>
-
-                    <div class="input-group-dark">
-                        <input type="text" name="username" id="username" class="input-dark"
-                            placeholder="Nome de usuário (ex: joao_123)" required autocomplete="off" maxlength="30"
-                            pattern="[a-zA-Z0-9_]+">
-                        <span class="username-status-dark" id="username-status"></span>
-                    </div>
-
-                    <div class="toggle-row-dark">
-                        <div class="toggle-texts-dark">
-                            <span class="toggle-title-dark">Perfil Infantil</span>
-                            <span class="toggle-desc-dark">Restringe conteúdo apenas para crianças</span>
-                        </div>
-                        <label class="switch-dark">
-                            <input type="checkbox" id="kids-toggle">
-                            <span class="slider-dark"></span>
-                        </label>
-                    </div>
+                <input type="hidden" id="access-pin-input">
+                <div class="pin-numpad cp-numpad" style="width:100%;max-width:280px;">
+                    <button type="button" class="cp-num-key pin-key" data-digit="1">1</button>
+                    <button type="button" class="cp-num-key pin-key" data-digit="2">2</button>
+                    <button type="button" class="cp-num-key pin-key" data-digit="3">3</button>
+                    <button type="button" class="cp-num-key pin-key" data-digit="4">4</button>
+                    <button type="button" class="cp-num-key pin-key" data-digit="5">5</button>
+                    <button type="button" class="cp-num-key pin-key" data-digit="6">6</button>
+                    <button type="button" class="cp-num-key pin-key" data-digit="7">7</button>
+                    <button type="button" class="cp-num-key pin-key" data-digit="8">8</button>
+                    <button type="button" class="cp-num-key pin-key" data-digit="9">9</button>
+                    <div class="cp-num-key empty pin-key--empty"></div>
+                    <button type="button" class="cp-num-key pin-key" data-digit="0">0</button>
+                    <button type="button" class="cp-num-key del pin-key pin-key--del" data-digit="del">&#9003;</button>
                 </div>
-
-                <button type="submit" class="btn-save-dark" id="btn-save-profile">Salvar</button>
-            </form>
+            </div>
         </div>
     </div>
 
-    <div class="avatar-modal" id="pipo-avatar-modal" role="dialog" aria-modal="true">
-        <div class="modal-content-dark">
-            <div class="modal-header-dark" style="margin-bottom: 20px;">
-                <button type="button" class="btn-cancel-dark modal-close"
-                    onclick="document.getElementById('pipo-avatar-modal').classList.remove('open')">Voltar</button>
-                <h2 class="title-dark">Avatar</h2>
-                <div style="width: 50px;"></div>
+    <!-- ── Modal limite de perfis ──────────────────────────────────── -->
+    <div class="profile-modal" id="pipo-limit-modal" role="dialog" aria-modal="true">
+        <div class="modal-content-dark" style="max-width:380px;text-align:center;">
+            <div style="width:56px;height:56px;border-radius:50%;background:rgba(255,149,0,.15);
+                        display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+                <i data-lucide="shield-alert" style="width:26px;height:26px;color:#ff9500;"></i>
             </div>
-
-            <div class="avatar-categories" id="avatar-categories" role="tablist">
-                <button class="category-btn active" data-category="adventurer">Aventureiro</button>
-                <button class="category-btn" data-category="open-peeps">Pessoas</button>
-                <button class="category-btn" data-category="bottts">Robôs</button>
-                <button class="category-btn" data-category="pixel-art">Pixel</button>
-            </div>
-
-            <div class="avatar-grid" id="avatar-grid" role="listbox">
-                <img class="avatar-option" src="https://api.dicebear.com/7.x/adventurer/svg?seed=1" alt="Avatar">
-                <img class="avatar-option" src="https://api.dicebear.com/7.x/adventurer/svg?seed=2" alt="Avatar">
-                <img class="avatar-option" src="https://api.dicebear.com/7.x/adventurer/svg?seed=3" alt="Avatar">
-                <img class="avatar-option" src="https://api.dicebear.com/7.x/adventurer/svg?seed=4" alt="Avatar">
-            </div>
+            <h2 class="title-dark" style="margin:0 0 8px;">Limite atingido</h2>
+            <p style="color:#8e8e93;font-size:.93rem;margin:0 0 24px;" id="limit-modal-msg">
+                Voce atingiu o limite de perfis do seu plano.
+            </p>
+            <a href="/plan" style="display:block;background:#0a7aff;color:#fff;border-radius:12px;
+                                   padding:14px;font-size:1rem;font-weight:700;text-decoration:none;
+                                   margin-bottom:10px;">
+                Conhecer planos
+            </a>
+            <button type="button" class="btn-cancel-dark"
+                    onclick="document.getElementById('pipo-limit-modal').classList.remove('open')"
+                    style="width:100%;padding:12px;border-radius:12px;background:rgba(255,255,255,.05);">
+                Fechar
+            </button>
         </div>
     </div>
 
     <script src="/assets/js/notification.js"></script>
     <script src="/assets/js/profiles.js"></script>
     <script>
-        // Inicializar os ícones do Lucide
-        document.addEventListener('DOMContentLoaded', function () {
-            if (typeof lucide !== 'undefined') lucide.createIcons();
+    document.addEventListener('DOMContentLoaded', function () {
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+
+        // ── Botão "Adicionar Perfil" → API de token ─────────────────────────
+        const triggerAdd = document.getElementById('trigger-add-profile');
+        if (triggerAdd) {
+            triggerAdd.addEventListener('click', async () => {
+                try {
+                    const res  = await fetch('/api/profiles/issue-creation-token', { method: 'POST' });
+                    const data = await res.json();
+
+                    if (data.success && data.redirect) {
+                        window.location.href = data.redirect;
+                    } else if (data.limit_reached) {
+                        const msg = document.getElementById('limit-modal-msg');
+                        if (msg) msg.textContent = data.message || 'Limite de perfis atingido.';
+                        document.getElementById('pipo-limit-modal')?.classList.add('open');
+                    } else {
+                        if (typeof PipoNotification !== 'undefined') PipoNotification.error(data.message || 'Erro ao iniciar criacao.');
+                    }
+                } catch (_) {
+                    if (typeof PipoNotification !== 'undefined') PipoNotification.error('Erro de conexao.');
+                }
+            });
+        }
+
+        // ── Modal PIN: botão cancelar ────────────────────────────────────────
+        document.getElementById('btn-cancel-pin')?.addEventListener('click', () => {
+            document.getElementById('pipo-pin-modal')?.classList.remove('open');
         });
+    });
     </script>
 
     <?php

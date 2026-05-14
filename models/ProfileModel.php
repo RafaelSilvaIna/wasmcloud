@@ -54,9 +54,27 @@ class ProfileModel {
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-    // NOVA FUNÇÃO: Atualiza apenas o nome e o avatar do perfil com segurança
-    public function updateProfile(int $id, int $userId, string $name, string $image): bool {
+    // Atualiza nome, avatar e username do perfil
+    public function updateProfile(int $id, int $userId, string $name, string $image, ?string $username = null): bool {
+        if ($username !== null) {
+            $stmt = $this->db->prepare("UPDATE profiles SET profile_name = ?, profile_image = ?, profile_username = ? WHERE id = ? AND user_id = ?");
+            return $stmt->execute([$name, $image, $username, $id, $userId]);
+        }
         $stmt = $this->db->prepare("UPDATE profiles SET profile_name = ?, profile_image = ? WHERE id = ? AND user_id = ?");
         return $stmt->execute([$name, $image, $id, $userId]);
+    }
+
+    // Exclui um perfil do usuário
+    public function deleteProfile(int $id, int $userId): bool {
+        $stmt = $this->db->prepare("DELETE FROM profiles WHERE id = ? AND user_id = ?");
+        return $stmt->execute([$id, $userId]);
+    }
+
+    // Verifica se username já existe (excluindo um profileId específico)
+    public function findByUsernameExcluding(string $username, int $excludeId): ?array {
+        $stmt = $this->db->prepare("SELECT id FROM profiles WHERE profile_username = ? AND id != ? LIMIT 1");
+        $stmt->execute([$username, $excludeId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $row ?: null;
     }
 }

@@ -67,6 +67,19 @@ if ($requestUri === '/manage-profiles') {
     exit;
 }
 
+// ROTA: Criação de perfil (protegida por token)
+if ($requestUri === '/create/profile') {
+    require_once __DIR__ . '/create/index.php';
+    exit;
+}
+
+// ROTA: Edição de perfil /create/profile/edit=<id>
+if (preg_match('/^\/create\/profile\/edit=(\d+)$/', $requestUri, $m)) {
+    $_GET['profile'] = (int) $m[1];
+    require_once __DIR__ . '/create/edit.php';
+    exit;
+}
+
 // ROTA: Configurações (protegida por PIN)
 if ($requestUri === '/settings') {
     require_once __DIR__ . '/settings.php';

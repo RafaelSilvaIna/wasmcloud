@@ -126,6 +126,24 @@ class AuthModel {
         ");
     }
 
+    /**
+     * Verifica se o usuário tem uma assinatura ativa (paga OU cortesia) em user_subscriptions.
+     * Usa o mesmo banco (dbCineveo) onde fica a tabela user_subscriptions.
+     */
+    public function hasActivePremiumSubscription(int $userId): bool {
+        $stmt = $this->dbCineveo->prepare("
+            SELECT COUNT(*) AS cnt
+            FROM user_subscriptions
+            WHERE user_id = ?
+              AND status = 'active'
+              AND expires_at > NOW()
+            LIMIT 1
+        ");
+        $stmt->execute([$userId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return (int) ($row['cnt'] ?? 0) > 0;
+    }
+
     public function getDbPipocine(): ?PDO {
         return $this->dbPipocine;
     }

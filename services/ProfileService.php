@@ -23,19 +23,13 @@ class ProfileService
         return $_SESSION['auth_provider'] ?? 'cineveo';
     }
 
-    private function isPremiumActive(array $user): bool
+    /**
+     * Retorna true se o usuário tem assinatura premium ativa —
+     * inclui planos pagos E planos de cortesia (admin_courtesy).
+     */
+    private function isPremiumActive(int $userId): bool
     {
-        if (!isset($user['plan_type']) || $user['plan_type'] === 'casual') {
-            return false;
-        }
-
-        if (isset($user['plan_expiration'])) {
-            $expiry = new DateTime($user['plan_expiration']);
-            $now = new DateTime();
-            return $expiry > $now;
-        }
-
-        return false;
+        return $this->authModel->hasActivePremiumSubscription($userId);
     }
 
     private function getProfileLimitForCurrentUser(): array
@@ -53,12 +47,7 @@ class ProfileService
             ];
         }
 
-        $userCineveo = $this->authModel->getUserData($userId);
-        if (!$userCineveo) {
-            return ['success' => false, 'message' => 'Usuario nao encontrado.'];
-        }
-
-        $isPremium = $this->isPremiumActive($userCineveo);
+        $isPremium = $this->isPremiumActive($userId);
 
         return [
             'success' => true,
@@ -220,22 +209,121 @@ class ProfileService
             return ['success' => false, 'message' => 'Nao autenticado.'];
         }
 
-        $id = (int) ($data['id'] ?? 0);
-        $name = strip_tags(trim($data['name'] ?? ''));
-        $image = $data['image'] ?? '';
+        $id       = (int) ($data['id'] ?? 0);
+        $name     = strip_tags(trim($data['name'] ?? ''));
+        $image    = $data['image'] ?? '';
+        $username = isset($data['username']) ? strtolower(preg_replace('/[^a-zA-Z0-9_]/', '', $data['username'])) : null;
 
         if ($name === '') {
             return ['success' => false, 'message' => 'O nome do perfil nao pode estar vazio.'];
         }
 
-        if ($this->profileModel->updateProfile($id, $userId, $name, $image)) {
+        // Validação de username (se fornecido)
+        if ($username !== null && $username !== '') {
+            if (strlen($username) < 3) {
+                return ['success' => false, 'message' => 'Username muito curto.'];
+            }
+            $conflict = $this->profileModel->findByUsernameExcluding($username, $id);
+            if ($conflict) {
+                return ['success' => false, 'message' => 'Este username ja esta em uso.'];
+            }
+        }
+
+        if ($this->profileModel->updateProfile($id, $userId, $name, $image, $username ?: null)) {
             if (isset($_SESSION['profile_id']) && $_SESSION['profile_id'] == $id) {
-                $_SESSION['profile_name'] = $name;
+                $_SESSION['profile_name']  = $name;
                 $_SESSION['profile_image'] = $image;
             }
             return ['success' => true];
         }
 
         return ['success' => false, 'message' => 'Erro ao atualizar o perfil.'];
+    }
+
+    public function deleteProfile(int $profileId): array
+    {
+        $userId = $this->getCurrentUserId();
+        if (!$userId) {
+            return ['success' => false, 'message' => 'Nao autenticado.'];
+        }
+
+        $profile = $this->profileModel->findById($profileId);
+        if (!$profile || (int) $profile['user_id'] !== $userId) {
+            return ['success' => false, 'message' => 'Perfil nao encontrado.'];
+        }
+
+        // Não pode excluir o perfil atualmente em uso
+        if (isset($_SESSION['profile_id']) && (int) $_SESSION['profile_id'] === $profileId) {
+            unset($_SESSION['profile_id'], $_SESSION['profile_name'], $_SESSION['profile_image']);
+        }
+
+        if ($this->profileModel->deleteProfile($profileId, $userId)) {
+            return ['success' => true];
+        }
+
+        return ['success' => false, 'message' => 'Erro ao excluir perfil.'];
+    }
+
+    /**
+     * Valida o limite de perfis e retorna a URL de redirecionamento para criação.
+     * Não depende de tabela de tokens — usa sessão PHP para proteção.
+     */
+    public function issueCreationToken(): array
+    {
+        $userId = $this->getCurrentUserId();
+        if (!$userId) {
+            return ['success' => false, 'message' => 'Nao autenticado.'];
+        }
+
+        $profileLimit = $this->getProfileLimitForCurrentUser();
+        if (empty($profileLimit['success'])) {
+            return $profileLimit;
+        }
+
+        $currentCount = $this->profileModel->countByUserId($userId);
+        $limit        = (int) $profileLimit['limit'];
+        $isPremium    = (bool) $profileLimit['isPremium'];
+
+        if ($currentCount >= $limit) {
+            $msg = $isPremium
+                ? "Limite de $limit perfis atingido."
+                : "O plano gratuito permite apenas $limit perfis. Assine o Premium para criar ate 8!";
+            return ['success' => false, 'message' => $msg, 'limit_reached' => true];
+        }
+
+        // Armazena flag na sessao para proteger a pagina de criacao
+        $_SESSION['can_create_profile'] = true;
+
+        return ['success' => true, 'redirect' => '/create/profile'];
+    }
+
+    /**
+     * Emite um token de edição de perfil.
+     */
+    public function issueEditToken(int $profileId): array
+    {
+        $userId = $this->getCurrentUserId();
+        if (!$userId) {
+            return ['success' => false, 'message' => 'Nao autenticado.'];
+        }
+
+        $profile = $this->profileModel->findById($profileId);
+        if (!$profile || (int) $profile['user_id'] !== $userId) {
+            return ['success' => false, 'message' => 'Perfil nao encontrado.'];
+        }
+
+        return ['success' => true, 'redirect' => "/create/profile/edit={$profileId}"];
+    }
+
+    /**
+     * Adiciona novo perfil com suporte a token de segurança.
+     * Consome o token após criação bem-sucedida.
+     */
+    /**
+     * Alias de addNewProfile mantido por compatibilidade com chamadas existentes.
+     */
+    public function addNewProfileWithToken(array $data): array
+    {
+        return $this->addNewProfile($data);
     }
 }

@@ -49,17 +49,19 @@ document.addEventListener('DOMContentLoaded', () => {
         if (typeof lucide !== 'undefined') lucide.createIcons();
     };
 
-    // Ao clicar num perfil, abre o modal de edição preenchido
-    grid.addEventListener('click', (e) => {
+    // Ao clicar num perfil, redireciona para nova tela de edição
+    grid.addEventListener('click', async (e) => {
         const item = e.target.closest('.profile-item');
         if (!item) return;
 
-        document.getElementById('edit_profile_id').value = item.dataset.id;
-        document.getElementById('edit_pro_name').value = item.dataset.name;
-        document.getElementById('current-avatar-img').src = item.dataset.img;
-        document.getElementById('selected-avatar-url').value = item.dataset.img;
-        
-        openModal(modalEdit);
+        const profileId = item.dataset.id;
+        if (!profileId) return;
+
+        try {
+            window.location.href = `/create/profile/edit=${profileId}`;
+        } catch (_) {
+            if (typeof PipoNotification !== 'undefined') PipoNotification.error('Erro ao abrir edicao.');
+        }
     });
 
     // Enviar formulário de edição para o Backend
@@ -93,7 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (typeof PipoNotification !== 'undefined') PipoNotification.error('Erro de conexão.');
         }
 
-        btn.innerHTML = '<i data-lucide="check" width="16" height="16"></i> Salvar'; 
+        btn.innerHTML = '<i data-lucide="check" width="16" height="16"></i> Salvar';
         btn.disabled = false;
         if (typeof lucide !== 'undefined') lucide.createIcons();
     });
@@ -130,7 +132,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 gridA.appendChild(img);
             });
-        } catch (err) {}
+        } catch (err) { }
     };
 
     // Fechar modais

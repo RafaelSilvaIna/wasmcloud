@@ -89,9 +89,10 @@ class ProfileHook {
             '/plan/pix',
             '/plan/payment',
             '/plan/me',
+            '/create/profile',
         ];
 
-        if (strpos($uri, '/api/') === 0 || strpos($uri, '/login/') === 0 || strpos($uri, '/webhooks/') === 0 || str_starts_with($uri, '/plan/payment/active=') || in_array($uri, $exempt, true) || preg_match('/^\/verify=/', $uri)) {
+        if (strpos($uri, '/api/') === 0 || strpos($uri, '/login/') === 0 || strpos($uri, '/webhooks/') === 0 || str_starts_with($uri, '/plan/payment/active=') || str_starts_with($uri, '/create/profile/edit=') || in_array($uri, $exempt, true) || preg_match('/^\/verify=/', $uri)) {
             return;
         }
 

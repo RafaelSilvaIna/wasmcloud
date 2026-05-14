@@ -1,22 +1,22 @@
 document.addEventListener('DOMContentLoaded', () => {
     // ── Elementos ─────────────────────────────────────────────────────────
-    const grid             = document.getElementById('profiles-grid');
-    const modalForm        = document.getElementById('pipo-profile-modal');
-    const modalPin         = document.getElementById('pipo-pin-modal');
-    const modalAvatars     = document.getElementById('pipo-avatar-modal');
+    const grid = document.getElementById('profiles-grid');
+    const modalForm = document.getElementById('pipo-profile-modal');
+    const modalPin = document.getElementById('pipo-pin-modal');
+    const modalAvatars = document.getElementById('pipo-avatar-modal');
     const modalAccountType = document.getElementById('pipo-account-type-modal');
-    const actionMenu       = document.getElementById('pipo-profile-action-menu');
-    const pressOverlay     = document.getElementById('pipo-press-overlay');
+    const actionMenu = document.getElementById('pipo-profile-action-menu');
+    const pressOverlay = document.getElementById('pipo-press-overlay');
 
-    let currentProfiles        = [];
-    let selectedProfileForPin  = null;
+    let currentProfiles = [];
+    let selectedProfileForPin = null;
     let pressTimer;
-    let actionProfileData      = null;
+    let actionProfileData = null;
 
     const isMobile = () => window.innerWidth <= 768;
 
     // ── Helpers de modal ──────────────────────────────────────────────────
-    const openModal  = (m) => { if (m) m.classList.add('open'); };
+    const openModal = (m) => { if (m) m.classList.add('open'); };
     const closeModal = (m) => {
         if (!m) return;
         m.classList.remove('open');
@@ -48,7 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ── Carregar e renderizar perfis ──────────────────────────────────────
     const fetchProfiles = async () => {
         try {
-            const res  = await fetch('/api/profiles/list');
+            const res = await fetch('/api/profiles/list');
             const data = await res.json();
             currentProfiles = data;
             renderProfiles();
@@ -106,12 +106,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ── Cliques na grid ───────────────────────────────────────────────────
     if (grid) {
-        grid.addEventListener('click', (e) => {
+        grid.addEventListener('click', async (e) => {
             const addBtn = e.target.closest('.add-profile-btn');
             if (addBtn) {
-                const title = document.getElementById('modal-title');
-                if (title) title.innerText = 'Criar Novo Perfil';
-                openModal(modalForm);
+                try {
+                    const res  = await fetch('/api/profiles/issue-creation-token', { method: 'POST' });
+                    const data = await res.json();
+
+                    if (data.success && data.redirect) {
+                        window.location.href = data.redirect;
+                    } else if (data.limit_reached) {
+                        const msg = document.getElementById('limit-modal-msg');
+                        if (msg) msg.textContent = data.message || 'Limite de perfis atingido.';
+                        document.getElementById('pipo-limit-modal')?.classList.add('open');
+                    } else {
+                        if (typeof PipoNotification !== 'undefined') {
+                            PipoNotification.error(data.message || 'Erro ao iniciar criacao.');
+                        }
+                    }
+                } catch (_) {
+                    if (typeof PipoNotification !== 'undefined') {
+                        PipoNotification.error('Erro de conexao.');
+                    }
+                }
                 return;
             }
 
@@ -124,9 +141,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!item || !isMobile()) return;
             pressTimer = setTimeout(() => {
                 actionProfileData = {
-                    id:     item.dataset.id,
-                    name:   item.dataset.name,
-                    image:  item.dataset.img,
+                    id: item.dataset.id,
+                    name: item.dataset.name,
+                    image: item.dataset.img,
                     hasPin: item.dataset.pin === '1' || item.dataset.pin === 'true'
                 };
                 openActionMenu();
@@ -137,7 +154,7 @@ document.addEventListener('DOMContentLoaded', () => {
             clearTimeout(pressTimer);
             const item = e.target.closest('.profile-item:not(.add-profile-btn)');
             const isMenuOpen = actionMenu ? actionMenu.classList.contains('open') : false;
-            
+
             if (item && isMobile() && !isMenuOpen) {
                 handleProfileSelection(item);
             }
@@ -148,9 +165,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ── Seleção de perfil ─────────────────────────────────────────────────
     const handleProfileSelection = (item) => {
-        const id     = item.dataset.id;
-        const name   = item.dataset.name;
-        const img    = item.dataset.img;
+        const id = item.dataset.id;
+        const name = item.dataset.name;
+        const img = item.dataset.img;
         const hasPin = item.dataset.pin === '1' || item.dataset.pin === 'true';
 
         if (hasPin) {
@@ -163,10 +180,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const executeSelectProfile = async (id, name, img, pin) => {
         try {
-            const res  = await fetch('/api/profiles/select', {
-                method:  'POST',
+            const res = await fetch('/api/profiles/select', {
+                method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body:    JSON.stringify({ id, pin })
+                body: JSON.stringify({ id, pin })
             });
             const data = await res.json();
 
@@ -181,13 +198,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     accessPin.value = '';
                     updateDots('access-pin-dots', 0);
                     const dotsWrap = document.getElementById('access-pin-dots');
-                    if(dotsWrap) {
+                    if (dotsWrap) {
                         dotsWrap.classList.add('shake');
                         setTimeout(() => dotsWrap.classList.remove('shake'), 500);
                     }
                 }
             }
-        } catch (err) {}
+        } catch (err) { }
     };
 
     // ── Teclado PIN ───────────────────────────────────────────────────────
@@ -249,11 +266,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const profileType = (kidsToggle && kidsToggle.checked) ? 'kids' : (document.getElementById('pro_type')?.value || 'standard');
 
             const payload = {
-                name:     (document.getElementById('pro_name')?.value     || '').trim(),
-                username: (document.getElementById('username')?.value     || '').trim(),
-                image:     document.getElementById('selected-avatar-url')?.value || '',
-                type:      profileType, 
-                pin:       document.getElementById('pin_input')?.value            || ''
+                name: (document.getElementById('pro_name')?.value || '').trim(),
+                username: (document.getElementById('username')?.value || '').trim(),
+                image: document.getElementById('selected-avatar-url')?.value || '',
+                type: profileType,
+                pin: document.getElementById('pin_input')?.value || ''
             };
 
             const isPinEnabled = document.getElementById('pin-toggle')?.checked;
@@ -266,10 +283,10 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             try {
-                const res  = await fetch('/api/profiles/create', {
-                    method:  'POST',
+                const res = await fetch('/api/profiles/create', {
+                    method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body:    JSON.stringify(payload)
+                    body: JSON.stringify(payload)
                 });
                 const data = await res.json();
 
@@ -280,14 +297,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     if (typeof PipoNotification !== 'undefined') PipoNotification.error(data.message);
                 }
-            } catch (err) {}
+            } catch (err) { }
 
             if (btn) { btn.innerText = 'Salvar Perfil'; btn.disabled = false; }
         });
     }
 
     // ── Validação de username ─────────────────────────────────────────────
-    const usernameInput  = document.getElementById('username');
+    const usernameInput = document.getElementById('username');
     const usernameStatus = document.getElementById('username-status');
     let debounceTimer;
 
@@ -311,7 +328,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     return;
                 }
                 try {
-                    const res  = await fetch(`/api/profiles/check-username?username=${username}`);
+                    const res = await fetch(`/api/profiles/check-username?username=${username}`);
                     const data = await res.json();
                     if (data.available) {
                         usernameStatus.innerText = 'disponível';
@@ -329,8 +346,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const pinToggle = document.getElementById('pin-toggle');
     if (pinToggle) {
         pinToggle.addEventListener('change', function () {
-            const pinBox  = document.getElementById('pin-input-box');
-            if (pinBox)  pinBox.classList.toggle('show', this.checked);
+            const pinBox = document.getElementById('pin-input-box');
+            if (pinBox) pinBox.classList.toggle('show', this.checked);
         });
     }
 
@@ -378,17 +395,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const openActionMenu = () => {
         if (!actionProfileData) return;
         const menuAvatar = document.getElementById('menu-avatar-img');
-        const menuName   = document.getElementById('menu-profile-name');
-        const menuUser   = document.getElementById('menu-username');
+        const menuName = document.getElementById('menu-profile-name');
+        const menuUser = document.getElementById('menu-username');
         if (menuAvatar) menuAvatar.src = actionProfileData.image;
-        if (menuName)   menuName.innerText = actionProfileData.name;
-        if (menuUser)   menuUser.innerText = 'Opções do perfil';
+        if (menuName) menuName.innerText = actionProfileData.name;
+        if (menuUser) menuUser.innerText = 'Opções do perfil';
         if (actionMenu) actionMenu.classList.add('open');
         if (pressOverlay) pressOverlay.classList.add('open');
     };
 
     const closeActionMenu = () => {
-        if (actionMenu)   actionMenu.classList.remove('open');
+        if (actionMenu) actionMenu.classList.remove('open');
         if (pressOverlay) pressOverlay.classList.remove('open');
     };
 
@@ -435,7 +452,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!gridA) return;
         gridA.innerHTML = '<div class="loader-pipo" style="margin:20px auto; grid-column: 1/-1;"></div>';
         try {
-            const res  = await fetch(`/api/profiles/avatars?category=${category}`);
+            const res = await fetch(`/api/profiles/avatars?category=${category}`);
             const data = await res.json();
             gridA.innerHTML = '';
             data.avatars.forEach(url => {
@@ -444,14 +461,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 img.className = 'avatar-option';
                 img.addEventListener('click', () => {
                     const currAvatar = document.getElementById('current-avatar-img');
-                    const hiddenUrl  = document.getElementById('selected-avatar-url');
+                    const hiddenUrl = document.getElementById('selected-avatar-url');
                     if (currAvatar) currAvatar.src = url;
-                    if (hiddenUrl)  hiddenUrl.value = url;
+                    if (hiddenUrl) hiddenUrl.value = url;
                     closeModal(modalAvatars);
                 });
                 gridA.appendChild(img);
             });
-        } catch (err) {}
+        } catch (err) { }
     };
 
     // ── Iniciar ───────────────────────────────────────────────────────────
