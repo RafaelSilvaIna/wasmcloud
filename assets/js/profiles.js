@@ -211,6 +211,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 localStorage.setItem('pipo_current_profile', JSON.stringify({ id, name, img }));
                 if (typeof PipoNotification !== 'undefined') PipoNotification.success(`Bem-vindo de volta, ${name}!`, 3000);
                 setTimeout(() => window.location.href = '/home', 1000);
+            } else if (data.code === 'PROFILE_IN_USE') {
+                // Perfil em uso em outro dispositivo — exibe o SessionModal
+                if (typeof window.PinInputModal !== 'undefined') {
+                    window.PinInputModal.hide?.();
+                }
+                if (typeof window.showSessionModal === 'function') {
+                    window.showSessionModal();
+                } else {
+                    // Fallback: exibe overlay diretamente se showSessionModal não estiver pronto
+                    const overlay = document.getElementById('sessionModal');
+                    if (overlay) {
+                        setTimeout(() => overlay.classList.add('show'), 50);
+                    } else if (typeof PipoNotification !== 'undefined') {
+                        PipoNotification.error(data.message || 'Este perfil já está em uso em outro dispositivo.');
+                    }
+                }
             } else {
                 const errMsg = data.message || 'PIN incorreto.';
                 // Mostra erro no PinInputModal se estiver aberto
@@ -487,6 +503,6 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (err) { }
     };
 
-    // ── Iniciar ───────────────────────────────────────────────────────────
+    // ── Iniciar ─��─────────────────────────────────────────────────────────
     fetchProfiles();
 });

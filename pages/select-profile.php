@@ -822,6 +822,13 @@ if (!isset($_SESSION['user_id'])) {
         </div>
     </div>
 
+    <?php
+    require_once __DIR__ . '/../components/SessionModal.php';
+    SessionModal::renderInlineCSS();
+    SessionModal::render();
+    SessionModal::renderScript();
+    ?>
+
     <script src="/assets/js/notification.js"></script>
     <script src="/assets/js/profiles.js"></script>
     <script>

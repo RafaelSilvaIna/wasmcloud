@@ -3,10 +3,12 @@ require_once __DIR__ . '/../database/db.php';
 require_once __DIR__ . '/../hooks/ProfileHook.php';
 require_once __DIR__ . '/../hooks/v4/AccountStatusHook.php';
 require_once __DIR__ . '/../hooks/v4/SubscriptionHook.php';
+require_once __DIR__ . '/../hooks/device/DeviceHook.php';
 ProfileHook::redirectTvToQrLogin();
 \Hooks\V4\AccountStatusHook::enforce($pdo);
 \Hooks\V4\SubscriptionHook::enforcePlanAccess($pdo);
 ProfileHook::enforceProfile($pdo);
+\Hooks\Device\DeviceHook::enforce($pdo);
 
 $requestUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $requestMethod = $_SERVER['REQUEST_METHOD'];
@@ -20,6 +22,11 @@ if (strpos($requestUri, '/api/') === 0) {
 
     if (strpos($requestUri, '/api/v4/') === 0) {
         require_once __DIR__ . '/v4/index.php';
+        exit;
+    }
+
+    if (strpos($requestUri, '/api/devices/') === 0) {
+        require_once __DIR__ . '/devices/index.php';
         exit;
     }
 
