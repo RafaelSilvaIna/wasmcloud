@@ -18,11 +18,6 @@ class ProfileService
         return isset($_SESSION['user_id']) ? (int) $_SESSION['user_id'] : null;
     }
 
-    private function getCurrentAuthProvider(): string
-    {
-        return $_SESSION['auth_provider'] ?? 'cineveo';
-    }
-
     /**
      * Retorna true se o usuário tem assinatura premium ativa —
      * inclui planos pagos E planos de cortesia (admin_courtesy).
@@ -39,14 +34,6 @@ class ProfileService
             return ['success' => false, 'message' => 'Sessao expirada.'];
         }
 
-        if ($this->getCurrentAuthProvider() === 'pipocine') {
-            return [
-                'success' => true,
-                'isPremium' => false,
-                'limit' => self::DEFAULT_PROFILE_LIMIT
-            ];
-        }
-
         $isPremium = $this->isPremiumActive($userId);
 
         return [
@@ -56,6 +43,44 @@ class ProfileService
         ];
     }
 
+    private function getProfilesVisibleForPlan(int $userId, ?array $profileLimit = null): array
+    {
+        $profileLimit = $profileLimit ?? $this->getProfileLimitForCurrentUser();
+        if (empty($profileLimit['success'])) {
+            return [];
+        }
+
+        $profiles = $this->profileModel->listByUserId($userId);
+        if (!empty($profileLimit['isPremium'])) {
+            return $profiles;
+        }
+
+        return array_slice($profiles, 0, self::DEFAULT_PROFILE_LIMIT);
+    }
+
+    private function isProfileVisibleForCurrentPlan(int $userId, int $profileId): bool
+    {
+        foreach ($this->getProfilesVisibleForPlan($userId) as $profile) {
+            if ((int) $profile['id'] === $profileId) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function clearCurrentProfileSessionIfHidden(int $userId): void
+    {
+        $profileId = isset($_SESSION['profile_id']) ? (int) $_SESSION['profile_id'] : 0;
+        if ($profileId <= 0 || $this->isProfileVisibleForCurrentPlan($userId, $profileId)) {
+            return;
+        }
+
+        $this->authModel->deactivateProfileSessions($profileId);
+        $this->profileModel->updateWatchingStatus($profileId, false, null);
+        unset($_SESSION['profile_id'], $_SESSION['profile_name'], $_SESSION['profile_image'], $_SESSION['profile_is_kids']);
+    }
+
     public function getProfilesForUser(): array
     {
         $userId = $this->getCurrentUserId();
@@ -63,7 +88,35 @@ class ProfileService
             return [];
         }
 
-        return $this->profileModel->listByUserId($userId);
+        $this->clearCurrentProfileSessionIfHidden($userId);
+
+        return $this->getProfilesVisibleForPlan($userId);
+    }
+
+    public function getCurrentSelectedProfile(): ?array
+    {
+        $userId = $this->getCurrentUserId();
+        if (!$userId || empty($_SESSION['profile_id'])) {
+            return null;
+        }
+
+        $this->clearCurrentProfileSessionIfHidden($userId);
+        if (empty($_SESSION['profile_id'])) {
+            return null;
+        }
+
+        $profile = $this->profileModel->findById((int) $_SESSION['profile_id']);
+        if (!$profile || (int) $profile['user_id'] !== $userId) {
+            unset($_SESSION['profile_id'], $_SESSION['profile_name'], $_SESSION['profile_image'], $_SESSION['profile_is_kids']);
+            return null;
+        }
+
+        return [
+            'id' => (int) $profile['id'],
+            'name' => $profile['profile_name'] ?? '',
+            'image' => $profile['profile_image'] ?? '',
+            'is_kids' => (bool) (int) ($profile['is_kids'] ?? 0),
+        ];
     }
 
     public function isUsernameAvailable(string $username): array
@@ -87,6 +140,14 @@ class ProfileService
         $profile = $this->profileModel->findById($profileId);
         if (!$profile || (int) $profile['user_id'] !== $userId) {
             return ['success' => false, 'message' => 'Perfil nao encontrado.'];
+        }
+
+        if (!$this->isProfileVisibleForCurrentPlan($userId, $profileId)) {
+            return [
+                'success' => false,
+                'message' => 'Este perfil faz parte do Plano Gold. Reative o plano para acessar novamente.',
+                'code' => 'PROFILE_REQUIRES_GOLD'
+            ];
         }
 
         if (!empty($profile['pin_hash'])) {
@@ -133,7 +194,7 @@ class ProfileService
             return $profileLimit;
         }
 
-        $currentProfilesCount = $this->profileModel->countByUserId($userId);
+        $currentProfilesCount = count($this->getProfilesVisibleForPlan($userId, $profileLimit));
         $isPremium = (bool) $profileLimit['isPremium'];
         $limit = (int) $profileLimit['limit'];
 
@@ -180,6 +241,20 @@ class ProfileService
 
     public function startWatching(int $profileId): array
     {
+        $userId = $this->getCurrentUserId();
+        if (!$userId) {
+            return ['success' => false, 'message' => 'Nao autenticado.'];
+        }
+
+        $profile = $this->profileModel->findById($profileId);
+        if (!$profile || (int) $profile['user_id'] !== $userId) {
+            return ['success' => false, 'message' => 'Perfil nao encontrado.'];
+        }
+
+        if (!$this->isProfileVisibleForCurrentPlan($userId, $profileId)) {
+            return ['success' => false, 'message' => 'Reative o Plano Gold para acessar este perfil.', 'code' => 'PROFILE_REQUIRES_GOLD'];
+        }
+
         $session = $this->profileModel->checkActiveSession($profileId);
         $now = new DateTime();
 
@@ -213,6 +288,15 @@ class ProfileService
         $name     = strip_tags(trim($data['name'] ?? ''));
         $image    = $data['image'] ?? '';
         $username = isset($data['username']) ? strtolower(preg_replace('/[^a-zA-Z0-9_]/', '', $data['username'])) : null;
+
+        $profile = $this->profileModel->findById($id);
+        if (!$profile || (int) $profile['user_id'] !== $userId) {
+            return ['success' => false, 'message' => 'Perfil nao encontrado.'];
+        }
+
+        if (!$this->isProfileVisibleForCurrentPlan($userId, $id)) {
+            return ['success' => false, 'message' => 'Reative o Plano Gold para editar este perfil.', 'code' => 'PROFILE_REQUIRES_GOLD'];
+        }
 
         if ($name === '') {
             return ['success' => false, 'message' => 'O nome do perfil nao pode estar vazio.'];
@@ -252,6 +336,10 @@ class ProfileService
             return ['success' => false, 'message' => 'Perfil nao encontrado.'];
         }
 
+        if (!$this->isProfileVisibleForCurrentPlan($userId, $profileId)) {
+            return ['success' => false, 'message' => 'Reative o Plano Gold para gerenciar este perfil.', 'code' => 'PROFILE_REQUIRES_GOLD'];
+        }
+
         // Não pode excluir o perfil atualmente em uso
         if (isset($_SESSION['profile_id']) && (int) $_SESSION['profile_id'] === $profileId) {
             unset($_SESSION['profile_id'], $_SESSION['profile_name'], $_SESSION['profile_image']);
@@ -280,7 +368,7 @@ class ProfileService
             return $profileLimit;
         }
 
-        $currentCount = $this->profileModel->countByUserId($userId);
+        $currentCount = count($this->getProfilesVisibleForPlan($userId, $profileLimit));
         $limit        = (int) $profileLimit['limit'];
         $isPremium    = (bool) $profileLimit['isPremium'];
 
@@ -310,6 +398,10 @@ class ProfileService
         $profile = $this->profileModel->findById($profileId);
         if (!$profile || (int) $profile['user_id'] !== $userId) {
             return ['success' => false, 'message' => 'Perfil nao encontrado.'];
+        }
+
+        if (!$this->isProfileVisibleForCurrentPlan($userId, $profileId)) {
+            return ['success' => false, 'message' => 'Reative o Plano Gold para editar este perfil.', 'code' => 'PROFILE_REQUIRES_GOLD'];
         }
 
         return ['success' => true, 'redirect' => "/create/profile/edit={$profileId}"];

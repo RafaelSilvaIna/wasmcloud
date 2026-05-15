@@ -55,6 +55,21 @@ try {
     $isPremium = false;
 }
 
+if (!$isPremium) {
+    try {
+        $stmt = $pdo->prepare('SELECT id FROM profiles WHERE user_id = ? ORDER BY id ASC LIMIT 2');
+        $stmt->execute([$userId]);
+        $allowedProfileIds = array_map('intval', $stmt->fetchAll(\PDO::FETCH_COLUMN));
+        if (!in_array($profileId, $allowedProfileIds, true)) {
+            header('Location: /select-profile?error=plano_gold_necessario');
+            exit;
+        }
+    } catch (\Throwable $e) {
+        header('Location: /select-profile?error=plano_gold_necessario');
+        exit;
+    }
+}
+
 $isPremiumJs = $isPremium ? 'true' : 'false';
 $profileName = htmlspecialchars($profile['profile_name'] ?? '', ENT_QUOTES, 'UTF-8');
 $profileImg  = htmlspecialchars($profile['profile_image'] ?? 'https://api.dicebear.com/9.x/adventurer/svg?seed=Pipo', ENT_QUOTES, 'UTF-8');

@@ -165,14 +165,34 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ── Seleção de perfil ─────────────────────────────────────────────────
     const handleProfileSelection = (item) => {
-        const id = item.dataset.id;
+        const id   = item.dataset.id;
         const name = item.dataset.name;
-        const img = item.dataset.img;
-        const hasPin = item.dataset.pin === '1' || item.dataset.pin === 'true';
+        const img  = item.dataset.img;
+        const pin  = item.dataset.pin;
 
-        if (hasPin) {
+        if (pin === '1') {
             selectedProfileForPin = { id, name, img };
-            openModal(modalPin);
+
+            // Usa PinInputModal se disponivel, senão cai no modal antigo
+            if (typeof window.PinInputModal !== 'undefined') {
+                window.PinInputModal.open({
+                    title:        name,
+                    subtitle:     'Digite o PIN para acessar este perfil',
+                    confirmLabel: 'Acessar',
+                    autoSubmit:   true,
+                    onConfirm(enteredPin) {
+                        window.PinInputModal.close();
+                        executeSelectProfile(id, name, img, enteredPin);
+                    },
+                    onCancel() {
+                        selectedProfileForPin = null;
+                    }
+                });
+            } else {
+                const titleEl = document.getElementById('pin-modal-name');
+                if (titleEl) titleEl.textContent = name;
+                openModal(modalPin);
+            }
         } else {
             executeSelectProfile(id, name, img, null);
         }
@@ -192,16 +212,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (typeof PipoNotification !== 'undefined') PipoNotification.success(`Bem-vindo de volta, ${name}!`, 3000);
                 setTimeout(() => window.location.href = '/home', 1000);
             } else {
-                if (typeof PipoNotification !== 'undefined') PipoNotification.error(data.message || 'Erro ao acessar.');
-                const accessPin = document.getElementById('access-pin-input');
-                if (pin && accessPin) {
-                    accessPin.value = '';
-                    updateDots('access-pin-dots', 0);
-                    const dotsWrap = document.getElementById('access-pin-dots');
-                    if (dotsWrap) {
-                        dotsWrap.classList.add('shake');
-                        setTimeout(() => dotsWrap.classList.remove('shake'), 500);
-                    }
+                const errMsg = data.message || 'PIN incorreto.';
+                // Mostra erro no PinInputModal se estiver aberto
+                if (typeof window.PinInputModal !== 'undefined') {
+                    window.PinInputModal.showError(errMsg);
+                } else if (typeof PipoNotification !== 'undefined') {
+                    PipoNotification.error(errMsg);
                 }
             }
         } catch (err) { }

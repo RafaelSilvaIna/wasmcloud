@@ -127,21 +127,33 @@ class AuthModel {
     }
 
     /**
-     * Verifica se o usuário tem uma assinatura ativa (paga OU cortesia) em user_subscriptions.
-     * Usa o mesmo banco (dbCineveo) onde fica a tabela user_subscriptions.
+     * Verifica se o usuário tem assinatura ativa (paga ou cortesia).
+     * O sistema novo de planos fica no banco Pipocine; o fallback mantém compatibilidade.
      */
     public function hasActivePremiumSubscription(int $userId): bool {
-        $stmt = $this->dbCineveo->prepare("
-            SELECT COUNT(*) AS cnt
-            FROM user_subscriptions
-            WHERE user_id = ?
-              AND status = 'active'
-              AND expires_at > NOW()
-            LIMIT 1
-        ");
-        $stmt->execute([$userId]);
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        return (int) ($row['cnt'] ?? 0) > 0;
+        foreach ([$this->dbPipocine, $this->dbCineveo] as $db) {
+            if (!$db) {
+                continue;
+            }
+
+            try {
+                $stmt = $db->prepare("
+                    SELECT COUNT(*) AS cnt
+                    FROM user_subscriptions
+                    WHERE user_id = ?
+                      AND status = 'active'
+                      AND expires_at > NOW()
+                    LIMIT 1
+                ");
+                $stmt->execute([$userId]);
+                $row = $stmt->fetch(PDO::FETCH_ASSOC);
+                if ((int) ($row['cnt'] ?? 0) > 0) {
+                    return true;
+                }
+            } catch (Throwable $e) {}
+        }
+
+        return false;
     }
 
     public function getDbPipocine(): ?PDO {
@@ -169,6 +181,9 @@ class AuthModel {
      */
     public function createActiveSession(int $profileId, int $userId, string $sessionId, string $expiresAt): bool {
         if (!$this->dbPipocine) return false;
+
+        $this->dropBrokenSessionCleanupTrigger();
+        $this->cleanupExpiredSessions();
         
         // Desativa apenas a sessão anterior do MESMO session_id (se houver)
         $stmt = $this->dbPipocine->prepare("
@@ -187,7 +202,36 @@ class AuthModel {
         $ipAddress = $_SERVER['REMOTE_ADDR'] ?? '';
         $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? '';
         
-        return $stmt->execute([$profileId, $userId, $sessionId, $ipAddress, $userAgent, $expiresAt]);
+        try {
+            return $stmt->execute([$profileId, $userId, $sessionId, $ipAddress, $userAgent, $expiresAt]);
+        } catch (PDOException $e) {
+            if (($e->errorInfo[1] ?? null) === 1442) {
+                $this->dropBrokenSessionCleanupTrigger(true);
+                try {
+                    return $stmt->execute([$profileId, $userId, $sessionId, $ipAddress, $userAgent, $expiresAt]);
+                } catch (Throwable $retryError) {
+                    return false;
+                }
+            }
+
+            throw $e;
+        }
+    }
+
+    /**
+     * MySQL não permite que um trigger altere a mesma tabela que disparou o INSERT.
+     * A limpeza agora é feita em PHP antes de criar a sessão.
+     */
+    private function dropBrokenSessionCleanupTrigger(bool $force = false): void {
+        if (!$this->dbPipocine) return;
+
+        static $attempted = false;
+        if ($attempted && !$force) return;
+        $attempted = true;
+
+        try {
+            $this->dbPipocine->exec("DROP TRIGGER IF EXISTS cleanup_expired_profile_sessions");
+        } catch (Throwable $e) {}
     }
 
     /**

@@ -298,54 +298,27 @@ $isPremiumJs = $isPremium ? 'true' : 'false';
             opacity: 0;
             transition: max-height .3s ease, opacity .3s ease;
         }
-        .cp-pin-section.open { max-height: 300px; opacity: 1; }
+        .cp-pin-section.open { max-height: 80px; opacity: 1; }
 
-        .cp-pin-label {
-            color: var(--muted);
-            font-size: .82rem;
-            margin: 12px 0 10px;
-        }
-
-        .cp-pin-dots {
+        .cp-btn-set-pin {
             display: flex;
-            justify-content: center;
-            gap: 18px;
-            margin-bottom: 14px;
-        }
-
-        .cp-pin-dot {
-            width: 14px;
-            height: 14px;
-            border-radius: 50%;
-            border: 2px solid var(--muted);
-            transition: background .15s, border-color .15s;
-        }
-        .cp-pin-dot.filled {
-            background: var(--text);
-            border-color: var(--text);
-        }
-
-        .cp-numpad {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-        }
-
-        .cp-num-key {
-            background: var(--surface2);
-            border: 1px solid var(--border);
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+            margin-top: 10px;
+            padding: 12px 16px;
+            background: rgba(255,255,255,.05);
+            border: 1.5px dashed rgba(255,255,255,.15);
             border-radius: 10px;
-            color: var(--text);
-            font-size: 1.2rem;
-            font-weight: 600;
-            padding: 14px 8px;
+            color: var(--muted);
+            font-size: .9rem;
+            font-weight: 500;
             cursor: pointer;
-            transition: background .15s;
-            text-align: center;
+            transition: border-color .15s, color .15s, background .15s;
         }
-        .cp-num-key:hover { background: rgba(255,255,255,.1); }
-        .cp-num-key.empty { background: transparent; border-color: transparent; cursor: default; }
-        .cp-num-key.del   { font-size: .95rem; }
+        .cp-btn-set-pin:hover { border-color: rgba(255,255,255,.3); color: var(--text); background: rgba(255,255,255,.08); }
+        .cp-btn-set-pin.pin-ok { border-style: solid; border-color: rgba(34,197,94,.4); color: #4ade80; background: rgba(34,197,94,.05); }
+        .cp-btn-set-pin svg { width: 16px; height: 16px; flex-shrink: 0; }
 
         /* Premium lock */
         .cp-premium-lock {
@@ -627,24 +600,15 @@ $isPremiumJs = $isPremium ? 'true' : 'false';
             </div>
 
             <div class="cp-pin-section" id="pin-section">
-                <p class="cp-pin-label">Defina um PIN de 4 digitos:</p>
-                <div class="cp-pin-dots" id="pin-dots">
-                    <div class="cp-pin-dot"></div>
-                    <div class="cp-pin-dot"></div>
-                    <div class="cp-pin-dot"></div>
-                    <div class="cp-pin-dot"></div>
-                </div>
                 <input type="hidden" id="pin-value">
-                <div class="cp-numpad">
-                    <?php
-                    $keys = ['1','2','3','4','5','6','7','8','9','','0','del'];
-                    foreach ($keys as $k):
-                        if ($k === '') { echo '<div class="cp-num-key empty"></div>'; }
-                        elseif ($k === 'del') { echo '<button type="button" class="cp-num-key del" data-digit="del">&#9003;</button>'; }
-                        else { echo "<button type=\"button\" class=\"cp-num-key\" data-digit=\"{$k}\">{$k}</button>"; }
-                    endforeach;
-                    ?>
-                </div>
+                <button type="button" class="cp-btn-set-pin" id="btn-set-pin">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                        <path d="M7 11V7a5 5 0 0110 0v4"></path>
+                    </svg>
+                    <span id="btn-set-pin-label">Definir PIN</span>
+                </button>
             </div>
             <?php else: ?>
             <div class="cp-premium-lock">
@@ -688,6 +652,10 @@ $isPremiumJs = $isPremium ? 'true' : 'false';
     </div>
 </div>
 
+<?php
+require_once __DIR__ . '/../../components/PinInputModal.php';
+PinInputModal::render();
+?>
 <script src="/assets/js/notification.js"></script>
 <script>
 (function () {
@@ -706,7 +674,6 @@ $isPremiumJs = $isPremium ? 'true' : 'false';
     const avTabs         = document.getElementById('av-tabs');
     const avClose        = document.getElementById('av-close');
     const pinSection     = document.getElementById('pin-section');
-    const pinDots        = document.querySelectorAll('.cp-pin-dot');
     const pinValue       = document.getElementById('pin-value');
     const usernameInp    = document.getElementById('inp-username');
     const usernameStatus = document.getElementById('username-status');
@@ -859,32 +826,39 @@ $isPremiumJs = $isPremium ? 'true' : 'false';
     }
 
     // ── Toggle PIN ────────────────────────────────────────────────────────────
-    const togglePin = document.getElementById('toggle-pin');
+    const togglePin    = document.getElementById('toggle-pin');
+    const btnSetPin    = document.getElementById('btn-set-pin');
+    const btnSetLabel  = document.getElementById('btn-set-pin-label');
+
     if (togglePin && pinSection) {
         togglePin.addEventListener('change', () => {
             pinSection.classList.toggle('open', togglePin.checked);
             if (!togglePin.checked) {
                 if (pinValue) pinValue.value = '';
-                pinDots.forEach(d => d.classList.remove('filled'));
+                if (btnSetPin) {
+                    btnSetPin.classList.remove('pin-ok');
+                    btnSetLabel.textContent = 'Definir PIN';
+                }
             }
         });
     }
 
-    // Numpad PIN
-    const numpad = document.querySelector('.cp-numpad');
-    if (numpad && pinValue) {
-        numpad.addEventListener('click', (e) => {
-            const key = e.target.closest('.cp-num-key');
-            if (!key || key.classList.contains('empty')) return;
-            const digit = key.dataset.digit;
-            let val = pinValue.value || '';
-            if (digit === 'del') {
-                val = val.slice(0, -1);
-            } else if (val.length < 4) {
-                val += digit;
-            }
-            pinValue.value = val;
-            pinDots.forEach((d, i) => d.classList.toggle('filled', i < val.length));
+    // Botao "Definir PIN" → abre PinInputModal
+    if (btnSetPin && pinValue) {
+        btnSetPin.addEventListener('click', () => {
+            if (typeof window.PinInputModal === 'undefined') return;
+            window.PinInputModal.open({
+                title:        'Criar PIN do Perfil',
+                subtitle:     'Escolha 4 digitos para proteger este perfil',
+                confirmLabel: 'Salvar PIN',
+                onConfirm(pin) {
+                    pinValue.value = pin;
+                    btnSetPin.classList.add('pin-ok');
+                    btnSetLabel.textContent = 'PIN definido — clique para alterar';
+                    window.PinInputModal.close();
+                },
+                onCancel() {}
+            });
         });
     }
 

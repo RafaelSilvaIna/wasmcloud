@@ -663,44 +663,7 @@ if (!isset($_SESSION['user_id'])) {
             color: rgba(255, 255, 255, 0.72);
         }
 
-        /* ── PIN dots (reusados no modal de PIN do perfil) ── */
-        .cp-pin-dot {
-            width: 14px;
-            height: 14px;
-            border-radius: 50%;
-            border: 2px solid var(--profile-text-muted);
-            transition: background .15s, border-color .15s;
-        }
-        .cp-pin-dot.filled {
-            background: var(--profile-text-pure);
-            border-color: var(--profile-text-pure);
-        }
-        #access-pin-dots.shake {
-            animation: pin-shake .4s ease;
-        }
-        @keyframes pin-shake {
-            0%,100% { transform: translateX(0); }
-            20%      { transform: translateX(-6px); }
-            40%      { transform: translateX(6px); }
-            60%      { transform: translateX(-4px); }
-            80%      { transform: translateX(4px); }
-        }
-        /* Numpad no modal de PIN */
-        .cp-num-key {
-            background: var(--profile-bg-input);
-            border: 1px solid rgba(255,255,255,.08);
-            border-radius: 10px;
-            color: var(--profile-text-pure);
-            font-size: 1.2rem;
-            font-weight: 600;
-            padding: 14px 8px;
-            cursor: pointer;
-            transition: background .15s;
-            text-align: center;
-        }
-        .cp-num-key:hover { background: rgba(255,255,255,.1); }
-        .cp-num-key.empty { background: transparent; border-color: transparent; cursor: default; }
-        .cp-num-key.del   { font-size: .95rem; }
+        /* Espaço reservado — numpad removido, usa PinInputModal */
 
         @media (max-width: 560px) {
             .account-header {
@@ -830,39 +793,10 @@ if (!isset($_SESSION['user_id'])) {
         </div>
     </div>
 
-    <!-- ── Modal PIN de acesso ao perfil ──────────────────────────── -->
-    <div class="profile-modal" id="pipo-pin-modal" role="dialog" aria-modal="true" aria-label="Inserir PIN do perfil">
-        <div class="modal-content-dark" style="max-width:360px;">
-            <div class="modal-header-dark">
-                <button type="button" class="btn-cancel-dark" id="btn-cancel-pin">Cancelar</button>
-                <h2 class="title-dark" id="pin-modal-name">PIN do Perfil</h2>
-                <div style="width:60px;"></div>
-            </div>
-            <div style="display:flex;flex-direction:column;align-items:center;gap:20px;">
-                <div id="access-pin-dots" style="display:flex;gap:16px;">
-                    <div class="cp-pin-dot pin-dot"></div>
-                    <div class="cp-pin-dot pin-dot"></div>
-                    <div class="cp-pin-dot pin-dot"></div>
-                    <div class="cp-pin-dot pin-dot"></div>
-                </div>
-                <input type="hidden" id="access-pin-input">
-                <div class="pin-numpad cp-numpad" style="width:100%;max-width:280px;">
-                    <button type="button" class="cp-num-key pin-key" data-digit="1">1</button>
-                    <button type="button" class="cp-num-key pin-key" data-digit="2">2</button>
-                    <button type="button" class="cp-num-key pin-key" data-digit="3">3</button>
-                    <button type="button" class="cp-num-key pin-key" data-digit="4">4</button>
-                    <button type="button" class="cp-num-key pin-key" data-digit="5">5</button>
-                    <button type="button" class="cp-num-key pin-key" data-digit="6">6</button>
-                    <button type="button" class="cp-num-key pin-key" data-digit="7">7</button>
-                    <button type="button" class="cp-num-key pin-key" data-digit="8">8</button>
-                    <button type="button" class="cp-num-key pin-key" data-digit="9">9</button>
-                    <div class="cp-num-key empty pin-key--empty"></div>
-                    <button type="button" class="cp-num-key pin-key" data-digit="0">0</button>
-                    <button type="button" class="cp-num-key del pin-key pin-key--del" data-digit="del">&#9003;</button>
-                </div>
-            </div>
-        </div>
-    </div>
+    <?php
+    require_once __DIR__ . '/../components/PinInputModal.php';
+    PinInputModal::render();
+    ?>
 
     <!-- ── Modal limite de perfis ──────────────────────────────────── -->
     <div class="profile-modal" id="pipo-limit-modal" role="dialog" aria-modal="true">
@@ -917,10 +851,7 @@ if (!isset($_SESSION['user_id'])) {
             });
         }
 
-        // ── Modal PIN: botão cancelar ────────────────────────────────────────
-        document.getElementById('btn-cancel-pin')?.addEventListener('click', () => {
-            document.getElementById('pipo-pin-modal')?.classList.remove('open');
-        });
+        // PIN cancelar gerenciado pelo PinInputModal
     });
     </script>
 

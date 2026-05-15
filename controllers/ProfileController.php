@@ -41,13 +41,16 @@ class ProfileController {
             echo json_encode(['authenticated' => true, 'profile' => null]);
             exit;
         }
+
+        $profile = $this->profileService->getCurrentSelectedProfile();
+        if (!$profile) {
+            echo json_encode(['authenticated' => true, 'profile' => null]);
+            exit;
+        }
+
         echo json_encode([
             'authenticated' => true,
-            'profile' => [
-                'id'    => $_SESSION['profile_id'],
-                'name'  => $_SESSION['profile_name'] ?? '',
-                'image' => $_SESSION['profile_image'] ?? ''
-            ]
+            'profile' => $profile
         ]);
     }
 
@@ -67,9 +70,7 @@ class ProfileController {
     public function heartbeat(): void {
         header('Content-Type: application/json');
         if (isset($_SESSION['profile_id'])) {
-            $model = new ProfileModel($GLOBALS['pdo']);
-            $model->updateWatchingStatus((int)$_SESSION['profile_id'], true, session_id());
-            echo json_encode(['success' => true]);
+            echo json_encode($this->profileService->startWatching((int) $_SESSION['profile_id']));
         } else {
             echo json_encode(['success' => false]);
         }

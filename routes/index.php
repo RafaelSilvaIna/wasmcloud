@@ -6,7 +6,7 @@ require_once __DIR__ . '/../hooks/v4/SubscriptionHook.php';
 ProfileHook::redirectTvToQrLogin();
 \Hooks\V4\AccountStatusHook::enforce($pdo);
 \Hooks\V4\SubscriptionHook::enforcePlanAccess($pdo);
-ProfileHook::enforceProfile();
+ProfileHook::enforceProfile($pdo);
 
 $requestUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $requestMethod = $_SERVER['REQUEST_METHOD'];
@@ -69,7 +69,7 @@ if (strpos($requestUri, '/api/') === 0) {
         require_once __DIR__ . '/../controllers/ProfileController.php';
 
         // CORREÇÃO DO ERRO 500: Instanciamos o AuthModel e passamos para o ProfileService
-        $authModel = new AuthModel($pdoCineveo);
+        $authModel = new AuthModel($pdoCineveo, $pdo);
         $profileModel = new ProfileModel($pdo);
         $profileService = new ProfileService($profileModel, $authModel);
         $profileController = new ProfileController($profileService);

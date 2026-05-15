@@ -97,6 +97,10 @@ $backUrl = $isSerie
     ? ($slug ? "/serie/{$slug}" : "/info={$tmdbId}")
     : "/info={$tmdbId}";
 
+$userAgent = $_SERVER['HTTP_USER_AGENT'] ?? '';
+$embeddedBrowserPattern = '/instagram|fb_iab|fbav|fban|messenger|telegram|twitter|line\/|micromessenger|tiktok|snapchat|pinterest|linkedinapp|; wv| wv\)/i';
+$isEmbeddedBrowser = (bool) preg_match($embeddedBrowserPattern, $userAgent);
+
 ?>
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -130,12 +134,22 @@ $backUrl = $isSerie
 
         html, body {
             width: 100%;
+            min-height: 100%;
             background: var(--bg);
             color: var(--text-primary);
             font-family: 'Netflix Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
-            overflow-x: hidden;
+            overflow: hidden;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
+        }
+
+        main {
+            width: 100%;
+            height: 100svh;
+            min-height: 100vh;
+            background:
+                radial-gradient(circle at 18% 0%, rgba(229,9,20,.16), transparent 34%),
+                linear-gradient(135deg, #030303 0%, #0b0b0d 45%, #050505 100%);
         }
 
         /* ─── NAVBAR ──────────────────────────────────────────────────── */
@@ -148,7 +162,7 @@ $backUrl = $isSerie
             align-items: center;
             justify-content: space-between;
             padding: 0 28px;
-            background: linear-gradient(to bottom, rgba(0,0,0,.9) 0%, transparent 100%);
+            background: linear-gradient(to bottom, rgba(0,0,0,.86) 0%, rgba(0,0,0,.35) 58%, transparent 100%);
             pointer-events: none;
             transition: opacity .3s;
         }
@@ -207,8 +221,9 @@ $backUrl = $isSerie
         #player-wrap {
             position: relative;
             width: 100%;
+            height: 100svh;
+            min-height: 100vh;
             background: #000;
-            aspect-ratio: 16/9;
             overflow: hidden;
             cursor: none;
         }
@@ -228,6 +243,17 @@ $backUrl = $isSerie
             display: block;
             object-fit: contain;
             background: #000;
+        }
+
+        #player-wrap::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background:
+                linear-gradient(to bottom, rgba(0,0,0,.34) 0%, transparent 20%, transparent 66%, rgba(0,0,0,.72) 100%),
+                linear-gradient(to right, rgba(0,0,0,.2), transparent 24%, transparent 76%, rgba(0,0,0,.2));
+            z-index: 1;
         }
 
         /* ─── LOADER OVERLAY ──────────────────────────────────────────── */
@@ -525,96 +551,151 @@ $backUrl = $isSerie
             transform: translateX(-50%) translateY(0);
         }
 
-        /* ─── SEÇÃO DE INFO (abaixo do player) ────────────────────────── */
-        #player-info-section {
-            max-width: 900px;
-            margin: 0 auto;
-            padding: 32px 28px 72px;
-        }
-
-        /* Linha divisória Netflix */
-        .info-divider {
-            height: 1px;
-            background: var(--border);
-            margin-bottom: 28px;
-        }
-
-        /* Audio toggle — acima do bloco de info */
-        .audio-toggle-wrap {
+        .audio-switcher {
             display: flex;
-            gap: 8px;
-            margin-bottom: 28px;
+            align-items: center;
+            gap: 6px;
+            padding: 2px;
+            border: 1px solid rgba(255,255,255,.16);
+            border-radius: 999px;
+            background: rgba(10,10,12,.42);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
         }
-        .audio-tab {
-            padding: 5px 18px;
-            border-radius: 2px;
-            font-size: 12px;
-            font-weight: 700;
-            letter-spacing: .06em;
+
+        .audio-switcher .audio-tab {
+            min-width: 46px;
+            padding: 6px 10px;
+            border: 0;
+            border-radius: 999px;
+            background: transparent;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: .08em;
             text-transform: uppercase;
             cursor: pointer;
-            border: 1.5px solid var(--border-strong);
-            background: transparent;
-            color: var(--text-muted);
-            transition: all var(--transition);
+            color: rgba(255,255,255,.62);
+            transition: background var(--transition), color var(--transition);
         }
-        .audio-tab.active {
-            background: var(--accent);
-            border-color: var(--accent);
+
+        .audio-switcher .audio-tab.active {
+            background: rgba(255,255,255,.95);
+            color: #08080a;
+        }
+
+        .audio-switcher .audio-tab:hover:not(.active) {
+            background: rgba(255,255,255,.1);
             color: #fff;
         }
-        .audio-tab:hover:not(.active) {
-            border-color: rgba(255,255,255,.5);
-            color: var(--text-primary);
+
+        #browser-block-overlay {
+            position: absolute;
+            inset: 0;
+            z-index: 80;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 28px;
+            background-color: #050505;
+            background-image:
+                linear-gradient(135deg, rgba(4,4,6,.96), rgba(14,14,18,.9))
+                <?php if ($backdropImg): ?>, url('<?php echo htmlspecialchars($backdropImg, ENT_QUOTES); ?>')<?php endif; ?>;
+            background-position: center;
+            background-size: cover;
+            background-repeat: no-repeat;
+            text-align: center;
         }
 
-        /* Bloco de metadados */
-        .info-header {
-            display: flex;
-            align-items: flex-start;
-            gap: 20px;
+        #browser-block-overlay::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,.72);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
         }
 
-        .info-poster {
-            width: 78px;
-            height: 117px;
-            border-radius: 2px;
-            object-fit: cover;
-            flex-shrink: 0;
+        body.embedded-browser #browser-block-overlay { display: flex; }
+        body.embedded-browser #pplayer-nav,
+        body.embedded-browser #pip-loader-overlay,
+        body.embedded-browser #pip-controls,
+        body.embedded-browser #btn-next-episode,
+        body.embedded-browser #pip-video {
+            display: none !important;
         }
 
-        .info-text { flex: 1; min-width: 0; }
-
-        .info-series-name {
-            font-size: 10px;
-            font-weight: 700;
-            letter-spacing: .15em;
-            text-transform: uppercase;
-            color: var(--accent);
-            margin-bottom: 6px;
+        .browser-block-card {
+            position: relative;
+            z-index: 1;
+            width: min(100%, 460px);
+            padding: 30px;
+            border: 1px solid rgba(255,255,255,.13);
+            border-radius: 8px;
+            background: rgba(13,13,16,.78);
+            box-shadow: 0 24px 80px rgba(0,0,0,.55);
         }
 
-        .info-main-title {
+        .browser-block-icon {
+            width: 58px;
+            height: 58px;
+            margin: 0 auto 18px;
+            display: grid;
+            place-items: center;
+            border-radius: 50%;
+            background: rgba(229,9,20,.14);
+            color: #fff;
+            box-shadow: inset 0 0 0 1px rgba(229,9,20,.28);
+        }
+
+        .browser-block-icon svg { width: 28px; height: 28px; }
+
+        .browser-block-title {
+            color: #fff;
             font-size: 22px;
-            font-weight: 700;
-            color: var(--text-pure);
-            line-height: 1.2;
-            margin-bottom: 5px;
-            letter-spacing: -.015em;
+            font-weight: 800;
+            line-height: 1.18;
+            margin-bottom: 10px;
         }
 
-        .info-ep-label {
-            font-size: 13px;
-            color: var(--text-muted);
-            margin-bottom: 14px;
-            font-weight: 500;
-        }
-
-        .info-synopsis {
+        .browser-block-text {
+            color: rgba(255,255,255,.72);
             font-size: 14px;
-            color: var(--text-secondary);
-            line-height: 1.65;
-            max-width: 580px;
+            line-height: 1.62;
+            margin-bottom: 22px;
+        }
+
+        .browser-block-actions {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .browser-action-primary,
+        .browser-action-secondary {
+            min-height: 42px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            border-radius: 4px;
+            padding: 0 18px;
+            font-size: 13px;
+            font-weight: 800;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .browser-action-primary {
+            border: 0;
+            background: #fff;
+            color: #070707;
+        }
+
+        .browser-action-secondary {
+            border: 1px solid rgba(255,255,255,.16);
+            background: rgba(255,255,255,.08);
+            color: #fff;
         }
 
         /* ─── MOBILE ──────────────────────────────────────────────────── */
@@ -625,8 +706,7 @@ $backUrl = $isSerie
             .nav-ep-label { font-size: 11px; }
             .nav-divider { display: none; }
 
-            /* Player ocupa 100% da largura, mantém 16:9 */
-            #player-wrap { aspect-ratio: 16/9; }
+            #player-wrap { height: 100svh; }
 
             /* Controles mais tocáveis */
             #pip-controls { padding: 0 14px 16px; }
@@ -637,17 +717,13 @@ $backUrl = $isSerie
             .volume-wrap { display: none; } /* ocultar volume no mobile */
             .time-label { font-size: 11px; padding: 0 4px; }
             .audio-badge { font-size: 9px; padding: 2px 5px; }
+            .audio-switcher { gap: 2px; }
+            .audio-switcher .audio-tab { min-width: 38px; padding: 6px 8px; }
+            .browser-block-card { padding: 24px 18px; }
+            .browser-block-title { font-size: 19px; }
 
             /* Botão próximo ep */
             #btn-next-episode { bottom: 80px; right: 14px; font-size: 13px; padding: 9px 16px; }
-
-            /* Seção de info */
-            #player-info-section { padding: 24px 16px 56px; }
-            .info-divider { margin-bottom: 20px; }
-            .info-main-title { font-size: 18px; }
-            .info-ep-label { font-size: 12px; }
-            .info-synopsis { font-size: 13px; }
-            .info-poster { width: 64px; height: 96px; }
         }
 
         /* ─── FULLSCREEN / LANDSCAPE no mobile ───────────────────────── */
@@ -666,7 +742,7 @@ $backUrl = $isSerie
         #player-wrap:-webkit-full-screen #icon-fs { display: none; }
     </style>
 </head>
-<body>
+<body class="<?php echo $isEmbeddedBrowser ? 'embedded-browser' : ''; ?>">
 
 <!-- ─── NAVBAR ──────────────────────────────────────────────────────────── -->
 <nav id="pplayer-nav">
@@ -688,6 +764,25 @@ $backUrl = $isSerie
 <!-- ─── PLAYER ──────────────────────────────────────────────────────────── -->
 <main>
 <div id="player-wrap">
+
+    <div id="browser-block-overlay" role="dialog" aria-modal="true" aria-labelledby="browser-block-title">
+        <div class="browser-block-card">
+            <div class="browser-block-icon" aria-hidden="true">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v3m0 12v3m9-9h-3M6 12H3m15.36-6.36l-2.12 2.12M7.76 16.24l-2.12 2.12m12.72 0l-2.12-2.12M7.76 7.76 5.64 5.64"/>
+                    <circle cx="12" cy="12" r="4" stroke-width="2"/>
+                </svg>
+            </div>
+            <h1 class="browser-block-title" id="browser-block-title">Abra em um navegador seguro</h1>
+            <p class="browser-block-text">
+                Players de vídeo podem falhar dentro de apps como Telegram, Instagram e Facebook. Para assistir sem bloqueios, abra esta página no Google Chrome, Safari ou no navegador padrão do aparelho.
+            </p>
+            <div class="browser-block-actions">
+                <button class="browser-action-primary" type="button" id="open-external-browser">Abrir no Chrome</button>
+                <button class="browser-action-secondary" type="button" id="copy-player-link">Copiar link</button>
+            </div>
+        </div>
+    </div>
 
     <!-- Loader -->
     <div id="pip-loader-overlay">
@@ -765,7 +860,14 @@ $backUrl = $isSerie
             </div>
             <div class="controls-right">
                 <!-- Badge áudio -->
+                <?php if ($isSerie): ?>
+                <div class="audio-switcher" id="audio-switcher" aria-label="Selecionar audio">
+                    <button class="audio-tab active" type="button"><?php echo strtoupper($audio) === 'DUB' ? 'DUB' : 'LEG'; ?></button>
+                </div>
+                <span class="audio-badge" id="audio-badge-ctrl" style="display:none"><?php echo strtoupper($audio) === 'DUB' ? 'DUB' : 'LEG'; ?></span>
+                <?php else: ?>
                 <span class="audio-badge" id="audio-badge-ctrl"><?php echo strtoupper($audio) === 'DUB' ? 'DUB' : 'LEG'; ?></span>
+                <?php endif; ?>
                 <!-- PiP -->
                 <button class="ctrl-btn" id="btn-pip" aria-label="Picture-in-Picture" onclick="togglePiP()" style="display:none">
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 9h6v6H9z"/><rect stroke-linecap="round" stroke-linejoin="round" stroke-width="2" x="2" y="4" width="20" height="16" rx="2"/></svg>
@@ -780,34 +882,6 @@ $backUrl = $isSerie
     </div>
 </div>
 
-<!-- ─── INFO ABAIXO DO PLAYER ──────────────────────────────────────────── -->
-<section id="player-info-section">
-    <div class="info-divider"></div>
-
-    <?php if ($isSerie): ?>
-    <div class="audio-toggle-wrap" id="audio-toggle-below"></div>
-    <?php endif; ?>
-
-    <div class="info-header">
-        <?php if ($posterImg): ?>
-        <img src="<?php echo htmlspecialchars($posterImg); ?>" class="info-poster" alt="Poster">
-        <?php endif; ?>
-        <div class="info-text">
-            <?php if ($isSerie): ?>
-            <div class="info-series-name"><?php echo htmlspecialchars($title); ?></div>
-            <div class="info-main-title">
-                <?php echo $episodeName ? htmlspecialchars($episodeName) : "Episódio {$episode}"; ?>
-            </div>
-            <div class="info-ep-label">Temporada <?php echo $season; ?> &bull; Episódio <?php echo $episode; ?></div>
-            <?php else: ?>
-            <div class="info-main-title"><?php echo htmlspecialchars($title); ?></div>
-            <?php endif; ?>
-            <?php if ($episodeSynopsis || $content['sinopse']): ?>
-            <p class="info-synopsis"><?php echo htmlspecialchars($isSerie ? $episodeSynopsis : $content['sinopse']); ?></p>
-            <?php endif; ?>
-        </div>
-    </div>
-</section>
 </main>
 
 <script>
@@ -825,6 +899,7 @@ $backUrl = $isSerie
     const CONTENT_YEAR   = <?php echo json_encode((int) substr($content['data_lancamento'] ?? '0', 0, 4) ?: null); ?>;
     const CURRENT_S      = <?php echo $season; ?>;
     const CURRENT_E      = <?php echo $episode; ?>;
+    const IS_EMBEDDED_BROWSER = <?php echo $isEmbeddedBrowser ? 'true' : 'false'; ?>;
     let   AUDIO          = <?php echo json_encode($audio); ?>;
 
     // Progresso inicial: lê ?t= da URL (link "Continua Assistindo") ou usa a API
@@ -855,7 +930,9 @@ $backUrl = $isSerie
     const toast          = document.getElementById('pip-toast');
     const audioBadge     = document.getElementById('audio-badge-ctrl');
     const btnPiP         = document.getElementById('btn-pip');
-    const audioToggleBelow = document.getElementById('audio-toggle-below');
+    const audioSwitcher  = document.getElementById('audio-switcher');
+    const openExternalBrowser = document.getElementById('open-external-browser');
+    const copyPlayerLink = document.getElementById('copy-player-link');
 
     let hls           = null;
     let nextEpData    = null;
@@ -863,6 +940,45 @@ $backUrl = $isSerie
     let isDragging    = false;
     let toastTimer    = null;
     let isSeeking     = false;
+
+    function currentAbsoluteUrl() {
+        return window.location.href;
+    }
+
+    function setupEmbeddedBrowserBlock() {
+        if (!IS_EMBEDDED_BROWSER) return false;
+
+        const href = currentAbsoluteUrl();
+        const android = /Android/i.test(navigator.userAgent);
+        const ios = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+        openExternalBrowser?.addEventListener('click', () => {
+            if (android) {
+                const withoutProtocol = href.replace(/^https?:\/\//i, '');
+                window.location.href = `intent://${withoutProtocol}#Intent;scheme=${window.location.protocol.replace(':', '')};package=com.android.chrome;end`;
+                return;
+            }
+
+            if (ios) {
+                window.location.href = href.replace(/^https?:\/\//i, 'googlechrome://');
+                setTimeout(() => showToast('Se não abrir, copie o link e cole no Safari ou Chrome.'), 700);
+                return;
+            }
+
+            window.open(href, '_blank', 'noopener');
+        });
+
+        copyPlayerLink?.addEventListener('click', async () => {
+            try {
+                await navigator.clipboard.writeText(href);
+                showToast('Link copiado.');
+            } catch (_) {
+                showToast('Copie o link pela barra de endereços.');
+            }
+        });
+
+        return true;
+    }
 
     // ─── Utilitários ─────────────────────────────────────────────────────
     function formatTime(sec) {
@@ -883,6 +999,8 @@ $backUrl = $isSerie
 
     // ─── Carregar vídeo via API ───────────────────────────────────────────
     function loadVideo() {
+        if (IS_EMBEDDED_BROWSER) return;
+
         // Reset estado
         errorOverlay.classList.remove('visible');
         loaderOverlay.classList.remove('hidden');
@@ -915,6 +1033,8 @@ $backUrl = $isSerie
             })
             .catch(() => showError('Erro de conexão', 'Não foi possível conectar ao servidor de vídeo.'));
     }
+
+    window.loadVideo = loadVideo;
 
     function showError(title, message) {
         loaderOverlay.classList.add('hidden');
@@ -1204,25 +1324,27 @@ $backUrl = $isSerie
         btnNextEp.classList.add('visible');
     }
 
-    // ─── Audio toggle (seção abaixo) ──────────────────────────────────────
+    // ─── Audio toggle nos controles ───────────────────────────────────────
     function buildAudioTabs(hasDub, hasLeg) {
-        if (!audioToggleBelow) return;
-        audioToggleBelow.innerHTML = '';
+        if (!audioSwitcher) return;
+        audioSwitcher.innerHTML = '';
         if (hasDub) {
             const btn = document.createElement('button');
             btn.className = 'audio-tab' + (AUDIO === 'dub' ? ' active' : '');
             btn.dataset.audio = 'dub';
-            btn.textContent = 'Dublado';
+            btn.type = 'button';
+            btn.textContent = 'DUB';
             btn.onclick = () => switchAudio('dub');
-            audioToggleBelow.appendChild(btn);
+            audioSwitcher.appendChild(btn);
         }
         if (hasLeg) {
             const btn = document.createElement('button');
             btn.className = 'audio-tab' + (AUDIO === 'leg' ? ' active' : '');
             btn.dataset.audio = 'leg';
-            btn.textContent = 'Legendado';
+            btn.type = 'button';
+            btn.textContent = 'LEG';
             btn.onclick = () => switchAudio('leg');
-            audioToggleBelow.appendChild(btn);
+            audioSwitcher.appendChild(btn);
         }
     }
 
@@ -1396,7 +1518,9 @@ $backUrl = $isSerie
 
     // ─── Init ─────────────────────────────────────────────────────────────
     // Primeiro busca o progresso, depois carrega o vídeo para poder retomar
-    WatchProgress.init().then(() => loadVideo());
+    if (!setupEmbeddedBrowserBlock()) {
+        WatchProgress.init().then(() => loadVideo());
+    }
 
 })();
 </script>

@@ -23,17 +23,6 @@ CREATE TABLE IF NOT EXISTS `profile_active_sessions` (
     KEY `idx_profile_active` (`profile_id`, `is_active`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Trigger para limpar sessões expiradas automaticamente
-DELIMITER //
-CREATE TRIGGER IF NOT EXISTS `cleanup_expired_profile_sessions`
-BEFORE INSERT ON `profile_active_sessions`
-FOR EACH ROW
-BEGIN
-    DELETE FROM `profile_active_sessions` 
-    WHERE `expires_at` < NOW() OR `last_activity` < DATE_SUB(NOW(), INTERVAL 30 MINUTE);
-END//
-DELIMITER ;
-
 -- Procedimento para limpar sessões inativas
 DELIMITER //
 CREATE PROCEDURE IF NOT EXISTS `CleanupInactiveProfileSessions`()

@@ -25,7 +25,12 @@ class ProfileModel {
     }
 
     public function listByUserId(int $userId): array {
-        $stmt = $this->db->prepare("SELECT id, profile_name, username, profile_image, is_kids, (pin_hash IS NOT NULL) as has_pin, is_watching, last_active_at FROM profiles WHERE user_id = ?");
+        $stmt = $this->db->prepare("
+            SELECT id, profile_name, username, profile_image, is_kids, (pin_hash IS NOT NULL) as has_pin, is_watching, last_active_at
+            FROM profiles
+            WHERE user_id = ?
+            ORDER BY id ASC
+        ");
         $stmt->execute([$userId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
