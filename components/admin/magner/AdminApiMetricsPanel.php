@@ -191,7 +191,20 @@ final class AdminApiMetricsPanel
                 width: 100%;
                 height: 220px;
                 display: block;
-                overflow: visible;
+                overflow: hidden;
+            }
+
+            /* garante que o fundo do card do grafico seja identico ao da imagem */
+            .aapi-chart-row .aapi-section-card {
+                background: #0c1117;
+                padding: 18px 16px 14px;
+            }
+
+            .aapi-chart-row .aapi-section-card h3 {
+                color: #cbd5e1;
+                font-size: .9rem;
+                font-weight: 600;
+                margin-bottom: 10px;
             }
 
             /* ----------------------------------------------------------------
@@ -646,47 +659,103 @@ final class AdminApiMetricsPanel
             }
 
             // ------------------------------------------------------------------
-            // Grafico de linha SVG
+            // Grafico de linha SVG — estilo da imagem de referencia
             // ------------------------------------------------------------------
             function lineChart(points, key, color, height = 220) {
                 if (!points || !points.length) {
                     return `<p style="color:#64748b;font-size:.82rem;margin:0">Sem dados neste periodo.</p>`;
                 }
-                const w = 640, h = height, pad = 30;
-                const max = Math.max(1, ...points.map(p => Number(p[key] || 0)));
-                const step = points.length > 1 ? (w - pad * 2) / (points.length - 1) : 0;
-                const coords = points.map((p, i) => {
-                    const x = pad + i * step;
-                    const y = h - pad - (Number(p[key] || 0) / max) * (h - pad * 2);
-                    return [x, y];
+
+                const w      = 660;
+                const h      = height;
+                const padL   = 56;   // largura eixo Y
+                const padR   = 16;
+                const padT   = 16;
+                const padB   = 10;
+                const chartW = w - padL - padR;
+                const chartH = h - padT - padB;
+
+                const vals  = points.map(p => Number(p[key] || 0));
+                const max   = Math.max(1, ...vals);
+                const step  = points.length > 1 ? chartW / (points.length - 1) : 0;
+
+                // coordenadas de cada ponto
+                const coords = vals.map((v, i) => ({
+                    x: padL + i * step,
+                    y: padT + chartH - (v / max) * chartH,
+                }));
+
+                // polyline da linha principal
+                const linePts = coords.map(c => `${c.x.toFixed(1)},${c.y.toFixed(1)}`).join(' ');
+
+                // path do area (fechado na base)
+                const baseY   = padT + chartH;
+                const areaD   = `M ${coords[0].x.toFixed(1)},${baseY} `
+                    + coords.map(c => `L ${c.x.toFixed(1)},${c.y.toFixed(1)}`).join(' ')
+                    + ` L ${coords[coords.length - 1].x.toFixed(1)},${baseY} Z`;
+
+                // ID do gradiente unico por key para evitar conflito entre os dois graficos
+                const gId = `aapi-g-${key.replace(/[^a-z0-9]/gi, '')}`;
+
+                // labels do eixo Y — 5 marcas horizontais
+                const yTicks = [0, 0.25, 0.5, 0.75, 1].map(frac => {
+                    const val   = max * frac;
+                    const yPos  = (padT + chartH - frac * chartH).toFixed(1);
+                    const label = key.includes('bytes') ? bytes(val)
+                                : key.includes('ms')    ? ms(val)
+                                : num(val);
+                    return { yPos, label, frac };
                 });
-                const poly  = coords.map(c => c.join(',')).join(' ');
-                // area fill
-                const areaTop = coords.map(c => c.join(',')).join(' ');
-                const areaPath = `M ${coords[0][0]},${h - pad} L ${areaTop.replace(/,(\S+)/g, (_m, y, _o, _s) => `,${y}`)} `
-                    + coords.map(c => `${c[0]},${c[1]}`).join(' L ')
-                    + ` L ${coords[coords.length - 1][0]},${h - pad} Z`;
-                const fillPath = `M ${coords[0][0]},${h - pad} ` + coords.map(c => `L ${c[0]},${c[1]}`).join(' ') + ` L ${coords[coords.length-1][0]},${h-pad} Z`;
-                const dots = coords.map(([x, y]) => `<circle cx="${x}" cy="${y}" r="3.5"/>`).join('');
-                // labels Y
-                const yLabels = [0, .25, .5, .75, 1].map(frac => {
-                    const val = max * frac;
-                    const y   = h - pad - frac * (h - pad * 2);
-                    const label = key.includes('bytes') ? bytes(val) : key.includes('ms') ? ms(val) : num(val);
-                    return `<text x="${pad - 4}" y="${y + 4}" fill="#475569" font-size="10" text-anchor="end">${label}</text>
-                            <line x1="${pad}" y1="${y}" x2="${w - pad}" y2="${y}" stroke="rgba(148,163,184,.10)" stroke-dasharray="3"/>`;
-                }).join('');
-                return `<svg class="aapi-svg" viewBox="0 0 ${w} ${h}">
+
+                const gridLines = yTicks.map(({ yPos, label }) =>
+                    `<line x1="${padL}" y1="${yPos}" x2="${w - padR}" y2="${yPos}"
+                           stroke="rgba(148,163,184,.09)" stroke-dasharray="4 4"/>
+                     <text x="${padL - 6}" y="${Number(yPos) + 4}"
+                           fill="#475569" font-size="10" text-anchor="end"
+                           font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">${label}</text>`
+                ).join('');
+
+                // pontos de dados
+                const dots = coords.map(c =>
+                    `<circle cx="${c.x.toFixed(1)}" cy="${c.y.toFixed(1)}" r="3.5"
+                             fill="${color}" stroke="#0f131a" stroke-width="1.5"/>`
+                ).join('');
+
+                return `<svg class="aapi-svg" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">
                     <defs>
-                        <linearGradient id="aapi-grad-${key}" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stop-color="${color}" stop-opacity=".25"/>
-                            <stop offset="100%" stop-color="${color}" stop-opacity=".02"/>
+                        <linearGradient id="${gId}" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%"   stop-color="${color}" stop-opacity=".35"/>
+                            <stop offset="100%" stop-color="${color}" stop-opacity=".01"/>
                         </linearGradient>
+                        <clipPath id="${gId}-clip">
+                            <rect x="${padL}" y="${padT}" width="${chartW}" height="${chartH}"/>
+                        </clipPath>
                     </defs>
-                    ${yLabels}
-                    <path d="${fillPath}" fill="url(#aapi-grad-${key})"/>
-                    <polyline points="${poly}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                    <g fill="${color}">${dots}</g>
+
+                    <!-- grade horizontal -->
+                    <g clip-path="url(#${gId}-clip)">${gridLines}</g>
+
+                    <!-- area com gradiente -->
+                    <path d="${areaD}" fill="url(#${gId})" clip-path="url(#${gId}-clip)"/>
+
+                    <!-- linha principal -->
+                    <polyline points="${linePts}"
+                              fill="none"
+                              stroke="${color}"
+                              stroke-width="2"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              clip-path="url(#${gId}-clip)"/>
+
+                    <!-- labels do eixo Y (fora do clip) -->
+                    ${yTicks.map(({ yPos, label }) =>
+                        `<text x="${padL - 6}" y="${Number(yPos) + 4}"
+                               fill="#475569" font-size="10" text-anchor="end"
+                               font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">${label}</text>`
+                    ).join('')}
+
+                    <!-- pontos -->
+                    <g clip-path="url(#${gId}-clip)">${dots}</g>
                 </svg>`;
             }
 

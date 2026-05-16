@@ -22,10 +22,10 @@ final class DeviceModel
     // após parar de enviar heartbeats.
     // Heartbeat frontend ocorre a cada 30s → 45s garante 1 ciclo de folga
     // sem deixar o slot preso por um longo período após saída do usuário.
-    public const HEARTBEAT_TTL = 45;
+    public const HEARTBEAT_TTL = 90;
 
     // Após este tempo sem atividade, o registro é removido definitivamente.
-    public const CLEANUP_AFTER_SECONDS = 300;
+    public const CLEANUP_AFTER_SECONDS = 600;
 
     public function __construct(PDO $pdo)
     {
@@ -57,6 +57,8 @@ final class DeviceModel
                 KEY idx_user_device    (user_id, device_id)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
         ");
+
+        $this->ensureUniqueDeviceKey();
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -84,7 +86,9 @@ final class DeviceModel
                 ON DUPLICATE KEY UPDATE
                     is_active      = 1,
                     last_heartbeat = NOW(),
+                    session_id     = VALUES(session_id),
                     ip_partial     = VALUES(ip_partial),
+                    user_agent_hash = VALUES(user_agent_hash),
                     device_label   = VALUES(device_label)
             ");
             return $stmt->execute([
@@ -109,9 +113,9 @@ final class DeviceModel
             $stmt = $this->db->prepare("
                 UPDATE account_devices
                 SET is_active = 0
-                WHERE user_id = ? AND device_id = ? AND session_id = ?
+                WHERE user_id = ? AND device_id = ?
             ");
-            return $stmt->execute([$userId, $deviceId, $sessionId]);
+            return $stmt->execute([$userId, $deviceId]);
         } catch (Throwable) {
             return false;
         }
@@ -219,6 +223,30 @@ final class DeviceModel
             ");
         } catch (Throwable) {
             // silencioso
+        }
+    }
+
+    private function ensureUniqueDeviceKey(): void
+    {
+        try {
+            $stmt = $this->db->prepare("
+                SELECT COUNT(*) AS cnt
+                FROM information_schema.statistics
+                WHERE table_schema = DATABASE()
+                  AND table_name = 'account_devices'
+                  AND index_name = 'uk_user_device'
+            ");
+            $stmt->execute();
+            if ((int) $stmt->fetchColumn() > 0) {
+                return;
+            }
+
+            $this->db->exec("
+                ALTER TABLE account_devices
+                ADD UNIQUE KEY uk_user_device (user_id, device_id)
+            ");
+        } catch (Throwable) {
+            // Instalacoes sem permissao de ALTER continuam usando o indice antigo.
         }
     }
 }
