@@ -20,7 +20,9 @@ final class DeviceModel
 
     // Tolerância (em segundos) antes de um dispositivo ser marcado como inativo
     // após parar de enviar heartbeats.
-    public const HEARTBEAT_TTL = 90;
+    // Heartbeat frontend ocorre a cada 30s → 45s garante 1 ciclo de folga
+    // sem deixar o slot preso por um longo período após saída do usuário.
+    public const HEARTBEAT_TTL = 45;
 
     // Após este tempo sem atividade, o registro é removido definitivamente.
     public const CLEANUP_AFTER_SECONDS = 300;

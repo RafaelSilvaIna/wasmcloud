@@ -97,6 +97,16 @@ final class DeviceHook
 
         $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) ?: '/';
 
+        // ── Release automático ao voltar para /select-profile ─────────────
+        // Quando o usuário navega de volta ao seletor de perfis (ex: clicou
+        // em "Mudar Perfil"), o slot do dispositivo deve ser liberado
+        // imediatamente, sem esperar o TTL expirar. Isso impede o falso
+        // "Perfil em Uso" quando outro dispositivo tenta o mesmo perfil logo
+        // em seguida.
+        if ($uri === '/select-profile' && !empty($_SESSION['user_id'])) {
+            self::releaseIfActive($pdo, (int) $_SESSION['user_id']);
+        }
+
         // Rotas de API e isentas não recebem verificação nem output buffer
         if (self::isExempt($uri)) {
             return;
@@ -185,6 +195,52 @@ final class DeviceHook
         }
 
         return false;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────��───
+    // Release explícito de slot
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Libera o slot do dispositivo atual, se ele estiver ativo.
+     * Chamado ao navegar para /select-profile para garantir que a vaga
+     * seja imediatamente disponibilizada a outro dispositivo, sem
+     * depender do TTL do heartbeat.
+     * É idempotente: não gera erro se o dispositivo não estiver ativo.
+     */
+    private static function releaseIfActive(PDO $pdo, int $userId): void
+    {
+        try {
+            require_once __DIR__ . '/../../models/device/DeviceModel.php';
+            require_once __DIR__ . '/../../helpers/device/DeviceFingerprint.php';
+            require_once __DIR__ . '/../../services/device/DeviceService.php';
+
+            // Novo sistema: libera slot em account_devices
+            $service = new DeviceService(new DeviceModel($pdo));
+            $service->release($userId);
+
+            // Sistema legado: desativa sessão em profile_active_sessions
+            // para o perfil atualmente selecionado, se houver.
+            // Isso elimina o falso "Perfil em Uso" quando outro dispositivo
+            // tenta selecionar o mesmo perfil logo em seguida.
+            $profileId = isset($_SESSION['profile_id']) ? (int) $_SESSION['profile_id'] : 0;
+            if ($profileId > 0) {
+                try {
+                    $stmt = $pdo->prepare("
+                        UPDATE profile_active_sessions
+                           SET is_active = 0
+                         WHERE profile_id = ?
+                           AND session_id = ?
+                    ");
+                    $stmt->execute([$profileId, session_id()]);
+                } catch (\Throwable) {}
+            }
+
+            // Limpa flags de bloqueio residuais na sessão PHP
+            unset($_SESSION['device_limit_exceeded']);
+        } catch (\Throwable) {
+            // Silencioso — nunca deve bloquear a navegação
+        }
     }
 
     // ─────────────────────────────────────────────────────────────────────────

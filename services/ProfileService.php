@@ -156,12 +156,24 @@ class ProfileService
             }
         }
 
-        $activeSession = $this->authModel->hasActiveSession($profileId);
         $currentSessionId = session_id();
 
-        if ($activeSession) {
-            $existingSession = $this->authModel->getActiveProfileSession($profileId);
-            if ($existingSession && $existingSession['session_id'] !== $currentSessionId) {
+        // Antes de verificar conflito, limpa sessões órfãs do sistema antigo:
+        // qualquer sessão ativa com session_id diferente do atual que pertença
+        // ao mesmo usuário é considerada abandonada (o usuário já saiu ou
+        // trocou de dispositivo sem fazer release explícito).
+        $existingSession = $this->authModel->getActiveProfileSession($profileId);
+        if ($existingSession && $existingSession['session_id'] !== $currentSessionId) {
+            // Verifica se a sessão antiga ainda está "viva" via heartbeat
+            // do novo DeviceService. Se o slot do device antigo já foi
+            // liberado (release chamado no DeviceHook ao acessar /select-profile),
+            // desativa também o registro legado do sistema antigo.
+            $isOldSlotActive = $this->isLegacySessionStillActive($existingSession);
+            if (!$isOldSlotActive) {
+                // Sessão abandonada — limpa e permite acesso
+                $this->authModel->deactivateProfileSessions($profileId);
+            } else {
+                // Sessão genuinamente ativa em outro dispositivo
                 return [
                     'success' => false,
                     'message' => 'Este perfil ja esta sendo usado em outro dispositivo.',
@@ -237,6 +249,60 @@ class ProfileService
         }
 
         return ['success' => false, 'message' => 'Erro ao criar perfil no banco de dados.'];
+    }
+
+    /**
+     * Determina se uma sessão legada (profile_active_sessions) representa
+     * um utilizador genuinamente ativo agora, cruzando com o sistema novo
+     * de heartbeat (account_devices).
+     *
+     * Regras (basta uma para considerar ABANDONADA → retorna false):
+     *   1. last_activity da sessão legada > 2 minutos atrás → expirou.
+     *   2. O DeviceService não tem slot ativo para o mesmo session_id
+     *      (significa que o release já foi chamado ou o heartbeat expirou).
+     *
+     * Se nenhuma regra de abandono for satisfeita → retorna true (ativa).
+     */
+    private function isLegacySessionStillActive(array $session): bool
+    {
+        // Regra 1: last_activity do sistema antigo — tolerância de 2 minutos
+        // (compatível com o heartbeat de 30s + folga de 90s do DeviceModel)
+        $lastActivity = $session['last_activity'] ?? $session['created_at'] ?? null;
+        if ($lastActivity) {
+            $age = time() - strtotime($lastActivity);
+            if ($age > 120) {
+                return false; // Abandonada por inatividade
+            }
+        }
+
+        // Regra 2: cruzamento com account_devices (novo sistema)
+        // Se o PDO estiver disponível, verifica se o session_id antigo
+        // ainda tem um slot ativo no novo controle de heartbeat.
+        try {
+            $pdo = $this->authModel->getDbPipocine();
+            if ($pdo) {
+                $ttlBuffer = \DeviceModel::HEARTBEAT_TTL + 5;
+                $stmt = $pdo->prepare("
+                    SELECT COUNT(*) AS cnt
+                    FROM account_devices
+                    WHERE session_id = :sid
+                      AND is_active  = 1
+                      AND last_heartbeat >= DATE_SUB(NOW(), INTERVAL :ttl SECOND)
+                ");
+                $stmt->execute([
+                    ':sid' => $session['session_id'],
+                    ':ttl' => $ttlBuffer,
+                ]);
+                $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+                if ((int)($row['cnt'] ?? 0) === 0) {
+                    return false; // Sem slot ativo no novo sistema → abandonada
+                }
+            }
+        } catch (\Throwable) {
+            // Se a consulta falhar, assume ativa por segurança
+        }
+
+        return true;
     }
 
     public function startWatching(int $profileId): array
