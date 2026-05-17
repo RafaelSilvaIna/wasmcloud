@@ -22,6 +22,7 @@ require_once $rootDir . '/controllers/admin/AdminController.php';
 require_once $rootDir . '/controllers/admin/AdminUsageMetricsController.php';
 require_once $rootDir . '/controllers/admin/AdminApiMetricsController.php';
 require_once $rootDir . '/controllers/admin/AdminSubscriptionController.php';
+require_once $rootDir . '/controllers/admin/SecurityAdminController.php';
 
 use Controllers\Admin\AdminController;
 use Controllers\Admin\AdminSubscriptionController;
@@ -58,6 +59,15 @@ try {
 
     $model = new AdminModel($pdo);
     $auth = new AdminAuthService($model);
+    if (str_starts_with($action, 'security/') || $action === 'security/dashboard') {
+        $secController = new \Controllers\Admin\SecurityAdminController(
+            new AdminAuthService($model),
+            $pdo
+        );
+        $secController->handle($action, $method);
+        exit;
+    }
+
     if (str_starts_with($action, 'metrics/')) {
         $metrics = new AdminUsageMetricsService(new AdminUsageMetricsModel($pdo));
         $metricsController = new AdminUsageMetricsController($auth, $metrics);

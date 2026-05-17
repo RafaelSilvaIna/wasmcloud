@@ -1,5 +1,13 @@
 <?php
 require_once __DIR__ . '/../database/db.php';
+
+// =========================================================
+// GLOBAL SECURITY LAYER — Anti-DDoS / Anti-Bot
+// Deve estar logo após o bootstrap de banco ($pdo disponível)
+// =========================================================
+require_once __DIR__ . '/../middleware/GlobalSecurityMiddleware.php';
+\Middleware\GlobalSecurityMiddleware::handle($pdo ?? null);
+
 require_once __DIR__ . '/../hooks/ProfileHook.php';
 require_once __DIR__ . '/../hooks/v4/AccountStatusHook.php';
 require_once __DIR__ . '/../hooks/v4/SubscriptionHook.php';
