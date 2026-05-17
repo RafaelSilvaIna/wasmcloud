@@ -1400,7 +1400,7 @@
 
 .sp-chat-main {
     display: flex;
-    min-height: calc(100vh - 58px);
+    min-height: calc(100dvh - 64px);
 }
 
 .sp-chat-loading,
@@ -1436,6 +1436,7 @@
     display: flex;
     flex: 1;
     min-height: 0;
+    height: calc(100dvh - 64px);
 }
 
 /* Sidebar */
@@ -1526,6 +1527,7 @@
     flex-direction: column;
     min-width: 0;
     min-height: 0;
+    height: 100%;
 }
 
 .sp-chat-panel-header {
@@ -1579,6 +1581,31 @@
     max-height: none;
 }
 
+/* Professional responsive pass: keep chat usable as an app surface. */
+.sp-novo-card,
+.sp-cta-card,
+.sp-chat-panel,
+.sp-input-bar {
+    min-width: 0;
+}
+
+.sp-input--textarea {
+    min-height: 128px;
+}
+
+.sp-msg-content {
+    min-width: 0;
+}
+
+.sp-msg-bubble {
+    overflow-wrap: anywhere;
+}
+
+.sp-msg-image {
+    max-width: min(260px, 72vw);
+    height: auto;
+}
+
 /* Footer */
 .sp-footer {
     border-top: 1px solid var(--sp-border);
@@ -1599,6 +1626,12 @@
 }
 
 @media (max-width: 700px) {
+    .sp-chat-main,
+    .sp-chat-ui {
+        height: calc(100dvh - 64px);
+        min-height: 0;
+    }
+
     .sp-chat-sidebar {
         display: none;
     }
@@ -1609,6 +1642,32 @@
 
     .sp-chat-panel-header {
         padding: 12px 14px;
+    }
+
+    .sp-chat-panel-sub {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .sp-input-bar {
+        padding: 10px;
+    }
+
+    .sp-input-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: end;
+    }
+
+    .sp-input-actions {
+        gap: 5px;
+    }
+
+    .sp-icon-btn,
+    .sp-send-btn {
+        width: 36px;
+        height: 36px;
     }
 }
 
@@ -1649,6 +1708,7 @@
     .sp-cta-card {
         flex-direction: column;
         align-items: flex-start;
+        padding: 18px;
     }
 
     .sp-cta-btn {
@@ -1661,6 +1721,48 @@
     }
 
     .sp-nav-brand-name {
+        display: none;
+    }
+
+    .sp-nav-breadcrumb {
+        max-width: 52vw;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+
+    .sp-hero-inner {
+        align-items: flex-start;
+    }
+
+    .sp-hero-title {
+        font-size: 1.45rem;
+    }
+
+    .sp-novo-body,
+    .sp-steps {
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+
+    .sp-novo-actions {
+        display: grid;
+        grid-template-columns: 1fr;
+    }
+
+    .sp-novo-actions .sp-btn {
+        width: 100%;
+    }
+
+    .sp-msg-avatar {
+        display: none;
+    }
+
+    .sp-msg {
+        max-width: 94%;
+    }
+
+    .sp-msg-reply-btn {
         display: none;
     }
 }

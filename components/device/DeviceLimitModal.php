@@ -1,44 +1,13 @@
 <?php
-/**
- * components/device/DeviceLimitModal.php
- *
- * Componente visual de bloqueio por limite de dispositivos simultâneos.
- *
- * Renderização automática (app-wide):
- *   Este componente é injetado globalmente pelo DeviceHook via output
- *   buffering (ob_start). Não é necessário incluí-lo manualmente em
- *   nenhuma página — o hook captura toda a saída HTML e insere este
- *   componente imediatamente antes do </body> em todas as páginas
- *   protegidas automaticamente.
- *
- * O componente verifica automaticamente a sessão e:
- *   - Se não houver `$_SESSION['device_limit_exceeded']`, não renderiza
- *     nenhum HTML visível — apenas injeta o script de heartbeat silencioso.
- *   - Se houver, renderiza o modal de bloqueio com:
- *       • Overlay de tela cheia com desfoque
- *       • Animação de entrada suave
- *       • Contador de dispositivos ativos / limite
- *       • Botão de upgrade para o Plano Gold
- *       • Polling automático via JS (a cada 5s) para detectar liberação de vaga
- *       • Ao detectar liberação, oculta o modal sem recarregar a página
- *
- * O heartbeat JS é sempre injetado (independente do bloqueio) para manter
- * o dispositivo ativo enquanto a página estiver aberta.
- */
-
 declare(strict_types=1);
 
 $_deviceLimitData = $_SESSION['device_limit_exceeded'] ?? null;
 $_deviceIsBlocked = $_deviceLimitData !== null;
-$_deviceActive    = (int) ($_deviceLimitData['active'] ?? 0);
-$_deviceLimit     = (int) ($_deviceLimitData['limit']  ?? 1);
-$_deviceIsGold    = (bool) ($_deviceLimitData['is_gold'] ?? false);
 ?>
 
 <?php if ($_deviceIsBlocked): ?>
 <div id="pip-device-overlay" role="dialog" aria-modal="true" aria-labelledby="pip-device-title">
     <div id="pip-device-card">
-
         <p class="pdm-label" aria-hidden="true">Acesso restrito</p>
         <h1 class="pdm-title" id="pip-device-title">Esta conta ja esta em uso</h1>
         <p class="pdm-body">Outro dispositivo esta usando esta conta no momento. Assim que ele sair, o acesso sera liberado automaticamente.</p>
@@ -50,7 +19,6 @@ $_deviceIsGold    = (bool) ($_deviceLimitData['is_gold'] ?? false);
             </svg>
             Voltar
         </a>
-
     </div>
 </div>
 
@@ -70,7 +38,7 @@ $_deviceIsGold    = (bool) ($_deviceLimitData['is_gold'] ?? false);
 }
 @keyframes pdm-fade-in {
     from { opacity: 0; }
-    to   { opacity: 1; }
+    to { opacity: 1; }
 }
 
 #pip-device-card {
@@ -86,7 +54,7 @@ $_deviceIsGold    = (bool) ($_deviceLimitData['is_gold'] ?? false);
 }
 @keyframes pdm-up {
     from { opacity: 0; transform: translateY(16px); }
-    to   { opacity: 1; transform: translateY(0); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 .pdm-label {
@@ -104,7 +72,7 @@ $_deviceIsGold    = (bool) ($_deviceLimitData['is_gold'] ?? false);
     color: #f0f0f2;
     margin: 0 0 12px;
     line-height: 1.3;
-    letter-spacing: -.01em;
+    letter-spacing: 0;
 }
 
 .pdm-body {
@@ -152,54 +120,103 @@ $_deviceIsGold    = (bool) ($_deviceLimitData['is_gold'] ?? false);
 </style>
 <?php endif; ?>
 
-<!-- ════════════════════════════════════════════════════════════════════════
-     HEARTBEAT JS — Sempre injetado em páginas protegidas
-     ════════════════════════════════════════════════════════════════════════ -->
 <script>
 (function () {
     'use strict';
 
-    var HEARTBEAT_INTERVAL = 30000;
-    var isBlocked          = <?= $_deviceIsBlocked ? 'true' : 'false' ?>;
-    var hbTimer            = null;
+    var HEARTBEAT_INTERVAL = 20000;
+    var STATUS_INTERVAL = 5000;
+    var isBlocked = <?= $_deviceIsBlocked ? 'true' : 'false' ?>;
+    var hbTimer = null;
+    var statusTimer = null;
 
-    // ── Heartbeat principal ───────────────────────────────────────────────
     function sendHeartbeat() {
-        fetch('/api/devices/heartbeat', {
+        return fetch('/api/devices/heartbeat', {
             method: 'POST',
             credentials: 'same-origin',
             headers: { 'Content-Type': 'application/json' },
-            keepalive: true,
+            keepalive: true
+        }).then(function (response) {
+            return response.ok ? response.json() : null;
+        }).then(function (data) {
+            if (data && data.allowed === false && !isBlocked) {
+                window.location.reload();
+            }
+            return data;
         }).catch(function () {});
     }
 
-    // ── Inicializacao ─────────────────────────────────────────────────────
-    if (!isBlocked) {
+    function releaseCurrentDevice() {
+        if (isBlocked) return;
+
+        try {
+            if (navigator.sendBeacon) {
+                var payload = new Blob(['{}'], { type: 'application/json' });
+                navigator.sendBeacon('/api/devices/release', payload);
+                return;
+            }
+        } catch (e) {}
+
+        try {
+            fetch('/api/devices/release', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json' },
+                body: '{}',
+                keepalive: true
+            }).catch(function () {});
+        } catch (e) {}
+    }
+
+    function startHeartbeat() {
+        clearInterval(hbTimer);
         sendHeartbeat();
         hbTimer = setInterval(sendHeartbeat, HEARTBEAT_INTERVAL);
     }
 
-    // ── Release ao sair — sendBeacon e instantaneo (melhor esforco) ──────
-    // pagehide dispara ao fechar a aba/navegar, antes de qualquer unload.
-    // beforeunload e mantido como fallback para browsers mais antigos.
-    function releaseDevice() {
-        clearInterval(hbTimer);
-        navigator.sendBeacon('/api/devices/release');
+    function checkBlockedStatus() {
+        fetch('/api/devices/status', {
+            credentials: 'same-origin',
+            headers: { 'Cache-Control': 'no-store' }
+        }).then(function (response) {
+            return response.ok ? response.json() : null;
+        }).then(function (data) {
+            if (!data || data.allowed !== true) return;
+
+            clearInterval(statusTimer);
+            isBlocked = false;
+
+            var overlay = document.getElementById('pip-device-overlay');
+            if (overlay) {
+                overlay.classList.add('pdm-released');
+                setTimeout(function () { overlay.remove(); }, 320);
+            }
+
+            startHeartbeat();
+        }).catch(function () {});
     }
 
-    window.addEventListener('pagehide', releaseDevice);
-    window.addEventListener('beforeunload', releaseDevice);
+    if (isBlocked) {
+        checkBlockedStatus();
+        statusTimer = setInterval(checkBlockedStatus, STATUS_INTERVAL);
+    } else {
+        startHeartbeat();
+    }
 
-    // ── Pausa/retoma heartbeat com visibilidade da aba ───────────────────
     document.addEventListener('visibilitychange', function () {
         if (document.hidden) {
             clearInterval(hbTimer);
+            return;
+        }
+
+        if (isBlocked) {
+            checkBlockedStatus();
         } else {
-            sendHeartbeat();
-            if (!isBlocked) {
-                hbTimer = setInterval(sendHeartbeat, HEARTBEAT_INTERVAL);
-            }
+            startHeartbeat();
         }
     });
+
+    window.addEventListener('pagehide', releaseCurrentDevice);
+    window.addEventListener('beforeunload', releaseCurrentDevice);
 })();
 </script>

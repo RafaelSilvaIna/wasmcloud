@@ -6,7 +6,12 @@ namespace Models\Suporte;
 
 final class SupportChatModel
 {
-    public function __construct(private \PDO $db) {}
+    private static bool $schemaChecked = false;
+
+    public function __construct(private \PDO $db)
+    {
+        $this->ensureOperationalColumns();
+    }
 
     /** Create a new chat, returns the new row id. */
     public function create(array $data): int
@@ -73,7 +78,10 @@ final class SupportChatModel
         } elseif ($status === 'open') {
             $stmt = $this->db->prepare("
                 UPDATE support_chats
-                SET status = 'open', reopened_at = NOW(), resolved_at = NULL, resolved_by = NULL
+                SET status = 'open',
+                    reopened_at = CASE WHEN status = 'closed' THEN NOW() ELSE reopened_at END,
+                    resolved_at = NULL,
+                    resolved_by = NULL
                 WHERE id = ?
             ");
             $stmt->execute([$chatId]);
@@ -81,6 +89,19 @@ final class SupportChatModel
             $stmt = $this->db->prepare("UPDATE support_chats SET status = ? WHERE id = ?");
             $stmt->execute([$status, $chatId]);
         }
+    }
+
+    public function markAdminJoined(int $chatId, string $adminName): bool
+    {
+        $stmt = $this->db->prepare("
+            UPDATE support_chats
+               SET admin_joined_at = COALESCE(admin_joined_at, NOW()),
+                   assigned_admin = COALESCE(assigned_admin, ?)
+             WHERE id = ?
+               AND admin_joined_at IS NULL
+        ");
+        $stmt->execute([$adminName, $chatId]);
+        return $stmt->rowCount() > 0;
     }
 
     /** Increment unread counter for a given side (admin or user). */
@@ -101,19 +122,54 @@ final class SupportChatModel
     }
 
     /** List chats for admin panel with optional status filter. */
-    public function listForAdmin(?string $status, int $limit = 60, int $offset = 0): array
+    public function listForAdmin(?string $status, int $limit = 60, int $offset = 0, ?string $search = null): array
     {
-        $where = $status ? "WHERE c.status = ?" : "";
-        $params = $status ? [$status, $limit, $offset] : [$limit, $offset];
+        $where = [];
+        $params = [];
+
+        if ($status) {
+            $where[] = "c.status = ?";
+            $params[] = $status;
+        }
+
+        if ($search !== null && trim($search) !== '') {
+            $where[] = "(c.subject LIKE ? OR c.guest_name LIKE ? OR u.full_name LIKE ? OR u.email LIKE ?)";
+            $like = '%' . trim($search) . '%';
+            array_push($params, $like, $like, $like, $like);
+        }
+
+        $whereSql = $where ? 'WHERE ' . implode(' AND ', $where) : '';
+        array_push($params, $limit, $offset);
 
         $stmt = $this->db->prepare("
             SELECT c.*,
                    u.full_name   AS user_full_name,
                    u.email       AS user_email,
-                   u.avatar_url  AS user_avatar
+                   u.avatar_url  AS user_avatar,
+                   (
+                    SELECT body_encrypted
+                      FROM support_messages lm
+                     WHERE lm.chat_id = c.id
+                     ORDER BY lm.id DESC
+                     LIMIT 1
+                   ) AS last_body_encrypted,
+                   (
+                    SELECT iv
+                      FROM support_messages lm
+                     WHERE lm.chat_id = c.id
+                     ORDER BY lm.id DESC
+                     LIMIT 1
+                   ) AS last_body_iv,
+                   (
+                    SELECT sender
+                      FROM support_messages lm
+                     WHERE lm.chat_id = c.id
+                     ORDER BY lm.id DESC
+                     LIMIT 1
+                   ) AS last_sender
             FROM support_chats c
             LEFT JOIN platform_users u ON u.id = c.user_id
-            {$where}
+            {$whereSql}
             ORDER BY c.last_message_at DESC, c.created_at DESC
             LIMIT ? OFFSET ?
         ");
@@ -149,5 +205,25 @@ final class SupportChatModel
         ");
         $stmt->execute([$since]);
         return array_column($stmt->fetchAll(), 'id');
+    }
+
+    private function ensureOperationalColumns(): void
+    {
+        if (self::$schemaChecked) {
+            return;
+        }
+        self::$schemaChecked = true;
+
+        try {
+            $this->db->exec("ALTER TABLE support_chats ADD COLUMN admin_joined_at DATETIME NULL");
+        } catch (\Throwable) {}
+
+        try {
+            $this->db->exec("ALTER TABLE support_chats ADD COLUMN assigned_admin VARCHAR(120) NULL");
+        } catch (\Throwable) {}
+
+        try {
+            $this->db->exec("CREATE INDEX idx_support_chats_status_updated ON support_chats (status, updated_at)");
+        } catch (\Throwable) {}
     }
 }

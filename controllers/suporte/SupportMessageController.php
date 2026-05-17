@@ -92,6 +92,7 @@ final class SupportMessageController
 
         $imageToken  = null;
         $plaintext   = '';
+        $body        = [];
 
         // Handle multipart (file upload)
         if (!empty($_FILES['image']['tmp_name'])) {
@@ -103,6 +104,7 @@ final class SupportMessageController
                 return;
             }
             $plaintext = trim($_POST['body'] ?? '');
+            $body      = $_POST;
         } else {
             $body      = $this->body();
             $plaintext = trim($body['body'] ?? '');

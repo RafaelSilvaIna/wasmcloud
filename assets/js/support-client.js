@@ -28,6 +28,7 @@
     let replyTo      = null;
     let pendingImage = null;
     let polling      = false; // guard: only one in-flight poll at a time
+    let typingTimer  = null;
 
     // ----------------------------------------------------------------
     // INIT
@@ -197,7 +198,10 @@
             }
         });
 
-        textarea?.addEventListener('input', function () { autoResize(textarea); });
+        textarea?.addEventListener('input', function () {
+            autoResize(textarea);
+            sendUserTyping();
+        });
 
         fileInput?.addEventListener('change', function () {
             const file = fileInput.files?.[0];
@@ -310,7 +314,9 @@
                     if (!appendMessage(msg)) hasNew = true;
                 });
                 saveLastMsgId(data.messages[data.messages.length - 1].id);
-                if (!hasNew) blinkTitle('Nova mensagem');
+                if (hasNew && data.messages.some(function (msg) { return msg.sender === 'admin'; })) {
+                    blinkTitle('Nova mensagem');
+                }
             }
 
             updateTypingIndicator(data.typing ?? false);
@@ -464,6 +470,22 @@
         document.getElementById('sp-img-preview')?.classList.remove('active');
         const fi = document.getElementById('sp-file-input');
         if (fi) fi.value = '';
+    }
+
+    function sendUserTyping() {
+        if (!sessionToken || chatStatus === 'closed') return;
+
+        clearTimeout(typingTimer);
+        typingTimer = setTimeout(function () {
+            fetch(API_BASE + '/messages/typing', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Support-Token': sessionToken,
+                },
+                body: JSON.stringify({ chat_id: chatId }),
+            }).catch(function () {});
+        }, 450);
     }
 
     // ----------------------------------------------------------------

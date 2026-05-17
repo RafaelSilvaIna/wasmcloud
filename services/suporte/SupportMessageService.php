@@ -47,6 +47,12 @@ final class SupportMessageService
         // Increment unread for the opposite side
         $this->chatModel->incrementUnread($chatId, $sender === 'user' ? 'admin' : 'user');
 
+        if ($sender === 'user') {
+            $this->chatModel->setStatus($chatId, 'open');
+        } elseif ($sender === 'admin' && $senderName !== 'Sistema') {
+            $this->chatModel->setStatus($chatId, 'pending');
+        }
+
         return $msgId;
     }
 

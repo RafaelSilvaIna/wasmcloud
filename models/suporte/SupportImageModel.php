@@ -8,12 +8,12 @@ final class SupportImageModel
 {
     public function __construct(private \PDO $db) {}
 
-    /** Register an uploaded image. Expiry = +24h. Returns the token. */
+    /** Register an uploaded image. External URLs are kept for support history. */
     public function register(string $token, string $filePath, int $chatId, string $mime, int $size): void
     {
         $stmt = $this->db->prepare("
             INSERT INTO support_images (token, file_path, chat_id, mime_type, file_size, expires_at)
-            VALUES (?, ?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL 24 HOUR))
+            VALUES (?, ?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL 180 DAY))
         ");
         $stmt->execute([$token, $filePath, $chatId, $mime, $size]);
     }
@@ -35,7 +35,7 @@ final class SupportImageModel
         $paths = array_column($stmt->fetchAll(), 'file_path');
 
         foreach ($paths as $path) {
-            if ($path && is_file($path)) {
+            if ($path && !preg_match('#^https?://#i', (string) $path) && is_file($path)) {
                 @unlink($path);
             }
         }

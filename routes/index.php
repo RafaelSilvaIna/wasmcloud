@@ -51,6 +51,38 @@ if (strpos($requestUri, '/api/') === 0) {
             $authController->getStatus();
             exit;
         }
+        if ($requestUri === '/api/auth/logout' && $requestMethod === 'POST') {
+            if (!empty($_SESSION['user_id'])) {
+                require_once __DIR__ . '/../models/device/DeviceModel.php';
+                require_once __DIR__ . '/../helpers/device/DeviceFingerprint.php';
+                require_once __DIR__ . '/../services/device/DeviceService.php';
+
+                $deviceService = new \Services\Device\DeviceService(new \Models\Device\DeviceModel($pdo));
+                $deviceService->release((int) $_SESSION['user_id']);
+            }
+
+            if (!empty($_SESSION['profile_id'])) {
+                try {
+                    $pdo->prepare("
+                        UPDATE profile_active_sessions
+                        SET is_active = 0
+                        WHERE profile_id = ? AND session_id = ?
+                    ")->execute([(int) $_SESSION['profile_id'], session_id()]);
+                } catch (Throwable $e) {}
+            }
+
+            $_SESSION = [];
+            if (session_status() === PHP_SESSION_ACTIVE) {
+                session_destroy();
+            }
+
+            setcookie('cineveo_token', '', time() - 3600, '/', '', false, true);
+            setcookie('pipocine_token', '', time() - 3600, '/', '', false, true);
+
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode(['success' => true]);
+            exit;
+        }
         if ($requestUri === '/api/auth/login' && $requestMethod === 'POST') {
             $authController->login();
             exit;

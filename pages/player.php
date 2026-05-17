@@ -19,6 +19,9 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 require_once __DIR__ . '/../database/db.php';
+require_once __DIR__ . '/../helpers/player/PlayerPlanHelper.php';
+require_once __DIR__ . '/../helpers/player/PlayerCastRegistry.php';
+require_once __DIR__ . '/../helpers/player/PlayerFeatureRegistry.php';
 
 // ─── Parâmetros ───────────────────────────────────────────────────────────────
 $contentType = strtolower(trim($_GET['type'] ?? 'filme'));
@@ -92,14 +95,16 @@ $pageTitle = $isSerie
 // URL da API de vídeo (chamada pelo JS no carregamento)
 $apiUrl = "/api/v2/episode-url?id={$tmdbId}&type={$contentType}&s={$season}&e={$episode}&audio={$audio}";
 
-// Link de voltar: para série vai para a página de episódios; para filme vai para /info=<id>
-$backUrl = $isSerie
-    ? ($slug ? "/serie/{$slug}" : "/info={$tmdbId}")
-    : "/info={$tmdbId}";
+// Link de voltar: sempre retorna para a view canonica do conteudo.
+$backType = $isSerie ? 'serie' : 'filme';
+$backUrl = "/view?id={$tmdbId}&type={$backType}";
 
 $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? '';
 $embeddedBrowserPattern = '/instagram|fb_iab|fbav|fban|messenger|telegram|twitter|line\/|micromessenger|tiktok|snapchat|pinterest|linkedinapp|; wv| wv\)/i';
 $isEmbeddedBrowser = (bool) preg_match($embeddedBrowserPattern, $userAgent);
+
+$hasPremiumFillAccess = \Helpers\Player\PlayerPlanHelper::hasProAccess($pdoPipocine ?? null, (int) ($_SESSION['user_id'] ?? 0));
+$playerFeatures = \Helpers\Player\PlayerFeatureRegistry::build($hasPremiumFillAccess);
 
 ?>
 <!DOCTYPE html>
@@ -173,6 +178,7 @@ $isEmbeddedBrowser = (bool) preg_match($embeddedBrowserPattern, $userAgent);
             display: flex;
             align-items: center;
             gap: 16px;
+            min-width: 0;
         }
 
         .nav-back-btn {
@@ -217,6 +223,259 @@ $isEmbeddedBrowser = (bool) preg_match($embeddedBrowserPattern, $userAgent);
             white-space: nowrap;
         }
 
+        .nav-right {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 10px;
+            min-width: 132px;
+        }
+
+        .display-menu {
+            position: relative;
+        }
+
+        .display-menu-btn {
+            min-height: 36px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid rgba(255,255,255,.18);
+            border-radius: 4px;
+            padding: 0 12px;
+            background: rgba(12,12,14,.62);
+            color: #fff;
+            font-size: 12px;
+            font-weight: 800;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+        }
+
+        .display-menu-btn svg {
+            width: 17px;
+            height: 17px;
+            flex: 0 0 auto;
+        }
+
+        .display-menu-panel {
+            position: absolute;
+            top: calc(100% + 10px);
+            right: 0;
+            width: 250px;
+            display: none;
+            padding: 8px;
+            border: 1px solid rgba(255,255,255,.14);
+            border-radius: 6px;
+            background: rgba(9,9,11,.94);
+            box-shadow: 0 18px 48px rgba(0,0,0,.46);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+        }
+
+        .display-menu.open .display-menu-panel { display: block; }
+
+        .display-option {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border: 0;
+            border-radius: 4px;
+            padding: 10px;
+            background: transparent;
+            color: rgba(255,255,255,.72);
+            text-align: left;
+            cursor: pointer;
+        }
+
+        .display-option:hover,
+        .display-option.active {
+            background: rgba(255,255,255,.1);
+            color: #fff;
+        }
+
+        .display-option.locked {
+            cursor: not-allowed;
+            opacity: .72;
+        }
+
+        .display-option-icon {
+            width: 34px;
+            height: 34px;
+            display: grid;
+            place-items: center;
+            flex: 0 0 auto;
+            border-radius: 4px;
+            background: rgba(255,255,255,.08);
+        }
+
+        .display-option-icon svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        .display-option-text {
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .display-option-text strong {
+            font-size: 12px;
+            line-height: 1.2;
+            color: inherit;
+        }
+
+        .display-option-text span {
+            font-size: 11px;
+            line-height: 1.35;
+            color: rgba(255,255,255,.52);
+        }
+
+        .settings-menu-panel {
+            width: 330px;
+            max-height: min(72vh, 560px);
+            overflow: auto;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        .settings-menu-panel::-webkit-scrollbar {
+            width: 0;
+            height: 0;
+        }
+
+        .cast-menu-panel {
+            width: 360px;
+            max-height: min(76vh, 620px);
+            overflow: auto;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        .cast-menu-panel::-webkit-scrollbar {
+            width: 0;
+            height: 0;
+        }
+
+        .cast-option-list {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .cast-feature-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            margin-top: 5px;
+        }
+
+        .cast-feature-pill {
+            max-width: 100%;
+            padding: 3px 6px;
+            border-radius: 3px;
+            background: rgba(255,255,255,.07);
+            color: rgba(255,255,255,.58);
+            font-size: 9px;
+            font-weight: 800;
+            line-height: 1.2;
+        }
+
+        .cast-action-row {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 8px;
+            padding: 8px 0 0;
+            margin-top: 8px;
+            border-top: 1px solid rgba(255,255,255,.1);
+        }
+
+        .cast-action-btn {
+            min-height: 38px;
+            border: 0;
+            border-radius: 4px;
+            padding: 0 12px;
+            background: #fff;
+            color: #08080a;
+            font-size: 12px;
+            font-weight: 900;
+            cursor: pointer;
+        }
+
+        .cast-action-btn.secondary {
+            border: 1px solid rgba(255,255,255,.16);
+            background: rgba(255,255,255,.08);
+            color: #fff;
+        }
+
+        .cast-status {
+            min-height: 28px;
+            padding: 8px 10px 2px;
+            color: rgba(255,255,255,.58);
+            font-size: 11px;
+            line-height: 1.35;
+        }
+
+        .cast-status strong {
+            color: #fff;
+            font-weight: 900;
+        }
+
+        .settings-section {
+            padding: 6px 0;
+        }
+
+        .settings-section + .settings-section {
+            border-top: 1px solid rgba(255,255,255,.1);
+        }
+
+        .settings-title {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 7px 10px 5px;
+            color: rgba(255,255,255,.9);
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+        }
+
+        .settings-hint {
+            font-size: 10px;
+            font-weight: 700;
+            color: rgba(255,255,255,.45);
+            text-transform: none;
+        }
+
+        .settings-option-badge {
+            margin-left: auto;
+            padding: 3px 6px;
+            border-radius: 3px;
+            border: 1px solid rgba(255,255,255,.16);
+            color: rgba(255,255,255,.58);
+            font-size: 9px;
+            font-weight: 900;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+        }
+
+        .display-option.active .settings-option-badge {
+            border-color: rgba(229,9,20,.5);
+            color: #fff;
+            background: rgba(229,9,20,.28);
+        }
+
+        .display-option.locked .settings-option-badge {
+            border-color: rgba(255,255,255,.1);
+            color: rgba(255,255,255,.42);
+        }
+
         /* ─── WRAP DO PLAYER ──────────────────────────────────────────── */
         #player-wrap {
             position: relative;
@@ -242,7 +501,12 @@ $isEmbeddedBrowser = (bool) preg_match($embeddedBrowserPattern, $userAgent);
             height: 100%;
             display: block;
             object-fit: contain;
+            object-position: center center;
             background: #000;
+        }
+
+        #player-wrap.fit-cover #pip-video {
+            object-fit: cover;
         }
 
         #player-wrap::before {
@@ -372,12 +636,13 @@ $isEmbeddedBrowser = (bool) preg_match($embeddedBrowserPattern, $userAgent);
             position: absolute;
             bottom: 0; left: 0; right: 0;
             z-index: 20;
-            padding: 0 24px 20px;
+            padding: 0 24px calc(20px + env(safe-area-inset-bottom, 0px));
             background: linear-gradient(to top,
                 rgba(0,0,0,.95) 0%,
                 rgba(0,0,0,.5) 50%,
                 transparent 100%);
             transition: opacity .25s;
+            touch-action: manipulation;
         }
         #pip-controls.hidden {
             opacity: 0;
@@ -701,17 +966,55 @@ $isEmbeddedBrowser = (bool) preg_match($embeddedBrowserPattern, $userAgent);
         /* ─── MOBILE ──────────────────────────────────────────────────── */
         @media (max-width: 640px) {
             /* Navbar */
-            #pplayer-nav { padding: 0 16px; height: 56px; }
-            .nav-series-name { max-width: 200px; font-size: 13px; }
+            #pplayer-nav {
+                height: 58px;
+                gap: 8px;
+                padding: 0 max(12px, env(safe-area-inset-right, 0px)) 0 max(12px, env(safe-area-inset-left, 0px));
+            }
+            .nav-left { gap: 10px; flex: 1; }
+            .nav-series-name { max-width: 150px; font-size: 13px; }
             .nav-ep-label { font-size: 11px; }
             .nav-divider { display: none; }
+            .nav-right { min-width: auto; }
+            .display-menu-btn { min-width: 38px; padding: 0 10px; }
+            .display-menu-btn span { display: none; }
+            .display-menu-panel {
+                width: min(250px, calc(100vw - 24px));
+                right: 0;
+            }
+            .settings-menu-panel {
+                width: min(330px, calc(100vw - 24px));
+                max-height: calc(100dvh - 76px);
+            }
+            .cast-menu-panel {
+                width: min(360px, calc(100vw - 24px));
+                max-height: calc(100dvh - 76px);
+            }
 
-            #player-wrap { height: 100svh; }
+            main,
+            #player-wrap {
+                height: 100dvh;
+                min-height: 100dvh;
+            }
 
             /* Controles mais tocáveis */
-            #pip-controls { padding: 0 14px 16px; }
-            .progress-wrap { margin-bottom: 12px; }
-            .ctrl-btn { padding: 10px; }
+            #pip-controls {
+                z-index: 60;
+                padding: 0 max(14px, env(safe-area-inset-right, 0px)) calc(18px + env(safe-area-inset-bottom, 0px)) max(14px, env(safe-area-inset-left, 0px));
+            }
+            .controls-row { gap: 0; min-width: 0; }
+            .controls-left,
+            .controls-right { gap: 0; min-width: 0; }
+            .progress-wrap {
+                height: 5px;
+                margin-bottom: 12px;
+            }
+            .progress-thumb {
+                width: 15px;
+                height: 15px;
+                transform: translate(-50%, -50%) scale(1);
+            }
+            .ctrl-btn { padding: 9px; min-width: 38px; min-height: 38px; }
             .ctrl-btn svg { width: 22px; height: 22px; }
             .ctrl-btn.lg svg { width: 28px; height: 28px; }
             .volume-wrap { display: none; } /* ocultar volume no mobile */
@@ -726,11 +1029,63 @@ $isEmbeddedBrowser = (bool) preg_match($embeddedBrowserPattern, $userAgent);
             #btn-next-episode { bottom: 80px; right: 14px; font-size: 13px; padding: 9px 16px; }
         }
 
+        @media (pointer: coarse) {
+            main,
+            #player-wrap {
+                height: 100dvh;
+                min-height: 100dvh;
+            }
+
+            #pip-controls {
+                z-index: 60;
+                padding: 0 max(14px, env(safe-area-inset-right, 0px)) calc(18px + env(safe-area-inset-bottom, 0px)) max(14px, env(safe-area-inset-left, 0px));
+            }
+
+            .progress-wrap {
+                height: 5px;
+                margin-bottom: 12px;
+            }
+
+            .progress-thumb {
+                width: 15px;
+                height: 15px;
+                transform: translate(-50%, -50%) scale(1);
+            }
+
+            .ctrl-btn {
+                min-width: 38px;
+                min-height: 38px;
+                padding: 9px;
+            }
+
+            .volume-wrap { display: none; }
+        }
+
         /* ─── FULLSCREEN / LANDSCAPE no mobile ───────────────────────── */
         @media (max-width: 640px) and (orientation: landscape) {
+            #pplayer-nav { height: 50px; }
+            .nav-series-name { max-width: 220px; }
             #player-wrap {
                 aspect-ratio: unset;
-                height: 100svh;
+                height: 100dvh;
+                min-height: 100dvh;
+            }
+            #pip-controls {
+                padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+            }
+        }
+
+        @media (pointer: coarse) and (orientation: landscape) {
+            #pplayer-nav { height: 50px; }
+            .nav-series-name { max-width: 220px; }
+            #pip-controls {
+                padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+            }
+            .display-menu-panel,
+            .settings-menu-panel,
+            .cast-menu-panel {
+                max-height: calc(100dvh - 66px);
+                overflow: auto;
             }
         }
 
@@ -757,6 +1112,116 @@ $isEmbeddedBrowser = (bool) preg_match($embeddedBrowserPattern, $userAgent);
             <?php if ($isSerie): ?>
             <span class="nav-ep-label">T<?php echo $season; ?> &bull; Ep. <?php echo $episode; ?><?php if ($episodeName): ?> &mdash; <?php echo htmlspecialchars($episodeName); ?><?php endif; ?></span>
             <?php endif; ?>
+        </div>
+    </div>
+    <div class="nav-right">
+        <div class="display-menu" id="display-menu">
+            <button class="display-menu-btn" id="display-menu-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Modo de tela">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path stroke-linecap="round" stroke-linejoin="round" d="M8 9h8v6H8z"/></svg>
+                <span>Tela</span>
+            </button>
+            <div class="display-menu-panel" id="display-menu-panel" role="menu" aria-label="Modo de exibicao">
+                <button class="display-option active" type="button" data-fit-mode="contain" role="menuitemradio" aria-checked="true">
+                    <span class="display-option-icon" aria-hidden="true">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><rect x="4" y="6" width="16" height="12" rx="2"/><path stroke-linecap="round" d="M8 12h8"/></svg>
+                    </span>
+                    <span class="display-option-text">
+                        <strong>Original</strong>
+                        <span>Mostra o video inteiro.</span>
+                    </span>
+                </button>
+                <button class="display-option<?php echo $hasPremiumFillAccess ? '' : ' locked'; ?>" type="button" data-fit-mode="cover" role="menuitemradio" aria-checked="false" aria-disabled="<?php echo $hasPremiumFillAccess ? 'false' : 'true'; ?>">
+                    <span class="display-option-icon" aria-hidden="true">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path stroke-linecap="round" stroke-linejoin="round" d="M8 5v14M16 5v14"/></svg>
+                    </span>
+                    <span class="display-option-text">
+                        <strong>Preencher tela</strong>
+                        <span><?php echo $hasPremiumFillAccess ? 'Remove barras sem distorcer.' : 'Disponivel no plano pago ou cortesia.'; ?></span>
+                    </span>
+                </button>
+            </div>
+        </div>
+        <div class="display-menu player-settings-menu" id="player-settings-menu">
+            <button class="display-menu-btn" id="player-settings-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Ajustes do player">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15.5A3.5 3.5 0 1112 8a3.5 3.5 0 010 7.5z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.4 15a1.7 1.7 0 00.34 1.87l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.7 1.7 0 00-1.87-.34 1.7 1.7 0 00-1.04 1.56V21a2 2 0 01-4 0v-.08a1.7 1.7 0 00-1.04-1.56 1.7 1.7 0 00-1.87.34l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.7 1.7 0 004.6 15a1.7 1.7 0 00-1.56-1.04H3a2 2 0 010-4h.08A1.7 1.7 0 004.6 8a1.7 1.7 0 00-.34-1.87l-.06-.06a2 2 0 012.83-2.83l.06.06A1.7 1.7 0 008.96 3.6 1.7 1.7 0 0010 2.04V2a2 2 0 014 0v.08a1.7 1.7 0 001.04 1.56 1.7 1.7 0 001.87-.34l.06-.06a2 2 0 012.83 2.83l-.06.06A1.7 1.7 0 0019.4 8c.18.48.62.82 1.14.88H21a2 2 0 010 4h-.46A1.7 1.7 0 0019.4 15z"/></svg>
+                <span>Ajustes</span>
+            </button>
+            <div class="display-menu-panel settings-menu-panel" id="player-settings-panel" role="menu" aria-label="Ajustes de audio e internet">
+                <div class="settings-section">
+                    <div class="settings-title">
+                        <span>Audio</span>
+                        <span class="settings-hint">qualidade</span>
+                    </div>
+                    <?php foreach ($playerFeatures['audio'] as $feature): ?>
+                    <button class="display-option player-feature-option<?php echo $feature['enabled'] ? '' : ' locked'; ?><?php echo $feature['id'] === 'standard' ? ' active' : ''; ?>" type="button" data-feature-group="audio" data-feature-id="<?php echo htmlspecialchars($feature['id']); ?>" role="menuitemradio" aria-checked="<?php echo $feature['id'] === 'standard' ? 'true' : 'false'; ?>" aria-disabled="<?php echo $feature['enabled'] ? 'false' : 'true'; ?>">
+                        <span class="display-option-icon" aria-hidden="true">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 18V6l8 6-8 6z"/><path stroke-linecap="round" stroke-linejoin="round" d="M4 9v6"/></svg>
+                        </span>
+                        <span class="display-option-text">
+                            <strong><?php echo htmlspecialchars($feature['label']); ?></strong>
+                            <span><?php echo htmlspecialchars($feature['enabled'] ? $feature['description'] : 'Disponivel no plano pago ou cortesia.'); ?></span>
+                        </span>
+                        <span class="settings-option-badge"><?php echo $feature['tier'] === 'free' ? 'Free' : 'Pro'; ?></span>
+                    </button>
+                    <?php endforeach; ?>
+                </div>
+                <div class="settings-section">
+                    <div class="settings-title">
+                        <span>Internet</span>
+                        <span class="settings-hint">dados</span>
+                    </div>
+                    <?php foreach ($playerFeatures['data'] as $feature): ?>
+                    <button class="display-option player-feature-option<?php echo $feature['enabled'] ? '' : ' locked'; ?><?php echo $feature['id'] === 'standard' ? ' active' : ''; ?>" type="button" data-feature-group="data" data-feature-id="<?php echo htmlspecialchars($feature['id']); ?>" role="menuitemradio" aria-checked="<?php echo $feature['id'] === 'standard' ? 'true' : 'false'; ?>" aria-disabled="<?php echo $feature['enabled'] ? 'false' : 'true'; ?>">
+                        <span class="display-option-icon" aria-hidden="true">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 17h16"/><path stroke-linecap="round" stroke-linejoin="round" d="M7 13l3-3 3 3 4-6"/></svg>
+                        </span>
+                        <span class="display-option-text">
+                            <strong><?php echo htmlspecialchars($feature['label']); ?></strong>
+                            <span><?php echo htmlspecialchars($feature['enabled'] ? $feature['description'] : 'Disponivel no plano pago ou cortesia.'); ?></span>
+                        </span>
+                        <span class="settings-option-badge"><?php echo $feature['tier'] === 'free' ? 'Free' : 'Pro'; ?></span>
+                    </button>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        </div>
+        <div class="display-menu cast-menu" id="cast-menu">
+            <button class="display-menu-btn" id="cast-menu-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Transmissao para TV">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16a1 1 0 011 1v10a1 1 0 01-1 1h-5"/><path stroke-linecap="round" stroke-linejoin="round" d="M4 17a5 5 0 015 5"/><path stroke-linecap="round" stroke-linejoin="round" d="M4 13a9 9 0 019 9"/><path stroke-linecap="round" stroke-linejoin="round" d="M4 21h.01"/></svg>
+                <span>Transmitir</span>
+            </button>
+            <div class="display-menu-panel cast-menu-panel" id="cast-menu-panel" role="menu" aria-label="Transmissao de video">
+                <div class="settings-section">
+                    <div class="settings-title">
+                        <span>Transmissao</span>
+                        <span class="settings-hint">TV</span>
+                    </div>
+                    <div class="cast-option-list">
+                        <?php foreach ($playerFeatures['cast'] as $feature): ?>
+                        <button class="display-option player-feature-option<?php echo $feature['enabled'] ? '' : ' locked'; ?><?php echo $feature['id'] === 'tv_standard' ? ' active' : ''; ?>" type="button" data-feature-group="cast" data-feature-id="<?php echo htmlspecialchars($feature['id']); ?>" role="menuitemradio" aria-checked="<?php echo $feature['id'] === 'tv_standard' ? 'true' : 'false'; ?>" aria-disabled="<?php echo $feature['enabled'] ? 'false' : 'true'; ?>">
+                            <span class="display-option-icon" aria-hidden="true">
+                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16v10H4z"/><path stroke-linecap="round" stroke-linejoin="round" d="M8 21h8"/></svg>
+                            </span>
+                            <span class="display-option-text">
+                                <strong><?php echo htmlspecialchars($feature['label']); ?></strong>
+                                <span><?php echo htmlspecialchars($feature['enabled'] ? $feature['description'] : 'Disponivel no plano pago ou cortesia.'); ?></span>
+                                <span class="cast-feature-list" aria-hidden="true">
+                                    <?php foreach (array_slice($feature['features'], 0, 4) as $item): ?>
+                                    <span class="cast-feature-pill"><?php echo htmlspecialchars($item); ?></span>
+                                    <?php endforeach; ?>
+                                </span>
+                            </span>
+                            <span class="settings-option-badge"><?php echo $feature['tier'] === 'free' ? 'Free' : 'Pro'; ?></span>
+                        </button>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+                <div class="cast-status" id="cast-status">Escolha um perfil e conecte uma TV compativel.</div>
+                <div class="cast-action-row">
+                    <button class="cast-action-btn" type="button" id="cast-connect-btn">Conectar TV</button>
+                    <button class="cast-action-btn secondary" type="button" id="cast-stop-btn">Parar</button>
+                </div>
+            </div>
         </div>
     </div>
 </nav>
@@ -810,7 +1275,7 @@ $isEmbeddedBrowser = (bool) preg_match($embeddedBrowserPattern, $userAgent);
     </div>
 
     <!-- Elemento de vídeo -->
-    <video id="pip-video" preload="metadata" playsinline></video>
+    <video id="pip-video" preload="metadata" playsinline x-webkit-airplay="allow"></video>
 
     <!-- Toast feedback -->
     <div id="pip-toast"></div>
@@ -900,6 +1365,8 @@ $isEmbeddedBrowser = (bool) preg_match($embeddedBrowserPattern, $userAgent);
     const CURRENT_S      = <?php echo $season; ?>;
     const CURRENT_E      = <?php echo $episode; ?>;
     const IS_EMBEDDED_BROWSER = <?php echo $isEmbeddedBrowser ? 'true' : 'false'; ?>;
+    const CAN_PREMIUM_FILL = <?php echo $hasPremiumFillAccess ? 'true' : 'false'; ?>;
+    const PLAYER_FEATURES = <?php echo json_encode($playerFeatures, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?>;
     let   AUDIO          = <?php echo json_encode($audio); ?>;
 
     // Progresso inicial: lê ?t= da URL (link "Continua Assistindo") ou usa a API
@@ -933,6 +1400,15 @@ $isEmbeddedBrowser = (bool) preg_match($embeddedBrowserPattern, $userAgent);
     const audioSwitcher  = document.getElementById('audio-switcher');
     const openExternalBrowser = document.getElementById('open-external-browser');
     const copyPlayerLink = document.getElementById('copy-player-link');
+    const displayMenu    = document.getElementById('display-menu');
+    const displayMenuBtn = document.getElementById('display-menu-btn');
+    const settingsMenu   = document.getElementById('player-settings-menu');
+    const settingsBtn    = document.getElementById('player-settings-btn');
+    const castMenu       = document.getElementById('cast-menu');
+    const castMenuBtn    = document.getElementById('cast-menu-btn');
+    const castConnectBtn = document.getElementById('cast-connect-btn');
+    const castStopBtn    = document.getElementById('cast-stop-btn');
+    const castStatus     = document.getElementById('cast-status');
 
     let hls           = null;
     let nextEpData    = null;
@@ -940,6 +1416,15 @@ $isEmbeddedBrowser = (bool) preg_match($embeddedBrowserPattern, $userAgent);
     let isDragging    = false;
     let toastTimer    = null;
     let isSeeking     = false;
+    let activeAudioMode = 'standard';
+    let activeDataMode = 'standard';
+    let activeCastMode = 'tv_standard';
+    let audioEngine = null;
+    let currentMediaUrl = '';
+    let currentMediaType = '';
+    let googleCastSdkPromise = null;
+    let googleCastInitialized = false;
+    let castReconnectAttempts = 0;
 
     function currentAbsoluteUrl() {
         return window.location.href;
@@ -997,6 +1482,756 @@ $isEmbeddedBrowser = (bool) preg_match($embeddedBrowserPattern, $userAgent);
         toastTimer = setTimeout(() => toast.classList.remove('show'), 1800);
     }
 
+    function isMobileDevice() {
+        return /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) || window.innerWidth < 768;
+    }
+
+    function isFullscreen() {
+        return !!document.fullscreenElement || !!document.webkitFullscreenElement;
+    }
+
+    async function requestPlayerFullscreen() {
+        const request = playerWrap.requestFullscreen || playerWrap.webkitRequestFullscreen;
+        if (!request) {
+            if (video.webkitEnterFullscreen && isMobileDevice()) video.webkitEnterFullscreen();
+            return;
+        }
+
+        try {
+            await request.call(playerWrap, { navigationUI: 'hide' });
+        } catch (_) {
+            await request.call(playerWrap);
+        }
+    }
+
+    async function lockLandscape() {
+        if (!isMobileDevice() || !screen.orientation?.lock) return;
+        try {
+            await screen.orientation.lock('landscape');
+        } catch (_) {}
+    }
+
+    async function enterLandscapeFullscreen(silent = false) {
+        try {
+            if (!isFullscreen()) await requestPlayerFullscreen();
+            await lockLandscape();
+            showControls();
+        } catch (_) {
+            if (!silent) showToast('Toque em tela cheia para virar o player.');
+        }
+    }
+
+    let mobileFullscreenPrimed = false;
+    function primeMobileLandscapeFullscreen() {
+        if (!isMobileDevice() || mobileFullscreenPrimed) return;
+        mobileFullscreenPrimed = true;
+
+        enterLandscapeFullscreen(true);
+
+        const retry = () => enterLandscapeFullscreen(true);
+        ['pointerup', 'touchend', 'click'].forEach(eventName => {
+            playerWrap.addEventListener(eventName, retry, { once: true, passive: true });
+        });
+    }
+
+    function applyFitMode(mode, persist = true) {
+        const normalized = mode === 'cover' ? 'cover' : 'contain';
+        if (normalized === 'cover' && !CAN_PREMIUM_FILL) {
+            showToast('Recurso disponivel no plano pago ou cortesia.');
+            return;
+        }
+
+        playerWrap.classList.toggle('fit-cover', normalized === 'cover');
+        document.querySelectorAll('[data-fit-mode]').forEach(option => {
+            const active = option.dataset.fitMode === normalized;
+            option.classList.toggle('active', active);
+            option.setAttribute('aria-checked', String(active));
+        });
+
+        if (persist && CAN_PREMIUM_FILL) {
+            try { localStorage.setItem('pipocine-player-fit-mode', normalized); } catch (_) {}
+        }
+        if (persist) showToast(normalized === 'cover' ? 'Preenchendo tela sem distorcer.' : 'Formato original.');
+    }
+
+    function setupDisplayMenu() {
+        if (!displayMenu || !displayMenuBtn) return;
+
+        displayMenuBtn.addEventListener('click', (event) => {
+            event.stopPropagation();
+            const open = displayMenu.classList.toggle('open');
+            settingsMenu?.classList.remove('open');
+            settingsBtn?.setAttribute('aria-expanded', 'false');
+            castMenu?.classList.remove('open');
+            castMenuBtn?.setAttribute('aria-expanded', 'false');
+            displayMenuBtn.setAttribute('aria-expanded', String(open));
+            showControls();
+        });
+
+        displayMenu.addEventListener('click', (event) => event.stopPropagation());
+
+        document.addEventListener('click', () => {
+            displayMenu.classList.remove('open');
+            displayMenuBtn.setAttribute('aria-expanded', 'false');
+            settingsMenu?.classList.remove('open');
+            settingsBtn?.setAttribute('aria-expanded', 'false');
+            castMenu?.classList.remove('open');
+            castMenuBtn?.setAttribute('aria-expanded', 'false');
+        });
+
+        document.querySelectorAll('[data-fit-mode]').forEach(option => {
+            option.addEventListener('click', () => {
+                if (option.classList.contains('locked')) {
+                    showToast('Assine ou use uma cortesia ativa para liberar.');
+                    return;
+                }
+                applyFitMode(option.dataset.fitMode || 'contain');
+                displayMenu.classList.remove('open');
+                displayMenuBtn.setAttribute('aria-expanded', 'false');
+            });
+        });
+
+        if (CAN_PREMIUM_FILL) {
+            try {
+                applyFitMode(localStorage.getItem('pipocine-player-fit-mode') || 'contain', false);
+            } catch (_) {
+                applyFitMode('contain', false);
+            }
+        }
+    }
+
+    function getFeature(group, id) {
+        return (PLAYER_FEATURES[group] || []).find(feature => feature.id === id) || null;
+    }
+
+    function firstEnabledFeature(group) {
+        return (PLAYER_FEATURES[group] || []).find(feature => feature.enabled) || null;
+    }
+
+    function getStoredFeature(group, fallback) {
+        try {
+            const stored = localStorage.getItem(`pipocine-player-${group}-mode`);
+            const feature = stored ? getFeature(group, stored) : null;
+            return feature && feature.enabled ? stored : fallback;
+        } catch (_) {
+            return fallback;
+        }
+    }
+
+    function persistFeature(group, id) {
+        try { localStorage.setItem(`pipocine-player-${group}-mode`, id); } catch (_) {}
+    }
+
+    function mediaCanUseWebAudio() {
+        const source = video.currentSrc || video.src || currentMediaUrl || '';
+        if (!source) return false;
+
+        try {
+            const url = new URL(source, window.location.href);
+            if (url.protocol === 'blob:' || url.protocol === 'data:') return true;
+            return url.origin === window.location.origin;
+        } catch (_) {
+            return false;
+        }
+    }
+
+    function fallbackToStandardAudio(message, persist = true) {
+        activeAudioMode = 'standard';
+        updateFeatureMenuState('audio', activeAudioMode);
+        if (persist) persistFeature('audio', activeAudioMode);
+        if (message) showToast(message);
+    }
+
+    function updateFeatureMenuState(group, id) {
+        document.querySelectorAll(`[data-feature-group="${group}"]`).forEach(option => {
+            const active = option.dataset.featureId === id;
+            option.classList.toggle('active', active);
+            option.setAttribute('aria-checked', String(active));
+        });
+    }
+
+    function setupSettingsMenu() {
+        if (!settingsMenu || !settingsBtn) return;
+
+        settingsBtn.addEventListener('click', (event) => {
+            event.stopPropagation();
+            const open = settingsMenu.classList.toggle('open');
+            displayMenu?.classList.remove('open');
+            displayMenuBtn?.setAttribute('aria-expanded', 'false');
+            castMenu?.classList.remove('open');
+            castMenuBtn?.setAttribute('aria-expanded', 'false');
+            settingsBtn.setAttribute('aria-expanded', String(open));
+            showControls();
+        });
+
+        settingsMenu.addEventListener('click', (event) => event.stopPropagation());
+
+        document.querySelectorAll('[data-feature-group][data-feature-id]').forEach(option => {
+            option.addEventListener('click', () => {
+                const group = option.dataset.featureGroup;
+                const id = option.dataset.featureId;
+                const feature = getFeature(group, id);
+
+                if (!feature || option.classList.contains('locked') || !feature.enabled) {
+                    showToast('Disponivel no plano pago ou cortesia.');
+                    return;
+                }
+
+                if (group === 'audio') {
+                    applyAudioMode(id, true);
+                } else if (group === 'data') {
+                    applyDataMode(id, true);
+                } else if (group === 'cast') {
+                    applyCastMode(id, true);
+                }
+            });
+        });
+
+        activeAudioMode = getStoredFeature('audio', firstEnabledFeature('audio')?.id || 'standard');
+        activeDataMode = getStoredFeature('data', firstEnabledFeature('data')?.id || 'standard');
+        activeCastMode = getStoredFeature('cast', firstEnabledFeature('cast')?.id || 'tv_standard');
+        updateFeatureMenuState('audio', activeAudioMode);
+        updateFeatureMenuState('data', activeDataMode);
+        updateFeatureMenuState('cast', activeCastMode);
+
+        const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+        if (connection?.addEventListener) {
+            connection.addEventListener('change', () => {
+                if (activeDataMode === 'standard') applyHlsDataMode();
+            });
+        }
+
+        ['pointerup', 'touchend', 'click', 'play'].forEach(eventName => {
+            video.addEventListener(eventName, () => {
+                if (audioEngine?.context?.state === 'suspended') {
+                    audioEngine.context.resume().catch(() => {});
+                }
+            }, { passive: true });
+        });
+
+        if (activeAudioMode !== 'standard') {
+            video.addEventListener('play', () => applyAudioMode(activeAudioMode, false), { once: true });
+        }
+    }
+
+    function disconnectAudioEngine() {
+        if (!audioEngine) return;
+        audioEngine.nodes.forEach(node => {
+            try { node.disconnect(); } catch (_) {}
+        });
+        try { audioEngine.source.disconnect(); } catch (_) {}
+        audioEngine.nodes = [];
+    }
+
+    function initAudioEngine() {
+        if (audioEngine) return audioEngine;
+
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContextClass) {
+            showToast('Audio avancado indisponivel neste navegador.');
+            return null;
+        }
+
+        try {
+            const context = new AudioContextClass();
+            audioEngine = {
+                context,
+                source: context.createMediaElementSource(video),
+                nodes: [],
+            };
+            return audioEngine;
+        } catch (_) {
+            showToast('Este navegador bloqueou o processamento de audio.');
+            return null;
+        }
+    }
+
+    function setAudioParam(param, value) {
+        if (!param || value === undefined || value === null) return;
+        try { param.setValueAtTime(value, audioEngine.context.currentTime); } catch (_) { param.value = value; }
+    }
+
+    function createFilters(filters) {
+        return (filters || []).map(config => {
+            const node = audioEngine.context.createBiquadFilter();
+            node.type = config.type || 'peaking';
+            setAudioParam(node.frequency, Number(config.frequency || 1000));
+            setAudioParam(node.Q, Number(config.q || 0.7));
+            setAudioParam(node.gain, Number(config.gain || 0));
+            return node;
+        });
+    }
+
+    function createCompressor(config) {
+        if (!config) return null;
+        const node = audioEngine.context.createDynamicsCompressor();
+        setAudioParam(node.threshold, Number(config.threshold ?? -18));
+        setAudioParam(node.knee, Number(config.knee ?? 20));
+        setAudioParam(node.ratio, Number(config.ratio ?? 4));
+        setAudioParam(node.attack, Number(config.attack ?? 0.006));
+        setAudioParam(node.release, Number(config.release ?? 0.24));
+        return node;
+    }
+
+    function connectLinearAudioGraph(params) {
+        const nodes = [
+            ...createFilters(params.filters),
+            createCompressor(params.compressor),
+            audioEngine.context.createGain(),
+        ].filter(Boolean);
+
+        const master = nodes[nodes.length - 1];
+        setAudioParam(master.gain, Number(params.gain || 1));
+
+        let previous = audioEngine.source;
+        nodes.forEach(node => {
+            previous.connect(node);
+            previous = node;
+        });
+        previous.connect(audioEngine.context.destination);
+        audioEngine.nodes = nodes;
+    }
+
+    function connectSurroundGraph(params) {
+        const context = audioEngine.context;
+        const splitter = context.createChannelSplitter(2);
+        const merger = context.createChannelMerger(2);
+        const leftDelay = context.createDelay(0.05);
+        const rightDelay = context.createDelay(0.05);
+        const leftCross = context.createGain();
+        const rightCross = context.createGain();
+        const filters = createFilters(params.filters);
+        const compressor = createCompressor(params.compressor);
+        const master = context.createGain();
+        const delay = Number(params.delay || 0.016);
+        const crossGain = Number(params.crossGain || 0.18);
+
+        setAudioParam(leftDelay.delayTime, delay);
+        setAudioParam(rightDelay.delayTime, delay);
+        setAudioParam(leftCross.gain, crossGain);
+        setAudioParam(rightCross.gain, crossGain);
+        setAudioParam(master.gain, Number(params.gain || 1));
+
+        audioEngine.source.connect(splitter);
+        splitter.connect(merger, 0, 0);
+        splitter.connect(merger, 1, 1);
+        splitter.connect(leftDelay, 0);
+        leftDelay.connect(leftCross);
+        leftCross.connect(merger, 0, 1);
+        splitter.connect(rightDelay, 1);
+        rightDelay.connect(rightCross);
+        rightCross.connect(merger, 0, 0);
+
+        let previous = merger;
+        [...filters, compressor, master].filter(Boolean).forEach(node => {
+            previous.connect(node);
+            previous = node;
+        });
+        previous.connect(context.destination);
+
+        audioEngine.nodes = [splitter, merger, leftDelay, rightDelay, leftCross, rightCross, ...filters, compressor, master].filter(Boolean);
+    }
+
+    function applyAudioMode(id, persist = true) {
+        const feature = getFeature('audio', id) || getFeature('audio', 'standard');
+        if (!feature || !feature.enabled) {
+            showToast('Disponivel no plano pago ou cortesia.');
+            return;
+        }
+
+        if (feature.id !== 'standard' && !mediaCanUseWebAudio()) {
+            fallbackToStandardAudio('Audio avancado indisponivel nesta fonte. Volume normal mantido.');
+            return;
+        }
+
+        activeAudioMode = feature.id;
+        updateFeatureMenuState('audio', activeAudioMode);
+        if (persist) persistFeature('audio', activeAudioMode);
+
+        if (feature.id === 'standard' && !audioEngine) {
+            if (persist) showToast('Audio padrao.');
+            return;
+        }
+
+        if (feature.id === 'standard' && !mediaCanUseWebAudio()) {
+            if (persist) showToast('Audio padrao.');
+            return;
+        }
+
+        const engine = initAudioEngine();
+        if (!engine) {
+            fallbackToStandardAudio('', persist);
+            return;
+        }
+
+        disconnectAudioEngine();
+        const params = feature.params || {};
+        if (params.graph === 'surround') {
+            connectSurroundGraph(params);
+        } else {
+            connectLinearAudioGraph(params);
+        }
+
+        if (engine.context.state === 'suspended') {
+            engine.context.resume().catch(() => {});
+        }
+
+        if (persist) showToast(feature.label);
+    }
+
+    function applyDataMode(id, persist = true) {
+        const feature = getFeature('data', id) || getFeature('data', 'standard');
+        if (!feature || !feature.enabled) {
+            showToast('Disponivel no plano pago ou cortesia.');
+            return;
+        }
+
+        activeDataMode = feature.id;
+        updateFeatureMenuState('data', activeDataMode);
+        if (persist) persistFeature('data', activeDataMode);
+        applyHlsDataMode();
+        if (persist) showToast(feature.label);
+    }
+
+    function setupCastMenu() {
+        if (!castMenu || !castMenuBtn) return;
+
+        castMenuBtn.addEventListener('click', (event) => {
+            event.stopPropagation();
+            const open = castMenu.classList.toggle('open');
+            displayMenu?.classList.remove('open');
+            settingsMenu?.classList.remove('open');
+            displayMenuBtn?.setAttribute('aria-expanded', 'false');
+            settingsBtn?.setAttribute('aria-expanded', 'false');
+            castMenuBtn.setAttribute('aria-expanded', String(open));
+            updateCastStatus();
+            showControls();
+        });
+
+        castMenu.addEventListener('click', (event) => event.stopPropagation());
+        castConnectBtn?.addEventListener('click', () => connectToTv());
+        castStopBtn?.addEventListener('click', () => stopCasting());
+        setupCastAvailability();
+        updateCastStatus();
+    }
+
+    function isSlowConnection() {
+        const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+        return Boolean(connection?.saveData || ['slow-2g', '2g', '3g'].includes(connection?.effectiveType));
+    }
+
+    function applyCastMode(id, persist = true) {
+        const feature = getFeature('cast', id) || getFeature('cast', 'tv_standard');
+        if (!feature || !feature.enabled) {
+            showToast('Disponivel no plano pago ou cortesia.');
+            return;
+        }
+
+        activeCastMode = feature.id;
+        updateFeatureMenuState('cast', activeCastMode);
+        if (persist) persistFeature('cast', activeCastMode);
+
+        const params = feature.params || {};
+        const dataMode = params.slowNetworkDataMode && isSlowConnection()
+            ? params.slowNetworkDataMode
+            : params.preferredDataMode;
+
+        if (dataMode && getFeature('data', dataMode)?.enabled) {
+            applyDataMode(dataMode, false);
+        }
+
+        if (params.preferredAudioMode && getFeature('audio', params.preferredAudioMode)?.enabled) {
+            applyAudioMode(params.preferredAudioMode, false);
+        }
+
+        updateCastStatus(`${feature.label} selecionado. Conecte uma TV compativel.`);
+        if (persist) showToast(feature.label);
+    }
+
+    function updateCastStatus(message = '') {
+        if (!castStatus) return;
+        const feature = getFeature('cast', activeCastMode) || getFeature('cast', 'tv_standard');
+        const suffix = feature ? `Perfil: ${feature.label}.` : '';
+        castStatus.textContent = message || `${suffix} Use AirPlay, Chromecast ou Remote Playback quando disponivel.`;
+    }
+
+    function mediaUrlForCast() {
+        const source = currentMediaUrl || video.currentSrc || video.src || '';
+        if (!source) return '';
+        try {
+            return new URL(source, window.location.href).href;
+        } catch (_) {
+            return source;
+        }
+    }
+
+    function castContentType(url, mediaType) {
+        const lower = String(url || '').split('?')[0].toLowerCase();
+        const type = String(mediaType || '').toLowerCase();
+        if (type === 'm3u8' || lower.endsWith('.m3u8')) return 'application/x-mpegURL';
+        if (type === 'webm' || lower.endsWith('.webm')) return 'video/webm';
+        if (type === 'mkv' || lower.endsWith('.mkv')) return 'video/x-matroska';
+        return 'video/mp4';
+    }
+
+    function setupCastAvailability() {
+        if (video.remote?.addEventListener) {
+            video.remote.addEventListener('connect', () => updateCastStatus('Transmitindo pela TV.'));
+            video.remote.addEventListener('connecting', () => updateCastStatus('Conectando com a TV...'));
+            video.remote.addEventListener('disconnect', () => {
+                const feature = getFeature('cast', activeCastMode);
+                updateCastStatus(feature?.params?.reconnect ? 'TV desconectada. Tentando manter o perfil ativo.' : 'Transmissao encerrada.');
+            });
+        }
+
+        if (video.remote?.watchAvailability) {
+            video.remote.watchAvailability((available) => {
+                if (available) updateCastStatus('TV detectada. Toque em Conectar TV.');
+            }).catch(() => {});
+        }
+
+        video.addEventListener('webkitplaybacktargetavailabilitychanged', (event) => {
+            if (event.availability === 'available') updateCastStatus('AirPlay disponivel. Toque em Conectar TV.');
+        });
+
+        video.addEventListener('webkitcurrentplaybacktargetiswirelesschanged', () => {
+            updateCastStatus(video.webkitCurrentPlaybackTargetIsWireless ? 'Transmitindo por AirPlay.' : 'AirPlay encerrado.');
+        });
+    }
+
+    async function connectToTv() {
+        const feature = getFeature('cast', activeCastMode) || getFeature('cast', 'tv_standard');
+        if (!feature?.enabled) {
+            showToast('Disponivel no plano pago ou cortesia.');
+            return;
+        }
+
+        applyCastMode(feature.id, false);
+
+        if (!mediaUrlForCast()) {
+            updateCastStatus('Aguarde o video carregar antes de transmitir.');
+            showToast('Aguarde o video carregar.');
+            return;
+        }
+
+        updateCastStatus('Procurando TVs compativeis...');
+
+        if (typeof video.webkitShowPlaybackTargetPicker === 'function') {
+            try {
+                video.webkitShowPlaybackTargetPicker();
+                updateCastStatus('Selecione a TV pelo AirPlay.');
+                return;
+            } catch (_) {}
+        }
+
+        if (await startGoogleCast()) return;
+        if (await startRemotePlayback()) return;
+
+        updateCastStatus('Nenhuma API de transmissao foi liberada neste navegador.');
+        showToast('Transmissao indisponivel neste navegador.');
+    }
+
+    async function startRemotePlayback() {
+        if (!video.remote?.prompt) return false;
+        try {
+            await video.remote.prompt();
+            updateCastStatus('Selecione a TV detectada pelo navegador.');
+            return true;
+        } catch (_) {
+            return false;
+        }
+    }
+
+    function loadGoogleCastSdk() {
+        if (window.cast?.framework && window.chrome?.cast) return Promise.resolve(true);
+        if (googleCastSdkPromise) return googleCastSdkPromise;
+
+        googleCastSdkPromise = new Promise((resolve, reject) => {
+            const timeout = setTimeout(() => reject(new Error('Tempo esgotado ao carregar Google Cast')), 8000);
+            const previous = window.__onGCastApiAvailable;
+            window.__onGCastApiAvailable = (available) => {
+                if (typeof previous === 'function') previous(available);
+                clearTimeout(timeout);
+                if (available) resolve(true);
+                else reject(new Error('Google Cast indisponivel'));
+            };
+
+            const existing = document.querySelector('script[data-pipocine-cast-sdk]');
+            if (existing) return;
+
+            const script = document.createElement('script');
+            script.src = 'https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1';
+            script.async = true;
+            script.dataset.pipocineCastSdk = 'true';
+            script.onerror = () => {
+                clearTimeout(timeout);
+                reject(new Error('Falha ao carregar Google Cast'));
+            };
+            document.head.appendChild(script);
+        });
+
+        googleCastSdkPromise = googleCastSdkPromise.catch((error) => {
+            googleCastSdkPromise = null;
+            throw error;
+        });
+
+        return googleCastSdkPromise;
+    }
+
+    async function initGoogleCast() {
+        await loadGoogleCastSdk();
+        if (googleCastInitialized || !window.cast?.framework || !window.chrome?.cast) return true;
+
+        const castContext = cast.framework.CastContext.getInstance();
+        castContext.setOptions({
+            receiverApplicationId: chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID,
+            autoJoinPolicy: chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED,
+        });
+
+        castContext.addEventListener(cast.framework.CastContextEventType.SESSION_STATE_CHANGED, (event) => {
+            const state = event.sessionState;
+            if (state === cast.framework.SessionState.SESSION_STARTED || state === cast.framework.SessionState.SESSION_RESUMED) {
+                castReconnectAttempts = 0;
+                updateCastStatus('TV conectada.');
+            }
+
+            if (state === cast.framework.SessionState.SESSION_ENDED) {
+                handleCastEnded();
+            }
+        });
+
+        googleCastInitialized = true;
+        return true;
+    }
+
+    async function startGoogleCast() {
+        try {
+            await initGoogleCast();
+            const castContext = cast.framework.CastContext.getInstance();
+            const session = castContext.getCurrentSession() || await castContext.requestSession();
+            if (!session) return false;
+            await loadGoogleCastMedia(session);
+            return true;
+        } catch (_) {
+            return false;
+        }
+    }
+
+    async function loadGoogleCastMedia(existingSession = null) {
+        if (!window.chrome?.cast?.media || !window.cast?.framework) return false;
+
+        const session = existingSession || cast.framework.CastContext.getInstance().getCurrentSession();
+        if (!session) return false;
+
+        const url = mediaUrlForCast();
+        if (!url) return false;
+
+        const feature = getFeature('cast', activeCastMode) || getFeature('cast', 'tv_standard');
+        const mediaInfo = new chrome.cast.media.MediaInfo(url, castContentType(url, currentMediaType));
+        mediaInfo.streamType = chrome.cast.media.StreamType.BUFFERED;
+        mediaInfo.metadata = new chrome.cast.media.GenericMediaMetadata();
+        mediaInfo.metadata.title = CONTENT_TITLE;
+        mediaInfo.metadata.subtitle = IS_SERIE ? `T${CURRENT_S} Ep. ${CURRENT_E}` : 'Filme';
+        if (CONTENT_POSTER) mediaInfo.metadata.images = [{ url: CONTENT_POSTER }];
+        mediaInfo.customData = {
+            app: 'Pipocine',
+            profile: feature?.id || 'tv_standard',
+            hdr: Boolean(feature?.params?.hdr),
+            fps: feature?.params?.fps || 30,
+            targetLatency: feature?.params?.targetLatency || 'normal',
+            spatialAudio: Boolean(feature?.params?.spatialAudio),
+        };
+
+        const request = new chrome.cast.media.LoadRequest(mediaInfo);
+        request.autoplay = !video.paused;
+        request.currentTime = Math.max(0, Math.floor(video.currentTime || 0));
+        await session.loadMedia(request);
+
+        if (!video.paused) video.pause();
+        updateCastStatus(`Transmitindo: ${feature?.label || 'TV'}.`);
+        showToast('Transmitindo para TV');
+        return true;
+    }
+
+    function handleCastEnded() {
+        const feature = getFeature('cast', activeCastMode);
+        const maxAttempts = Number(feature?.params?.reconnectAttempts || 0);
+        if (!feature?.params?.reconnect || castReconnectAttempts >= maxAttempts) {
+            updateCastStatus('Transmissao encerrada.');
+            return;
+        }
+
+        castReconnectAttempts++;
+        updateCastStatus(`Reconectando TV... tentativa ${castReconnectAttempts}/${maxAttempts}.`);
+        setTimeout(() => {
+            startGoogleCast().catch(() => updateCastStatus('Nao foi possivel reconectar automaticamente.'));
+        }, 1400);
+    }
+
+    function stopCasting() {
+        try {
+            if (window.cast?.framework) {
+                const session = cast.framework.CastContext.getInstance().getCurrentSession();
+                if (session) session.endSession(true);
+            }
+        } catch (_) {}
+        updateCastStatus('Transmissao encerrada.');
+        showToast('Transmissao encerrada');
+    }
+
+    function effectiveDataFeature() {
+        const selected = getFeature('data', activeDataMode) || getFeature('data', 'standard');
+        if (selected?.id !== 'standard') return selected;
+
+        const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+        if (connection?.saveData || ['slow-2g', '2g'].includes(connection?.effectiveType)) {
+            return getFeature('data', 'low') || selected;
+        }
+
+        return selected;
+    }
+
+    function createHlsInstance() {
+        const feature = effectiveDataFeature();
+        const params = feature?.params || {};
+        return new Hls({
+            enableWorker: false,
+            maxBufferLength: Number(params.maxBufferLength || 30),
+            backBufferLength: Number(params.backBufferLength || 30),
+        });
+    }
+
+    function applyHlsDataMode() {
+        if (!hls || !Array.isArray(hls.levels) || !hls.levels.length) return;
+
+        const feature = effectiveDataFeature();
+        const strategy = feature?.params?.strategy || 'auto';
+        const levelCount = hls.levels.length;
+        let cap = -1;
+
+        if (strategy === 'low') {
+            cap = 0;
+            hls.currentLevel = -1;
+            hls.nextLevel = 0;
+        } else if (strategy === 'medium') {
+            cap = Math.max(0, Math.min(levelCount - 1, Math.floor((levelCount - 1) * Number(feature.params.capRatio || 0.66))));
+            hls.currentLevel = -1;
+            hls.nextLevel = cap;
+        } else if (strategy === 'highest') {
+            cap = levelCount - 1;
+            hls.currentLevel = cap;
+            hls.nextLevel = cap;
+        } else {
+            hls.currentLevel = -1;
+            hls.nextLevel = -1;
+        }
+
+        hls.autoLevelCapping = cap;
+        if (feature?.params?.maxBufferLength) {
+            hls.config.maxBufferLength = Number(feature.params.maxBufferLength);
+        }
+    }
+
     // ─── Carregar vídeo via API ───────────────────────────────────────────
     function loadVideo() {
         if (IS_EMBEDDED_BROWSER) return;
@@ -1046,20 +2281,24 @@ $isEmbeddedBrowser = (bool) preg_match($embeddedBrowserPattern, $userAgent);
     function startPlayer(url, mediaType) {
         if (!url) { showError('URL inválida', 'O link de vídeo retornado é inválido.'); return; }
 
+        currentMediaUrl = url;
+        currentMediaType = mediaType || '';
         const isHLS = mediaType === 'm3u8' || url.includes('.m3u8');
 
         if (isHLS) {
             if (typeof Hls !== 'undefined' && Hls.isSupported()) {
-                hls = new Hls({ enableWorker: false, maxBufferLength: 30 });
+                hls = createHlsInstance();
                 hls.loadSource(url);
                 hls.attachMedia(video);
                 hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                    applyHlsDataMode();
                     loaderOverlay.classList.add('hidden');
-                    controls.classList.remove('hidden');
+                    showControls();
                     if (RESUME_TIME > 5 && video.duration && RESUME_TIME < video.duration - 10) {
                         video.currentTime = RESUME_TIME;
                         RESUME_TIME = 0;
                     }
+                    primeMobileLandscapeFullscreen();
                     video.play().catch(() => {});
                 });
                 hls.on(Hls.Events.ERROR, (_e, d) => {
@@ -1101,12 +2340,13 @@ $isEmbeddedBrowser = (bool) preg_match($embeddedBrowserPattern, $userAgent);
 
     function onReady() {
         loaderOverlay.classList.add('hidden');
-        controls.classList.remove('hidden');
+        showControls();
         // Restaura ponto exato onde o usuário parou
         if (RESUME_TIME > 5 && video.duration && RESUME_TIME < video.duration - 10) {
             video.currentTime = RESUME_TIME;
             RESUME_TIME = 0; // aplica apenas uma vez
         }
+        primeMobileLandscapeFullscreen();
         video.play().catch(() => {});
     }
 
@@ -1137,23 +2377,17 @@ $isEmbeddedBrowser = (bool) preg_match($embeddedBrowserPattern, $userAgent);
         volumeSlider.value = video.muted ? 0 : video.volume;
     };
 
-    window.toggleFullscreen = function () {
-        const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) || window.innerWidth < 768;
-        const isFs = !!document.fullscreenElement || !!document.webkitFullscreenElement;
+    window.toggleFullscreen = async function () {
+        const isFs = isFullscreen();
 
         if (!isFs) {
-            const req = playerWrap.requestFullscreen || playerWrap.webkitRequestFullscreen;
-            if (req) req.call(playerWrap);
-            // No mobile, força landscape após entrar em fullscreen
-            if (isMobile && screen.orientation?.lock) {
-                screen.orientation.lock('landscape').catch(() => {});
-            }
+            await enterLandscapeFullscreen(false);
+            return;
         } else {
             const exit = document.exitFullscreen || document.webkitExitFullscreen;
-            if (exit) exit.call(document);
-            // Libera a orientação ao sair
-            if (isMobile && screen.orientation?.unlock) {
-                screen.orientation.unlock();
+            if (exit) await exit.call(document);
+            if (isMobileDevice() && screen.orientation?.unlock) {
+                try { screen.orientation.unlock(); } catch (_) {}
             }
         }
     };
@@ -1162,11 +2396,17 @@ $isEmbeddedBrowser = (bool) preg_match($embeddedBrowserPattern, $userAgent);
     document.addEventListener('fullscreenchange',       syncFsIcon);
     document.addEventListener('webkitfullscreenchange', syncFsIcon);
     function syncFsIcon() {
-        const isFs = !!document.fullscreenElement || !!document.webkitFullscreenElement;
+        const isFs = isFullscreen();
         document.getElementById('icon-fs').style.display      = isFs ? 'none' : '';
         document.getElementById('icon-fs-exit').style.display = isFs ? '' : 'none';
-        // Libera orientação se saiu do fullscreen sem passar pelo botão
-        if (!isFs && screen.orientation?.unlock) screen.orientation.unlock();
+        if (isFs) {
+            lockLandscape();
+            showControls();
+            return;
+        }
+        if (isMobileDevice() && screen.orientation?.unlock) {
+            try { screen.orientation.unlock(); } catch (_) {}
+        }
     }
 
     window.togglePiP = async function () {
@@ -1256,20 +2496,38 @@ $isEmbeddedBrowser = (bool) preg_match($embeddedBrowserPattern, $userAgent);
         nav.classList.remove('hidden');
         playerWrap.classList.add('cursor-visible');
         clearTimeout(controlsTimer);
-        if (!video.paused) {
+        if (!shouldKeepControlsVisible()) {
             controlsTimer = setTimeout(hideControls, 3000);
         }
     }
 
+    function shouldKeepControlsVisible() {
+        return video.paused ||
+            isDragging ||
+            displayMenu?.classList.contains('open') ||
+            settingsMenu?.classList.contains('open') ||
+            castMenu?.classList.contains('open');
+    }
+
     function hideControls() {
-        if (video.paused) return;
+        if (shouldKeepControlsVisible()) return;
         controls.classList.add('hidden');
         nav.classList.add('hidden');
         playerWrap.classList.remove('cursor-visible');
     }
 
-    playerWrap.addEventListener('mousemove',  showControls);
+    function showControlsFromPointer(event) {
+        if (event.pointerType === 'touch') return;
+        showControls();
+    }
+
+    playerWrap.addEventListener('pointermove', showControlsFromPointer);
+    window.addEventListener('orientationchange', () => setTimeout(showControls, 250));
+    window.addEventListener('resize', () => {
+        if (isMobileDevice() || isFullscreen()) setTimeout(showControls, 120);
+    });
     video.addEventListener('pause', showControls);
+    video.addEventListener('playing', showControls);
 
     // Toque único: mostra/oculta controles. Toque duplo: avança/volta 10s (Netflix)
     let tapCount = 0;
@@ -1292,6 +2550,7 @@ $isEmbeddedBrowser = (bool) preg_match($embeddedBrowserPattern, $userAgent);
 
     // Click no desktop
     playerWrap.addEventListener('click', (e) => {
+        if (isMobileDevice()) return;
         if (e.target === video || e.target === playerWrap) togglePlay();
     });
 
@@ -1387,15 +2646,19 @@ $isEmbeddedBrowser = (bool) preg_match($embeddedBrowserPattern, $userAgent);
     }
 
     function startPlayerAt(url, mediaType, resumeAt) {
+        currentMediaUrl = url || '';
+        currentMediaType = mediaType || '';
         const isHLS = mediaType === 'm3u8' || url.includes('.m3u8');
         if (isHLS && typeof Hls !== 'undefined' && Hls.isSupported()) {
-            hls = new Hls({ enableWorker: false, maxBufferLength: 30 });
+            hls = createHlsInstance();
             hls.loadSource(url);
             hls.attachMedia(video);
             hls.on(Hls.Events.MANIFEST_PARSED, () => {
                 if (resumeAt) video.currentTime = resumeAt;
+                applyHlsDataMode();
                 loaderOverlay.classList.add('hidden');
-                controls.classList.remove('hidden');
+                showControls();
+                primeMobileLandscapeFullscreen();
                 video.play().catch(() => {});
             });
         } else {
@@ -1404,7 +2667,8 @@ $isEmbeddedBrowser = (bool) preg_match($embeddedBrowserPattern, $userAgent);
             const onReadyAt = () => {
                 if (resumeAt) video.currentTime = resumeAt;
                 loaderOverlay.classList.add('hidden');
-                controls.classList.remove('hidden');
+                showControls();
+                primeMobileLandscapeFullscreen();
                 video.play().catch(() => {});
             };
             const fallbackAt = setTimeout(() => {
@@ -1518,6 +2782,9 @@ $isEmbeddedBrowser = (bool) preg_match($embeddedBrowserPattern, $userAgent);
 
     // ─── Init ─────────────────────────────────────────────────────────────
     // Primeiro busca o progresso, depois carrega o vídeo para poder retomar
+    setupDisplayMenu();
+    setupSettingsMenu();
+    setupCastMenu();
     if (!setupEmbeddedBrowserBlock()) {
         WatchProgress.init().then(() => loadVideo());
     }

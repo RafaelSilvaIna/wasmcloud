@@ -103,9 +103,79 @@ final class AdminSupportPanel
                 display: flex;
                 flex-wrap: wrap;
                 gap: 4px;
-                padding: 10px 10px 6px;
+                padding: 10px 10px 4px;
                 flex-shrink: 0;
             }
+
+            .spa-ops-row {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 6px;
+                padding: 4px 10px 8px;
+            }
+
+            .spa-stat-card {
+                min-width: 0;
+                border: 1px solid var(--admin-border);
+                border-radius: 8px;
+                padding: 8px 9px;
+                background: rgba(255, 255, 255, .02);
+            }
+
+            .spa-stat-card strong {
+                display: block;
+                color: #fff;
+                font-size: .92rem;
+                line-height: 1;
+            }
+
+            .spa-stat-card span {
+                display: block;
+                margin-top: 4px;
+                color: var(--admin-muted);
+                font-size: .67rem;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .spa-search-row {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                padding: 0 10px 8px;
+                flex-shrink: 0;
+            }
+
+            .spa-search-input {
+                flex: 1;
+                min-width: 0;
+                height: 34px;
+                border: 1px solid var(--admin-border);
+                border-radius: 8px;
+                background: var(--admin-elevated);
+                color: var(--admin-text);
+                padding: 0 10px;
+                font: inherit;
+                font-size: .8rem;
+                outline: none;
+            }
+
+            .spa-search-input:focus { border-color: rgba(229, 9, 20, .42); }
+
+            .spa-refresh-btn {
+                width: 34px;
+                height: 34px;
+                border: 1px solid var(--admin-border);
+                border-radius: 8px;
+                background: transparent;
+                color: var(--admin-muted);
+                display: grid;
+                place-items: center;
+                cursor: pointer;
+            }
+
+            .spa-refresh-btn:hover { color: #fff; border-color: rgba(148, 163, 184, .3); }
 
             .spa-filter-btn {
                 flex: 1 1 auto;
@@ -190,6 +260,35 @@ final class AdminSupportPanel
                 overflow: hidden;
                 text-overflow: ellipsis;
                 white-space: nowrap;
+            }
+
+            .spa-chat-item-preview {
+                margin-top: 7px;
+                min-height: 18px;
+                color: var(--admin-muted);
+                font-size: .75rem;
+                line-height: 1.35;
+                overflow: hidden;
+                display: -webkit-box;
+                -webkit-line-clamp: 2;
+                -webkit-box-orient: vertical;
+            }
+
+            .spa-chat-item-bottom {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 8px;
+                margin-top: 8px;
+            }
+
+            .spa-assignee {
+                min-width: 0;
+                color: var(--admin-muted);
+                font-size: .68rem;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
             }
 
             .spa-unread-badge {
@@ -732,15 +831,20 @@ final class AdminSupportPanel
 
             /* Responsive */
             @media (max-width: 800px) {
-                .spa-sidebar { width: 230px; }
+                .spa-sidebar { width: 260px; }
                 #spa-chat-title { max-width: 220px; }
+                .spa-ops-row { grid-template-columns: repeat(3, minmax(0, 1fr)); }
             }
 
             @media (max-width: 600px) {
                 .spa-layout    { flex-direction: column; }
-                .spa-sidebar   { width: 100%; height: 44%; border-right: none; border-bottom: 1px solid var(--admin-border); }
+                .spa-sidebar   { width: 100%; height: 42%; border-right: none; border-bottom: 1px solid var(--admin-border); }
                 .spa-main      { height: 56%; }
                 .spa-wrap      { height: calc(100vh - 80px); }
+                .spa-panel-head { flex-wrap: wrap; align-items: flex-start; }
+                #spa-chat-title { max-width: calc(100vw - 48px); }
+                .spa-input-row { align-items: stretch; }
+                .spa-textarea { min-height: 42px; }
             }
         </style>
 
@@ -767,6 +871,35 @@ final class AdminSupportPanel
                             <button type="button" data-sp-admin-filter="pending" class="spa-filter-btn">Pendentes</button>
                             <button type="button" data-sp-admin-filter="closed"  class="spa-filter-btn">Encerrados</button>
                             <button type="button" data-sp-admin-filter=""        class="spa-filter-btn">Todos</button>
+                        </div>
+
+                        <div class="spa-ops-row" aria-label="Resumo dos atendimentos">
+                            <div class="spa-stat-card">
+                                <strong id="spa-stat-open">0</strong>
+                                <span>Abertos</span>
+                            </div>
+                            <div class="spa-stat-card">
+                                <strong id="spa-stat-pending">0</strong>
+                                <span>Pendentes</span>
+                            </div>
+                            <div class="spa-stat-card">
+                                <strong id="spa-stat-closed">0</strong>
+                                <span>Fechados</span>
+                            </div>
+                        </div>
+
+                        <div class="spa-search-row">
+                            <input id="spa-search" class="spa-search-input" type="search"
+                                   placeholder="Buscar por usuario, email ou assunto" autocomplete="off">
+                            <button id="spa-refresh-btn" type="button" class="spa-refresh-btn"
+                                    title="Atualizar" aria-label="Atualizar atendimentos">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15"
+                                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 12a9 9 0 1 1-3-6.7"/>
+                                    <path d="M21 3v6h-6"/>
+                                </svg>
+                            </button>
                         </div>
 
                         <div id="spa-chat-list" class="spa-chat-list" role="list">

@@ -184,6 +184,22 @@ class AuthModel {
 
         $this->dropBrokenSessionCleanupTrigger();
         $this->cleanupExpiredSessions();
+
+        $stmt = $this->dbPipocine->prepare("
+            UPDATE profile_active_sessions
+            SET is_active = 0
+            WHERE user_id = ? AND is_active = 1
+        ");
+        $stmt->execute([$userId]);
+
+        $stmt = $this->dbPipocine->prepare("
+            UPDATE profiles
+            SET is_watching = 0,
+                current_session_id = NULL,
+                last_active_at = NOW()
+            WHERE user_id = ?
+        ");
+        $stmt->execute([$userId]);
         
         // Desativa apenas a sessão anterior do MESMO session_id (se houver)
         $stmt = $this->dbPipocine->prepare("
@@ -267,10 +283,56 @@ class AuthModel {
      */
     public function cleanupExpiredSessions(): bool {
         if (!$this->dbPipocine) return false;
-        
+
+        $ttl = 95;
+
+        try {
+            $this->dbPipocine->exec("
+                UPDATE profile_active_sessions pas
+                LEFT JOIN account_devices ad
+                  ON ad.user_id = pas.user_id
+                 AND ad.session_id = pas.session_id
+                 AND ad.is_active = 1
+                 AND ad.last_heartbeat >= DATE_SUB(NOW(), INTERVAL {$ttl} SECOND)
+                SET pas.is_active = 0
+                WHERE pas.is_active = 1
+                  AND (
+                      pas.expires_at <= NOW()
+                      OR pas.last_activity < DATE_SUB(NOW(), INTERVAL {$ttl} SECOND)
+                      OR ad.id IS NULL
+                  )
+            ");
+        } catch (Throwable $e) {
+            $stmt = $this->dbPipocine->prepare("
+                UPDATE profile_active_sessions
+                SET is_active = 0
+                WHERE is_active = 1
+                  AND (expires_at <= NOW() OR last_activity < DATE_SUB(NOW(), INTERVAL {$ttl} SECOND))
+            ");
+            $stmt->execute();
+        }
+
+        try {
+            $this->dbPipocine->exec("
+                UPDATE profiles p
+                LEFT JOIN profile_active_sessions pas
+                  ON pas.profile_id = p.id
+                 AND pas.session_id = p.current_session_id
+                 AND pas.is_active = 1
+                 AND pas.expires_at > NOW()
+                SET p.is_watching = 0,
+                    p.current_session_id = NULL,
+                    p.last_active_at = NOW()
+                WHERE p.is_watching = 1
+                  AND p.current_session_id IS NOT NULL
+                  AND pas.id IS NULL
+            ");
+        } catch (Throwable $e) {}
+
         $stmt = $this->dbPipocine->prepare("
-            DELETE FROM profile_active_sessions 
-            WHERE expires_at < NOW() OR last_activity < DATE_SUB(NOW(), INTERVAL 30 MINUTE)
+            DELETE FROM profile_active_sessions
+            WHERE (is_active = 0 AND last_activity < DATE_SUB(NOW(), INTERVAL 10 MINUTE))
+               OR expires_at < NOW()
         ");
         return $stmt->execute();
     }

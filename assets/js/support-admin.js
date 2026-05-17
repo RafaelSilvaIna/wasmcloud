@@ -6,8 +6,8 @@
     'use strict';
 
     const API = '/api/suporte';
-    const POLL_INTERVAL   = 5000;
-    const POLL_INTERVAL_CHAT = 3000;
+    const POLL_INTERVAL      = 8000;
+    const POLL_INTERVAL_CHAT = 2200;
 
     let selectedChatId  = null;
     let lastMsgId       = 0;
@@ -18,11 +18,15 @@
     let pendingImage    = null;
     let replyTo         = null;
     let typingTimer     = null;
+    let booted          = false;
 
     // ----------------------------------------------------------------
     // INIT
     // ----------------------------------------------------------------
     function init() {
+        if (booted) return;
+        booted = true;
+
         const filterBtns    = document.querySelectorAll('[data-sp-admin-filter]');
         const sendBtn       = document.getElementById('spa-send-btn');
         const attachBtn     = document.getElementById('spa-attach-btn');
@@ -32,12 +36,17 @@
         const closeBtn      = document.getElementById('spa-close-btn');
         const reopenBtn     = document.getElementById('spa-reopen-btn');
         const tabBtns       = document.querySelectorAll('[data-spa-tab]');
+        const searchInput   = document.getElementById('spa-search');
+        const refreshBtn    = document.getElementById('spa-refresh-btn');
 
         filterBtns.forEach(btn => btn.addEventListener('click', () => {
             filterStatus = btn.dataset.spAdminFilter;
             filterBtns.forEach(b => b.classList.toggle('active', b === btn));
             loadChatList();
         }));
+
+        searchInput?.addEventListener('input', debounce(() => loadChatList(), 250));
+        refreshBtn?.addEventListener('click', () => loadChatList());
 
         sendBtn?.addEventListener('click', sendMessage);
         attachBtn?.addEventListener('click', () => fileInput?.click());
@@ -91,6 +100,15 @@
         // Init
         loadChatList();
         startListPoll();
+        const initialChat = parseInt(new URLSearchParams(window.location.search).get('chat') || '0', 10);
+        if (initialChat) selectChat(initialChat);
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+                loadChatList();
+                if (selectedChatId) pollChatNow();
+            }
+        });
     }
 
     // ----------------------------------------------------------------
@@ -101,9 +119,15 @@
         if (!list) return;
 
         try {
-            const data = await apiGet(`admin/chats?status=${filterStatus}`);
+            const params = new URLSearchParams();
+            if (filterStatus) params.set('status', filterStatus);
+            const query = document.getElementById('spa-search')?.value.trim();
+            if (query) params.set('q', query);
+
+            const data = await apiGet(`admin/chats?${params.toString()}`);
             renderChatList(data.chats ?? []);
             updateCounts(data.counts ?? {});
+            lastPollTime = data.server_time || nowISO();
         } catch (e) {
             if (list) list.innerHTML = `<p class="spa-list-empty">Erro ao carregar chats.</p>`;
         }
@@ -129,7 +153,11 @@
                     <span>${esc(truncate(chat.subject, 38))}</span>
                     ${chat.unread_admin > 0 ? `<span class="spa-unread-badge">${chat.unread_admin}</span>` : ''}
                 </div>
-                <span class="spa-status-pill spa-status-${esc(chat.status)}">${statusLabel(chat.status)}</span>
+                <div class="spa-chat-item-preview">${esc(truncate(chat.last_preview || 'Sem mensagens ainda', 70))}</div>
+                <div class="spa-chat-item-bottom">
+                    <span class="spa-status-pill spa-status-${esc(chat.status)}">${statusLabel(chat.status)}</span>
+                    ${chat.assigned_admin ? `<span class="spa-assignee">${esc(chat.assigned_admin)}</span>` : ''}
+                </div>
             </button>
         `).join('');
 
@@ -141,7 +169,14 @@
     function updateCounts(counts) {
         const el = document.getElementById('spa-count-open');
         if (el) el.textContent = counts.open ?? '0';
-        const total = (counts.open ?? 0) + (counts.pending ?? 0);
+        const openEl = document.getElementById('spa-stat-open');
+        const pendingEl = document.getElementById('spa-stat-pending');
+        const closedEl = document.getElementById('spa-stat-closed');
+        if (openEl) openEl.textContent = counts.open ?? '0';
+        if (pendingEl) pendingEl.textContent = counts.pending ?? '0';
+        if (closedEl) closedEl.textContent = counts.closed ?? '0';
+
+        const total = (Number(counts.open) || 0) + (Number(counts.pending) || 0);
         const badge = document.getElementById('spa-unread-badge-total');
         if (badge) badge.textContent = total > 0 ? total : '';
     }
@@ -153,6 +188,7 @@
         selectedChatId = chatId;
         lastMsgId = 0;
         clearTimeout(pollChatTimer);
+        syncChatUrl(chatId);
 
         document.getElementById('spa-chat-panel')?.style.removeProperty('display');
         document.getElementById('spa-placeholder')?.style.setProperty('display', 'none');
@@ -162,6 +198,9 @@
             renderMessages(data.messages ?? []);
             renderUserInfo(data.user_info ?? null, data.chat ?? {});
             updateAdminChatHeader(data.chat ?? {});
+            document.querySelectorAll('[data-spa-chat-id]').forEach(btn => {
+                btn.classList.toggle('active', parseInt(btn.dataset.spaChatId) === chatId);
+            });
 
             if (data.messages?.length) {
                 lastMsgId = data.messages[data.messages.length - 1].id;
@@ -192,6 +231,9 @@
     function appendMessage(msg) {
         const container = document.getElementById('spa-messages');
         if (!container) return;
+
+        if (container.querySelector('[data-msg-id="' + msg.id + '"]')) return;
+        container.querySelector('.spa-empty-msg')?.remove();
 
         const isUser   = msg.sender === 'user';
         const isSystem = msg.sender_name === 'Sistema';
@@ -269,7 +311,7 @@
         const closeBtn  = document.getElementById('spa-close-btn');
         const reopenBtn = document.getElementById('spa-reopen-btn');
 
-        if (title)  title.textContent = esc(chat.subject ?? 'Chat #' + chat.id) + ' — ' + esc(chat.user_full_name || chat.guest_name || 'Visitante');
+        if (title)  title.textContent = `${chat.subject ?? 'Chat #' + chat.id} - ${chat.user_full_name || chat.guest_name || 'Visitante'}`;
         if (status) {
             status.textContent = statusLabel(chat.status);
             status.className   = `spa-status-pill spa-status-${chat.status}`;
@@ -388,12 +430,12 @@
         if (!selectedChatId) return;
         clearTimeout(typingTimer);
         typingTimer = setTimeout(() => {
-            fetch(`${API}/messages/typing`, {
+            fetch(`${API}/admin/messages/typing`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-Support-Token': 'admin' },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ chat_id: selectedChatId }),
             }).catch(() => {});
-        }, 2000);
+        }, 450);
     }
 
     // ----------------------------------------------------------------
@@ -402,8 +444,7 @@
     function startListPoll() {
         clearInterval(pollListTimer);
         pollListTimer = setInterval(() => {
-            loadChatList();
-            pollAdminStats();
+            pollListUpdates();
         }, POLL_INTERVAL);
     }
 
@@ -420,13 +461,13 @@
     async function pollChat() {
         if (!selectedChatId) return;
         try {
-            const data = await apiGet(`admin/chat/${selectedChatId}`);
-            const msgs = data.messages ?? [];
-            const newMsgs = msgs.filter(m => m.id > lastMsgId);
+            const data = await apiGet(`admin/chat/${selectedChatId}/poll?after=${lastMsgId}`);
+            const newMsgs = data.messages ?? [];
             newMsgs.forEach(appendMessage);
             if (newMsgs.length) {
                 lastMsgId = newMsgs[newMsgs.length - 1].id;
                 document.getElementById('spa-messages')?.scrollTo({ top: 99999, behavior: 'smooth' });
+                loadChatList();
             }
 
             // Typing
@@ -437,6 +478,19 @@
         } catch (_) {}
 
         startChatPoll();
+    }
+
+    async function pollListUpdates() {
+        if (document.visibilityState !== 'visible') return;
+
+        try {
+            const data = await apiGet(`admin/poll?since=${encodeURIComponent(lastPollTime)}`);
+            updateCounts(data.counts ?? {});
+            lastPollTime = data.server_time || nowISO();
+            if ((data.updated_chat_ids ?? []).length) {
+                loadChatList();
+            }
+        } catch (_) {}
     }
 
     async function pollAdminStats() {
@@ -510,6 +564,23 @@
     function autoResize(el) {
         el.style.height = 'auto';
         el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+    }
+
+    function debounce(fn, wait) {
+        let timer = null;
+        return function (...args) {
+            clearTimeout(timer);
+            timer = setTimeout(() => fn.apply(this, args), wait);
+        };
+    }
+
+    function syncChatUrl(chatId) {
+        try {
+            const url = new URL(window.location.href);
+            url.searchParams.set('route', 'suporte');
+            url.searchParams.set('chat', String(chatId));
+            history.replaceState({ route: 'suporte', chat: chatId }, '', url.pathname + url.search);
+        } catch (_) {}
     }
 
     function nowISO() {

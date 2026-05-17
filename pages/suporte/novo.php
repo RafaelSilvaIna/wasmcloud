@@ -239,6 +239,7 @@ $userAvatar      = $_SESSION['profile_pic_url'] ?? null;
         e.preventDefault();
 
         const subject   = document.getElementById('sp-subject')?.value.trim();
+        const description = document.getElementById('sp-description')?.value.trim() || '';
         const subErr    = document.getElementById('sp-subject-err');
         const guestName = document.getElementById('sp-guest-name')?.value.trim() || null;
 
@@ -265,6 +266,21 @@ $userAvatar      = $_SESSION['profile_pic_url'] ?? null;
             const data = await res.json();
 
             if (!res.ok || !data.success) throw new Error(data.error || 'Erro ao criar chamado.');
+
+            if (description) {
+                const firstMsg = await fetch('/api/suporte/messages/send', {
+                    method:  'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Support-Token': data.session_token,
+                    },
+                    body: JSON.stringify({ body: description }),
+                });
+                const msgData = await firstMsg.json();
+                if (!firstMsg.ok || !msgData.success) {
+                    throw new Error(msgData.error || 'Chamado criado, mas nao foi possivel enviar a descricao.');
+                }
+            }
 
             // Persist to localStorage
             const STORAGE_KEY   = 'pipo_support';

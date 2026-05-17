@@ -80,6 +80,9 @@ final class DeviceController
         }
 
         $result = $this->service->heartbeat($this->userId(), $this->isGold());
+        if (!empty($_SESSION['profile_id'])) {
+            $this->service->touchProfileSession($this->userId(), (int) $_SESSION['profile_id']);
+        }
 
         $this->json([
             'success'   => true,

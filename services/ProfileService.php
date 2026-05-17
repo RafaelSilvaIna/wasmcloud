@@ -281,7 +281,8 @@ class ProfileService
         try {
             $pdo = $this->authModel->getDbPipocine();
             if ($pdo) {
-                $ttlBuffer = \DeviceModel::HEARTBEAT_TTL + 5;
+                require_once __DIR__ . '/../models/device/DeviceModel.php';
+                $ttlBuffer = \Models\Device\DeviceModel::HEARTBEAT_TTL + 5;
                 $stmt = $pdo->prepare("
                     SELECT COUNT(*) AS cnt
                     FROM account_devices

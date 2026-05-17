@@ -76,10 +76,15 @@ final class SupportChatService
         $this->chatModel->setStatus($chatId, 'open');
     }
 
-    /** Admin list: all chats with optional status filter. */
-    public function listForAdmin(?string $status, int $page = 0): array
+    public function markAdminJoined(int $chatId, string $adminName): bool
     {
-        $chats = $this->chatModel->listForAdmin($status, 60, $page * 60);
+        return $this->chatModel->markAdminJoined($chatId, $adminName);
+    }
+
+    /** Admin list: all chats with optional status filter. */
+    public function listForAdmin(?string $status, int $page = 0, ?string $search = null): array
+    {
+        $chats = $this->chatModel->listForAdmin($status, 60, $page * 60, $search);
         $counts = $this->chatModel->countByStatus();
         $unread = $this->chatModel->countUnreadForAdmin();
 

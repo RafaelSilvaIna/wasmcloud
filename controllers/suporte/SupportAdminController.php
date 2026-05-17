@@ -7,6 +7,7 @@ namespace Controllers\Suporte;
 use Services\Suporte\SupportChatService;
 use Services\Suporte\SupportMessageService;
 use Services\Suporte\SupportImageService;
+use Helpers\Suporte\SupportCipher;
 
 final class SupportAdminController
 {
@@ -40,6 +41,7 @@ final class SupportAdminController
                 match ($sub) {
                     'close'  => $this->closeChat($chatId, $method),
                     'reopen' => $this->reopenChat($chatId, $method),
+                    'poll'   => $this->pollChatMessages($chatId, $method),
                     ''       => $this->getChat($chatId, $method),
                     default  => $this->notFound(),
                 };
@@ -51,6 +53,7 @@ final class SupportAdminController
                 match ($sub) {
                     'send'  => $this->sendMessage($method),
                     'reply' => $this->sendMessage($method),
+                    'typing' => $this->typing($method),
                     default => $this->notFound(),
                 };
                 return;
@@ -81,9 +84,11 @@ final class SupportAdminController
         $status = $_GET['status'] ?? null;
         if ($status && !in_array($status, ['open', 'pending', 'closed'], true)) $status = null;
         $page   = max(0, (int) ($_GET['page'] ?? 0));
+        $search = trim((string) ($_GET['q'] ?? ''));
 
-        $data = $this->chatService->listForAdmin($status, $page);
-        echo json_encode(['success' => true] + $data);
+        $data = $this->chatService->listForAdmin($status, $page, $search !== '' ? $search : null);
+        $data['chats'] = $this->hydrateAdminPreviews($data['chats'] ?? []);
+        echo json_encode(['success' => true, 'server_time' => date('Y-m-d H:i:s')] + $data);
     }
 
     private function getChat(int $chatId, string $method): void
@@ -92,6 +97,16 @@ final class SupportAdminController
 
         $chat = $this->chatService->resolveById($chatId);
         if (!$chat) { http_response_code(404); echo json_encode(['success' => false, 'error' => 'Chat nao encontrado.']); return; }
+
+        if ($this->chatService->markAdminJoined($chatId, $this->adminDisplayName)) {
+            $this->messageService->send(
+                $chatId,
+                'admin',
+                'Sistema',
+                'Voce esta conectado a um atendente.'
+            );
+            $chat = $this->chatService->resolveById($chatId) ?: $chat;
+        }
 
         $messages = $this->messageService->fullHistory($chatId);
         $this->chatService->markRead($chatId, 'admin');
@@ -117,6 +132,28 @@ final class SupportAdminController
             'messages'  => $messages,
             'user_info' => $userInfo,
             'typing'    => $typing,
+        ]);
+    }
+
+    private function pollChatMessages(int $chatId, string $method): void
+    {
+        if ($method !== 'GET') { $this->methodNotAllowed(); return; }
+
+        $chat = $this->chatService->resolveById($chatId);
+        if (!$chat) { http_response_code(404); echo json_encode(['success' => false, 'error' => 'Chat nao encontrado.']); return; }
+
+        $afterId  = max(0, (int) ($_GET['after'] ?? 0));
+        $messages = $this->messageService->poll($chatId, $afterId);
+
+        if (!empty($messages)) {
+            $this->chatService->markRead($chatId, 'admin');
+        }
+
+        echo json_encode([
+            'success'  => true,
+            'messages' => $messages,
+            'chat'     => $chat,
+            'typing'   => $this->isUserTyping($chatId),
         ]);
     }
 
@@ -200,6 +237,30 @@ final class SupportAdminController
         echo json_encode(['success' => true, 'message_id' => $msgId]);
     }
 
+    private function typing(string $method): void
+    {
+        if ($method !== 'POST') { $this->methodNotAllowed(); return; }
+
+        $body   = $this->body();
+        $chatId = (int) ($body['chat_id'] ?? 0);
+        if (!$chatId || !$this->chatService->resolveById($chatId)) {
+            http_response_code(404);
+            echo json_encode(['success' => false, 'error' => 'Chat nao encontrado.']);
+            return;
+        }
+
+        global $pdo;
+        if ($pdo) {
+            $stmt = $pdo->prepare("
+                REPLACE INTO support_typing (chat_id, sender, expires_at)
+                VALUES (?, 'admin', DATE_ADD(NOW(), INTERVAL 5 SECOND))
+            ");
+            $stmt->execute([$chatId]);
+        }
+
+        echo json_encode(['success' => true]);
+    }
+
     private function poll(): void
     {
         $since   = $_GET['since'] ?? date('Y-m-d H:i:s', time() - 10);
@@ -212,6 +273,40 @@ final class SupportAdminController
             'counts'          => $counts,
             'server_time'     => date('Y-m-d H:i:s'),
         ]);
+    }
+
+    private function hydrateAdminPreviews(array $chats): array
+    {
+        $cipher = new SupportCipher();
+
+        foreach ($chats as &$chat) {
+            $preview = '';
+            if (!empty($chat['last_body_encrypted']) && !empty($chat['last_body_iv'])) {
+                $preview = $cipher->decrypt(
+                    (string) $chat['last_body_encrypted'],
+                    (string) $chat['last_body_iv'],
+                    (int) $chat['id']
+                );
+            }
+
+            $chat['last_preview'] = $preview !== ''
+                ? (function_exists('mb_substr') ? mb_substr($preview, 0, 120) : substr($preview, 0, 120))
+                : '';
+            unset($chat['last_body_encrypted'], $chat['last_body_iv']);
+        }
+        unset($chat);
+
+        return $chats;
+    }
+
+    private function isUserTyping(int $chatId): bool
+    {
+        global $pdo;
+        if (!$pdo) return false;
+
+        $stmt = $pdo->prepare("SELECT 1 FROM support_typing WHERE chat_id = ? AND sender = 'user' AND expires_at > NOW() LIMIT 1");
+        $stmt->execute([$chatId]);
+        return (bool) $stmt->fetchColumn();
     }
 
     private function stats(): void

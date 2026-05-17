@@ -9,6 +9,7 @@ use Helpers\Suporte\SupportSession;
 
 final class SupportImageService
 {
+    private const IMGBB_KEY = '538999ea6353b2b12c58af1f65f3cd8c';
     private const MAX_SIZE    = 5 * 1024 * 1024; // 5 MB
     private const ALLOWED_EXT = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
     private const ALLOWED_MIME = [
@@ -58,16 +59,10 @@ final class SupportImageService
             };
         }
 
-        $token    = bin2hex(random_bytes(32));
-        $dir      = $this->storageDir();
-        $filename = $token . '.' . $ext;
-        $fullPath = $dir . DIRECTORY_SEPARATOR . $filename;
+        $token = bin2hex(random_bytes(32));
+        $imageUrl = $this->uploadToImgBb($file['tmp_name']);
 
-        if (!move_uploaded_file($file['tmp_name'], $fullPath)) {
-            throw new \RuntimeException('Nao foi possivel salvar a imagem.');
-        }
-
-        $this->imageModel->register($token, $fullPath, $chatId, $mime, (int) $file['size']);
+        $this->imageModel->register($token, $imageUrl, $chatId, $mime, (int) $file['size']);
 
         return $token;
     }
@@ -80,7 +75,17 @@ final class SupportImageService
     public function serve(string $token): bool
     {
         $image = $this->imageModel->findByToken($token);
-        if (!$image || !is_file($image['file_path'])) {
+        if (!$image) {
+            return false;
+        }
+
+        if (preg_match('#^https?://#i', (string) $image['file_path'])) {
+            header('Location: ' . $image['file_path'], true, 302);
+            header('Cache-Control: private, max-age=86400');
+            return true;
+        }
+
+        if (!is_file($image['file_path'])) {
             return false;
         }
 
@@ -90,6 +95,48 @@ final class SupportImageService
         header('X-Content-Type-Options: nosniff');
         readfile($image['file_path']);
         return true;
+    }
+
+    private function uploadToImgBb(string $tmpName): string
+    {
+        if (!function_exists('curl_init')) {
+            throw new \RuntimeException('Extensao cURL indisponivel para upload de imagens.');
+        }
+
+        if (!is_file($tmpName)) {
+            throw new \RuntimeException('Arquivo de imagem invalido.');
+        }
+
+        $ch = curl_init('https://api.imgbb.com/1/upload?key=' . self::IMGBB_KEY);
+        $payload = [
+            'image' => curl_file_create($tmpName),
+        ];
+
+        curl_setopt_array($ch, [
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => $payload,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_CONNECTTIMEOUT => 8,
+            CURLOPT_TIMEOUT => 20,
+        ]);
+
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $error = curl_error($ch);
+        curl_close($ch);
+
+        if ($response === false || $httpCode < 200 || $httpCode >= 300) {
+            throw new \RuntimeException('Nao foi possivel enviar a imagem para o ImgBB.');
+        }
+
+        $json = json_decode($response, true);
+        $url = $json['data']['display_url'] ?? $json['data']['url'] ?? null;
+
+        if (empty($json['success']) || !$url) {
+            throw new \RuntimeException('Resposta invalida do ImgBB.');
+        }
+
+        return (string) $url;
     }
 
     /** Run cleanup of expired images. Called probabilistically from the hook. */
