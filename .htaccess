@@ -34,6 +34,7 @@ DirectoryIndex index.php index.html
     RewriteRule ^api/v2/(.*)$ routes/v2/index.php [QSA,L]
     RewriteRule ^api/v3/(.*)$ routes/v3/index.php [QSA,L]
     RewriteRule ^api/v4/(.*)$ routes/v4/index.php [QSA,L]
+    RewriteRule ^cdn/(.*)$ routes/cdn/index.php [QSA,L]
 
     # Bloqueio de pastas sensíveis
     # Adicionada exceção para permitir o redirecionamento interno para os entrypoints da V2, V3 e V4
@@ -41,6 +42,7 @@ DirectoryIndex index.php index.html
     RewriteCond %{REQUEST_URI} !^/routes/v3/index.php
     RewriteCond %{REQUEST_URI} !^/routes/v4/index.php
     RewriteCond %{REQUEST_URI} !^/routes/admin/index.php
+    RewriteCond %{REQUEST_URI} !^/routes/cdn/index.php
     RewriteCond %{REQUEST_URI} !^/routes/suporte/index.php
     RewriteRule ^(components/|controllers/|data/|database/|helpers/|hooks/|models/|routes/|services/|utils/|middleware/)(/.*)?$ - [F,L]
 

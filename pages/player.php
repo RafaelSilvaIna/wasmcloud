@@ -1276,6 +1276,7 @@ $playerFeatures = \Helpers\Player\PlayerFeatureRegistry::build($hasPremiumFillAc
 
     <!-- Elemento de vídeo -->
     <video id="pip-video" preload="metadata" playsinline x-webkit-airplay="allow"></video>
+    <audio id="pip-audio" preload="metadata"></audio>
 
     <!-- Toast feedback -->
     <div id="pip-toast"></div>
@@ -1375,6 +1376,7 @@ $playerFeatures = \Helpers\Player\PlayerFeatureRegistry::build($hasPremiumFillAc
 
     // ─── Elementos ───────────────────────────────────────────────────────
     const video          = document.getElementById('pip-video');
+    const splitAudio     = document.getElementById('pip-audio');
     const loaderOverlay  = document.getElementById('pip-loader-overlay');
     const errorOverlay   = document.getElementById('pip-error-overlay');
     const errTitle       = document.getElementById('err-title');
@@ -1422,6 +1424,12 @@ $playerFeatures = \Helpers\Player\PlayerFeatureRegistry::build($hasPremiumFillAc
     let audioEngine = null;
     let currentMediaUrl = '';
     let currentMediaType = '';
+    let originalMediaUrl = '';
+    let originalMediaType = '';
+    let cdnVideoUrl = '';
+    let cdnAudioUrls = {};
+    let playbackUsesCdn = false;
+    let playbackUsesSplitAudio = false;
     let googleCastSdkPromise = null;
     let googleCastInitialized = false;
     let castReconnectAttempts = 0;
@@ -1620,6 +1628,76 @@ $playerFeatures = \Helpers\Player\PlayerFeatureRegistry::build($hasPremiumFillAc
 
     function persistFeature(group, id) {
         try { localStorage.setItem(`pipocine-player-${group}-mode`, id); } catch (_) {}
+    }
+
+    function configurePlaybackSource(data) {
+        originalMediaUrl = data?.url || '';
+        originalMediaType = data?.media_type || '';
+        const internalCdn = data?.cdn_internal?.enabled ? data.cdn_internal : null;
+        cdnVideoUrl = internalCdn?.video_url || '';
+        cdnAudioUrls = internalCdn?.audio_urls || {};
+        playbackUsesCdn = Boolean(cdnVideoUrl);
+        playbackUsesSplitAudio = Boolean(internalCdn && internalCdn.mode === 'internal_realtime_split_mp4');
+        configureSplitAudio(cdnAudioUrls[activeAudioMode] || cdnAudioUrls.standard || '');
+
+        return {
+            url: playbackUsesCdn ? cdnVideoUrlForProfile(activeAudioMode || 'standard') : originalMediaUrl,
+            mediaType: playbackUsesCdn ? 'mp4' : (data?.media_type || ''),
+            fallbackUrl: originalMediaUrl,
+            fallbackType: data?.media_type || '',
+        };
+    }
+
+    function cdnVideoUrlForProfile(profile) {
+        if (!cdnVideoUrl) return '';
+        return cdnVideoUrl;
+    }
+
+    function configureSplitAudio(audioUrl) {
+        if (!splitAudio) return;
+        if (!playbackUsesSplitAudio || !audioUrl) {
+            splitAudio.pause();
+            splitAudio.removeAttribute('src');
+            splitAudio.load();
+            video.muted = false;
+            return;
+        }
+
+        video.muted = true;
+        if (splitAudio.getAttribute('src') !== audioUrl) {
+            splitAudio.src = audioUrl;
+            splitAudio.load();
+        }
+        splitAudio.volume = parseFloat(volumeSlider?.value || '1');
+        splitAudio.muted = video.muted && Number(splitAudio.volume || 0) === 0;
+    }
+
+    function activeVolumeElement() {
+        return playbackUsesSplitAudio && splitAudio ? splitAudio : video;
+    }
+
+    function switchCdnAudioProfile(feature, persist = true) {
+        if (!feature || !cdnVideoUrl) return false;
+
+        activeAudioMode = feature.id;
+        updateFeatureMenuState('audio', activeAudioMode);
+        if (persist) persistFeature('audio', activeAudioMode);
+
+        disconnectAudioEngine();
+        const resumeAt = Math.max(0, video.currentTime || 0);
+        const nextAudioUrl = cdnAudioUrls[activeAudioMode] || cdnAudioUrls.standard || '';
+        if (playbackUsesSplitAudio && nextAudioUrl) {
+            const shouldResume = !video.paused;
+            configureSplitAudio(nextAudioUrl);
+            splitAudio.currentTime = resumeAt;
+            if (shouldResume) splitAudio.play().catch(() => {});
+            if (persist) showToast(feature.label);
+            return true;
+        }
+
+        if (persist) showToast(feature.label);
+        startPlayerAt(cdnVideoUrlForProfile(activeAudioMode), 'mp4', resumeAt, originalMediaUrl, originalMediaType || 'auto');
+        return true;
     }
 
     function mediaCanUseWebAudio() {
@@ -1836,6 +1914,10 @@ $playerFeatures = \Helpers\Player\PlayerFeatureRegistry::build($hasPremiumFillAc
         const feature = getFeature('audio', id) || getFeature('audio', 'standard');
         if (!feature || !feature.enabled) {
             showToast('Disponivel no plano pago ou cortesia.');
+            return;
+        }
+
+        if (playbackUsesCdn && cdnVideoUrl && switchCdnAudioProfile(feature, persist)) {
             return;
         }
 
@@ -2195,9 +2277,17 @@ $playerFeatures = \Helpers\Player\PlayerFeatureRegistry::build($hasPremiumFillAc
         const feature = effectiveDataFeature();
         const params = feature?.params || {};
         return new Hls({
-            enableWorker: false,
+            enableWorker: playbackUsesCdn,
+            lowLatencyMode: playbackUsesCdn,
             maxBufferLength: Number(params.maxBufferLength || 30),
+            maxMaxBufferLength: playbackUsesCdn ? 60 : Number(params.maxBufferLength || 30),
             backBufferLength: Number(params.backBufferLength || 30),
+            manifestLoadingTimeOut: 10000,
+            manifestLoadingMaxRetry: 3,
+            levelLoadingTimeOut: 10000,
+            levelLoadingMaxRetry: 3,
+            fragLoadingTimeOut: 20000,
+            fragLoadingMaxRetry: 5,
         });
     }
 
@@ -2264,7 +2354,8 @@ $playerFeatures = \Helpers\Player\PlayerFeatureRegistry::build($hasPremiumFillAc
                     buildNextEpLink(nextEpData);
                 }
                 // Inicia player
-                startPlayer(data.url, data.media_type);
+                const playback = configurePlaybackSource(data);
+                startPlayer(playback.url, playback.mediaType, playback.fallbackUrl, playback.fallbackType);
             })
             .catch(() => showError('Erro de conexão', 'Não foi possível conectar ao servidor de vídeo.'));
     }
@@ -2278,7 +2369,7 @@ $playerFeatures = \Helpers\Player\PlayerFeatureRegistry::build($hasPremiumFillAc
         errorOverlay.classList.add('visible');
     }
 
-    function startPlayer(url, mediaType) {
+    function startPlayer(url, mediaType, fallbackUrl = '', fallbackType = '') {
         if (!url) { showError('URL inválida', 'O link de vídeo retornado é inválido.'); return; }
 
         currentMediaUrl = url;
@@ -2302,7 +2393,16 @@ $playerFeatures = \Helpers\Player\PlayerFeatureRegistry::build($hasPremiumFillAc
                     video.play().catch(() => {});
                 });
                 hls.on(Hls.Events.ERROR, (_e, d) => {
-                    if (d.fatal) showError('Erro ao carregar stream', 'O vídeo HLS encontrou um erro fatal.');
+                    if (!d.fatal) return;
+                    if (playbackUsesCdn && fallbackUrl && fallbackUrl !== url) {
+                        playbackUsesCdn = false;
+                        cdnVideoUrl = '';
+                        cdnAudioUrls = {};
+                        showToast('CDN indisponivel. Usando fonte original.');
+                        startPlayer(fallbackUrl, fallbackType || 'auto');
+                        return;
+                    }
+                    showError('Erro ao carregar stream', 'O video HLS encontrou um erro fatal.');
                 });
             } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
                 // Safari nativo
@@ -2333,6 +2433,16 @@ $playerFeatures = \Helpers\Player\PlayerFeatureRegistry::build($hasPremiumFillAc
             }, { once: true });
             video.addEventListener('error', () => {
                 clearTimeout(fallbackTimer);
+                if (playbackUsesCdn && fallbackUrl && fallbackUrl !== url) {
+                    playbackUsesCdn = false;
+                    playbackUsesSplitAudio = false;
+                    cdnVideoUrl = '';
+                    cdnAudioUrls = {};
+                    configureSplitAudio('');
+                    showToast('CDN interna indisponivel. Usando fonte original.');
+                    startPlayer(fallbackUrl, fallbackType || 'auto');
+                    return;
+                }
                 onVideoError();
             }, { once: true });
         }
@@ -2371,10 +2481,11 @@ $playerFeatures = \Helpers\Player\PlayerFeatureRegistry::build($hasPremiumFillAc
     };
 
     window.toggleMute = function () {
-        video.muted = !video.muted;
-        iconVol.style.display  = video.muted ? 'none'  : '';
-        iconMute.style.display = video.muted ? ''      : 'none';
-        volumeSlider.value = video.muted ? 0 : video.volume;
+        const volumeTarget = activeVolumeElement();
+        volumeTarget.muted = !volumeTarget.muted;
+        iconVol.style.display  = volumeTarget.muted ? 'none'  : '';
+        iconMute.style.display = volumeTarget.muted ? ''      : 'none';
+        volumeSlider.value = volumeTarget.muted ? 0 : volumeTarget.volume;
     };
 
     window.toggleFullscreen = async function () {
@@ -2419,12 +2530,47 @@ $playerFeatures = \Helpers\Player\PlayerFeatureRegistry::build($hasPremiumFillAc
         } catch (e) {}
     };
 
+    function syncSplitAudioTime(force = false) {
+        if (!playbackUsesSplitAudio || !splitAudio) return;
+        if (force || Math.abs((splitAudio.currentTime || 0) - (video.currentTime || 0)) > 0.25) {
+            try { splitAudio.currentTime = video.currentTime || 0; } catch (_) {}
+        }
+    }
+
+    video.addEventListener('play', () => {
+        if (!playbackUsesSplitAudio || !splitAudio?.src) return;
+        syncSplitAudioTime(true);
+        splitAudio.playbackRate = video.playbackRate || 1;
+        splitAudio.play().catch(() => {});
+    });
+
+    video.addEventListener('pause', () => {
+        if (playbackUsesSplitAudio && splitAudio) splitAudio.pause();
+    });
+
+    video.addEventListener('seeking', () => {
+        if (playbackUsesSplitAudio && splitAudio) splitAudio.pause();
+    });
+
+    video.addEventListener('seeked', () => {
+        if (!playbackUsesSplitAudio || !splitAudio) return;
+        syncSplitAudioTime(true);
+        if (!video.paused) splitAudio.play().catch(() => {});
+    });
+
+    video.addEventListener('ratechange', () => {
+        if (playbackUsesSplitAudio && splitAudio) splitAudio.playbackRate = video.playbackRate || 1;
+    });
+
+    video.addEventListener('timeupdate', () => syncSplitAudioTime(false));
+
     // Volume
     volumeSlider.addEventListener('input', () => {
-        video.volume = parseFloat(volumeSlider.value);
-        video.muted = video.volume === 0;
-        iconVol.style.display  = video.muted ? 'none' : '';
-        iconMute.style.display = video.muted ? ''     : 'none';
+        const volumeTarget = activeVolumeElement();
+        volumeTarget.volume = parseFloat(volumeSlider.value);
+        volumeTarget.muted = volumeTarget.volume === 0;
+        iconVol.style.display  = volumeTarget.muted ? 'none' : '';
+        iconMute.style.display = volumeTarget.muted ? ''     : 'none';
     });
 
     // Eventos do vídeo
@@ -2561,8 +2707,22 @@ $playerFeatures = \Helpers\Player\PlayerFeatureRegistry::build($hasPremiumFillAc
             case 'Space': case 'KeyK': e.preventDefault(); togglePlay(); break;
             case 'ArrowRight': e.preventDefault(); skip(10);  break;
             case 'ArrowLeft':  e.preventDefault(); skip(-10); break;
-            case 'ArrowUp':    e.preventDefault(); video.volume = Math.min(1, video.volume + .1); volumeSlider.value = video.volume; break;
-            case 'ArrowDown':  e.preventDefault(); video.volume = Math.max(0, video.volume - .1); volumeSlider.value = video.volume; break;
+            case 'ArrowUp': {
+                e.preventDefault();
+                const volumeTarget = activeVolumeElement();
+                volumeTarget.volume = Math.min(1, volumeTarget.volume + .1);
+                volumeTarget.muted = false;
+                volumeSlider.value = volumeTarget.volume;
+                break;
+            }
+            case 'ArrowDown': {
+                e.preventDefault();
+                const volumeTarget = activeVolumeElement();
+                volumeTarget.volume = Math.max(0, volumeTarget.volume - .1);
+                volumeTarget.muted = volumeTarget.volume === 0;
+                volumeSlider.value = volumeTarget.volume;
+                break;
+            }
             case 'KeyM':  e.preventDefault(); toggleMute(); break;
             case 'KeyF':  e.preventDefault(); toggleFullscreen(); break;
         }
@@ -2640,12 +2800,13 @@ $playerFeatures = \Helpers\Player\PlayerFeatureRegistry::build($hasPremiumFillAc
                 if (!data.success) { showError(data.error, data.message); return; }
                 if (data.audio) { AUDIO = data.audio; audioBadge.textContent = data.audio === 'dub' ? 'DUB' : 'LEG'; }
                 if (IS_SERIE && data.next_episode) { nextEpData = data.next_episode; buildNextEpLink(nextEpData); }
-                startPlayerAt(data.url, data.media_type, resumeAt);
+                const playback = configurePlaybackSource(data);
+                startPlayerAt(playback.url, playback.mediaType, resumeAt, playback.fallbackUrl, playback.fallbackType);
             })
             .catch(() => showError('Erro de conexão', ''));
     }
 
-    function startPlayerAt(url, mediaType, resumeAt) {
+    function startPlayerAt(url, mediaType, resumeAt, fallbackUrl = '', fallbackType = '') {
         currentMediaUrl = url || '';
         currentMediaType = mediaType || '';
         const isHLS = mediaType === 'm3u8' || url.includes('.m3u8');
@@ -2660,6 +2821,18 @@ $playerFeatures = \Helpers\Player\PlayerFeatureRegistry::build($hasPremiumFillAc
                 showControls();
                 primeMobileLandscapeFullscreen();
                 video.play().catch(() => {});
+            });
+            hls.on(Hls.Events.ERROR, (_e, d) => {
+                if (!d.fatal) return;
+                if (playbackUsesCdn && fallbackUrl && fallbackUrl !== url) {
+                    playbackUsesCdn = false;
+                    cdnVideoUrl = '';
+                    cdnAudioUrls = {};
+                    showToast('CDN indisponivel. Usando fonte original.');
+                    startPlayerAt(fallbackUrl, fallbackType || 'auto', resumeAt);
+                    return;
+                }
+                showError('Erro ao carregar stream', 'O video HLS encontrou um erro fatal.');
             });
         } else {
             video.src = url;
@@ -2677,6 +2850,20 @@ $playerFeatures = \Helpers\Player\PlayerFeatureRegistry::build($hasPremiumFillAc
                 else { video.addEventListener('loadedmetadata', onReadyAt, { once: true }); }
             }, 8000);
             video.addEventListener('canplay', () => { clearTimeout(fallbackAt); onReadyAt(); }, { once: true });
+            video.addEventListener('error', () => {
+                clearTimeout(fallbackAt);
+                if (playbackUsesCdn && fallbackUrl && fallbackUrl !== url) {
+                    playbackUsesCdn = false;
+                    playbackUsesSplitAudio = false;
+                    cdnVideoUrl = '';
+                    cdnAudioUrls = {};
+                    configureSplitAudio('');
+                    showToast('CDN interna indisponivel. Usando fonte original.');
+                    startPlayerAt(fallbackUrl, fallbackType || 'auto', resumeAt);
+                    return;
+                }
+                onVideoError();
+            }, { once: true });
         }
     }
 

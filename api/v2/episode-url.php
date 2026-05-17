@@ -22,6 +22,7 @@ header('X-Content-Type-Options: nosniff');
 
 // Carrega conexões do banco — usamos $pdoCineveo (banco cineveo)
 require_once __DIR__ . '/../../database/db.php';
+require_once __DIR__ . '/../../services/cdn/CdnPlaybackService.php';
 
 // ─── Validação de entrada ──────────────────────────────────────────────────────
 $id    = (int)   ($_GET['id']    ?? 0);
@@ -259,12 +260,33 @@ if ($isSerie) {
 }
 
 // ─── Resposta final ────────────────────────────────────────────────────────────
-echo json_encode([
+$cdnInternal = [];
+try {
+    $cdnInternal = (new \Services\Cdn\CdnPlaybackService())->buildUrls(
+        $id,
+        $isSerie ? 'serie' : 'filme',
+        $s,
+        $e,
+        $audioUsed,
+        $videoUrl
+    );
+} catch (Throwable $ex) {
+    $cdnInternal = [
+        'enabled' => false,
+        'error' => 'Falha ao preparar CDN interna. Usando fonte original.',
+    ];
+}
+
+$publicVideoUrl = !empty($cdnInternal['enabled']) ? null : $videoUrl;
+
+echo json_encode(array_merge([
     'success'      => true,
-    'url'          => $videoUrl,
+    'url'          => $publicVideoUrl,
     'media_type'   => detectMediaType($videoUrl),
     'audio'        => $audioUsed,
     'next_episode' => $nextEpisode,
     'meta'         => $meta,
-], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+], [
+    'cdn_internal' => $cdnInternal,
+]), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 exit;

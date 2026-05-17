@@ -3,7 +3,8 @@ require_once __DIR__ . '/../database/db.php';
 
 // =========================================================
 // GLOBAL SECURITY LAYER — Anti-DDoS / Anti-Bot
-// Deve estar logo após o bootstrap de banco ($pdo disponível)
+// Executado antes de QUALQUER rota — cobre todos os sub-
+// roteadores presentes e futuros carregados abaixo.
 // =========================================================
 require_once __DIR__ . '/../middleware/GlobalSecurityMiddleware.php';
 \Middleware\GlobalSecurityMiddleware::handle($pdo ?? null);
@@ -20,6 +21,11 @@ ProfileHook::enforceProfile($pdo);
 
 $requestUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $requestMethod = $_SERVER['REQUEST_METHOD'];
+
+if (strpos($requestUri, '/cdn/') === 0) {
+    require_once __DIR__ . '/cdn/index.php';
+    exit;
+}
 
 if (strpos($requestUri, '/api/') === 0) {
 
