@@ -16,6 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let swiperInstance   = null;
     let progressTimer    = null;
+    let heroItems        = [];
 
     // ── Helpers ─────────────────────────────────────────────────────
     const sanitize = (str) => {
@@ -67,6 +68,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ── Render de slides ────────────────────────────────────────────
     const renderSlides = (items) => {
         if (!sliderWrapper || !template) return;
+        heroItems = items;
         sliderWrapper.innerHTML = '';
 
         items.forEach((item) => {
@@ -175,10 +177,11 @@ document.addEventListener('DOMContentLoaded', () => {
             // 10. Botão Assistir — armazena dados no atributo data-* para funcionar com clones do Swiper loop
             const watchBtn = clone.querySelector('.hero-btn--primary');
             if (watchBtn) {
-                const id   = item.id || item.slug || null;
+                const id   = item.id_tmdb || item.id || null;
                 const tipo = (item.tipo || 'filme').toLowerCase();
+                const viewType = (tipo === 'serie' || tipo === 'tv') ? 'serie' : 'movie';
                 if (id) {
-                    watchBtn.dataset.href = `/${tipo}/${id}`;
+                    watchBtn.dataset.href = `/view?id=${id}&type=${viewType}`;
                 } else {
                     watchBtn.disabled = true;
                     watchBtn.style.opacity = '0.4';
@@ -207,7 +210,22 @@ document.addEventListener('DOMContentLoaded', () => {
         if (sliderEl) {
             sliderEl.addEventListener('click', (e) => {
                 const btn = e.target.closest('[data-href]');
-                if (btn && btn.dataset.href) {
+                if (!btn) return;
+
+                if (btn.classList.contains('hero-btn--primary') && swiperInstance) {
+                    const activeItem = heroItems[swiperInstance.realIndex];
+                    const activeId = activeItem?.id_tmdb || activeItem?.id || null;
+                    const activeTipo = (activeItem?.tipo || 'filme').toLowerCase();
+                    const activeViewType = (activeTipo === 'serie' || activeTipo === 'tv') ? 'serie' : 'movie';
+
+                    if (activeId) {
+                        window.location.href = `/view?id=${activeId}&type=${activeViewType}`;
+                    }
+                    return;
+                }
+
+                const clickedSlide = btn.closest('.swiper-slide');
+                if (btn.dataset.href && clickedSlide?.classList.contains('swiper-slide-active')) {
                     window.location.href = btn.dataset.href;
                 }
             });

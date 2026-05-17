@@ -740,7 +740,7 @@ if (!isset($_SESSION['user_id'])) {
                         <i data-lucide="credit-card" aria-hidden="true"></i>
                         <span>Minha Assinatura</span>
                     </a>
-                    <a class="account-menu-item" href="/settings?section=support">
+                    <a class="account-menu-item" href="/suporte">
                         <i data-lucide="life-buoy" aria-hidden="true"></i>
                         <span>Suporte</span>
                     </a>

@@ -1,5 +1,72 @@
 <?php
 require_once __DIR__ . '/../database/db.php';
+require_once __DIR__ . '/../hooks/SecurityChallengeHook.php';
+
+$requestUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+$requestMethod = $_SERVER['REQUEST_METHOD'];
+
+if ($requestUri === '/security/continue' && $requestMethod === 'POST') {
+    require_once __DIR__ . '/../security/storage/DbSecurityStore.php';
+
+    $token = (string) ($_POST['token'] ?? '');
+    $target = (string) ($_POST['target'] ?? '/home');
+    $sessionToken = (string) ($_SESSION['_sec_resume_token'] ?? '');
+    $sessionIp = (string) ($_SESSION['_sec_resume_ip'] ?? '');
+    $resolvedIp = '';
+    foreach (['HTTP_CF_CONNECTING_IP', 'HTTP_X_REAL_IP', 'HTTP_X_FORWARDED_FOR', 'REMOTE_ADDR'] as $key) {
+        $candidate = $_SERVER[$key] ?? '';
+        if ($candidate === '') {
+            continue;
+        }
+        $candidate = trim(explode(',', $candidate)[0]);
+        if (filter_var($candidate, FILTER_VALIDATE_IP)) {
+            $resolvedIp = $candidate;
+            break;
+        }
+    }
+
+    if ($token !== ''
+        && $sessionToken !== ''
+        && hash_equals($sessionToken, $token)
+        && $sessionIp !== ''
+        && $sessionIp === $resolvedIp
+        && $pdo
+    ) {
+        $store = new \Security\Storage\DbSecurityStore($pdo);
+        $store->deactivateActiveBans($sessionIp);
+        $store->deactivateActiveQuarantine($sessionIp);
+        $store->clearRateLimitWindows($sessionIp);
+        $store->resetIpReputation($sessionIp);
+
+        $_SESSION['req_cnt'] = 0;
+        $_SESSION['req_time'] = time();
+        unset($_SESSION['_sec_resume_token'], $_SESSION['_sec_resume_ip'], $_SESSION['_sec_resume_target']);
+        header('Location: ' . (str_starts_with($target, '/') ? $target : '/home'));
+        exit;
+    }
+
+    if (!empty($_SESSION['_sec_resume_token'])) {
+        header('Location: /security/challenge');
+        exit;
+    }
+
+    http_response_code(403);
+    exit('Confirmação inválida.');
+}
+
+if ($requestUri === '/security/challenge' && $requestMethod === 'GET') {
+    require_once __DIR__ . '/../components/SuspiciousActivityModal.php';
+    $token = (string) ($_SESSION['_sec_resume_token'] ?? '');
+    $target = (string) ($_SESSION['_sec_resume_target'] ?? '/home');
+
+    if ($token === '') {
+        header('Location: /home');
+        exit;
+    }
+
+    SuspiciousActivityModal::render($token, $target);
+    exit;
+}
 
 // =========================================================
 // GLOBAL SECURITY LAYER — Anti-DDoS / Anti-Bot
@@ -8,6 +75,7 @@ require_once __DIR__ . '/../database/db.php';
 // =========================================================
 require_once __DIR__ . '/../middleware/GlobalSecurityMiddleware.php';
 \Middleware\GlobalSecurityMiddleware::handle($pdo ?? null);
+\SecurityChallengeHook::injectClientBridge();
 
 require_once __DIR__ . '/../hooks/ProfileHook.php';
 require_once __DIR__ . '/../hooks/v4/AccountStatusHook.php';
@@ -18,9 +86,6 @@ ProfileHook::redirectTvToQrLogin();
 \Hooks\V4\SubscriptionHook::enforcePlanAccess($pdo);
 ProfileHook::enforceProfile($pdo);
 \Hooks\Device\DeviceHook::enforce($pdo);
-
-$requestUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-$requestMethod = $_SERVER['REQUEST_METHOD'];
 
 if (strpos($requestUri, '/cdn/') === 0) {
     require_once __DIR__ . '/cdn/index.php';

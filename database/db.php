@@ -57,6 +57,11 @@ function initSession(): void
 // ======================
 function applyRateLimit(): void
 {
+    $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?? '/';
+    if ($path === '/security/continue') {
+        return;
+    }
+
     $_SESSION['req_cnt'] = $_SESSION['req_cnt'] ?? 0;
     $_SESSION['req_time'] = $_SESSION['req_time'] ?? time();
 

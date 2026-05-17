@@ -73,7 +73,7 @@ if (!$isPremium) {
 $isPremiumJs = $isPremium ? 'true' : 'false';
 $profileName = htmlspecialchars($profile['profile_name'] ?? '', ENT_QUOTES, 'UTF-8');
 $profileImg  = htmlspecialchars($profile['profile_image'] ?? 'https://api.dicebear.com/9.x/adventurer/svg?seed=Pipo', ENT_QUOTES, 'UTF-8');
-$profileUser = htmlspecialchars($profile['profile_username'] ?? '', ENT_QUOTES, 'UTF-8');
+$profileUser = htmlspecialchars($profile['username'] ?? '', ENT_QUOTES, 'UTF-8');
 $profileIdJs = $profileId;
 ?>
 <!DOCTYPE html>

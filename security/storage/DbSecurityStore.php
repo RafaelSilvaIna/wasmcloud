@@ -214,6 +214,15 @@ final class DbSecurityStore
         } catch (Throwable) {}
     }
 
+    public function deactivateActiveBans(string $ip): void
+    {
+        try {
+            $this->pdo->prepare(
+                'UPDATE sec_ip_bans SET is_active = 0 WHERE ip_address = ? AND is_active = 1'
+            )->execute([$ip]);
+        } catch (Throwable) {}
+    }
+
     // =========================================================================
     // QUARANTINE
     // =========================================================================
@@ -257,6 +266,15 @@ final class DbSecurityStore
                    expires_at = VALUES(expires_at),
                    reason = VALUES(reason)'
             )->execute([$ip, $threatScore, $responseDelayMs, $maxReqPerMin, $expires, $reason]);
+        } catch (Throwable) {}
+    }
+
+    public function deactivateActiveQuarantine(string $ip): void
+    {
+        try {
+            $this->pdo->prepare(
+                'UPDATE sec_quarantine SET is_active = 0 WHERE ip_address = ? AND is_active = 1'
+            )->execute([$ip]);
         } catch (Throwable) {}
     }
 
@@ -332,6 +350,30 @@ final class DbSecurityStore
         } catch (Throwable) {
             return [0, false, $limitThreshold];
         }
+    }
+
+    public function clearRateLimitWindows(string $ip): void
+    {
+        try {
+            $this->pdo->prepare(
+                'DELETE FROM sec_rate_limit_windows WHERE ip_address = ?'
+            )->execute([$ip]);
+        } catch (Throwable) {}
+    }
+
+    public function resetIpReputation(string $ip): void
+    {
+        try {
+            $this->pdo->prepare(
+                'UPDATE sec_ip_reputation
+                 SET threat_score = 0,
+                     mitigation_level = 1,
+                     behavior_flags = "",
+                     req_count_1min = 0,
+                     concurrent_connections = 0
+                 WHERE ip_address = ?'
+            )->execute([$ip]);
+        } catch (Throwable) {}
     }
 
     // =========================================================================

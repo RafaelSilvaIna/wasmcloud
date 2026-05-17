@@ -42,6 +42,11 @@
     position: relative;
     display: flex;
     align-items: flex-end;
+    pointer-events: none;
+}
+
+.hero-slide.swiper-slide-active {
+    pointer-events: auto;
 }
 
 /* ── Backdrop ─────────────────────────────────────────────────── */

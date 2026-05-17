@@ -62,7 +62,7 @@ class ProfileModel {
     // Atualiza nome, avatar e username do perfil
     public function updateProfile(int $id, int $userId, string $name, string $image, ?string $username = null): bool {
         if ($username !== null) {
-            $stmt = $this->db->prepare("UPDATE profiles SET profile_name = ?, profile_image = ?, profile_username = ? WHERE id = ? AND user_id = ?");
+            $stmt = $this->db->prepare("UPDATE profiles SET profile_name = ?, profile_image = ?, username = ? WHERE id = ? AND user_id = ?");
             return $stmt->execute([$name, $image, $username, $id, $userId]);
         }
         $stmt = $this->db->prepare("UPDATE profiles SET profile_name = ?, profile_image = ? WHERE id = ? AND user_id = ?");
@@ -77,7 +77,7 @@ class ProfileModel {
 
     // Verifica se username já existe (excluindo um profileId específico)
     public function findByUsernameExcluding(string $username, int $excludeId): ?array {
-        $stmt = $this->db->prepare("SELECT id FROM profiles WHERE profile_username = ? AND id != ? LIMIT 1");
+        $stmt = $this->db->prepare("SELECT id FROM profiles WHERE username = ? AND id != ? LIMIT 1");
         $stmt->execute([$username, $excludeId]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         return $row ?: null;

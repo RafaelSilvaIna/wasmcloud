@@ -128,14 +128,15 @@ final class GlobalSecurityLayer
         // ----------------------------------------------------------------
         $activeBan = $this->banManager->getActiveBan($ip);
         if ($activeBan) {
-            $shouldExit = $this->banManager->enforceBan($activeBan);
-            if ($shouldExit) {
+            if (($activeBan['ban_type'] ?? '') === 'shadow') {
+                $this->banManager->enforceBan($activeBan);
+            } else {
                 $this->store->logThreatEvent(
                     $ip, 'hard_ban_applied', 'critical', 'blocked',
                     $threatScore, 0,
                     ['path' => $path, 'details' => ['ban_type' => $activeBan['ban_type']]]
                 );
-                exit;
+                $this->blockSuspiciousActivity($ip, $path, ($activeBan['ban_type'] ?? '') === 'hard' ? 403 : 429);
             }
         }
 
@@ -163,14 +164,7 @@ final class GlobalSecurityLayer
 
             $this->penalties->evaluate($ip, $newScore, 'rate_limit_exceeded', $routeProfile);
 
-            http_response_code(429);
-            header('Content-Type: application/json; charset=utf-8');
-            header('Retry-After: 60');
-            echo json_encode([
-                'error' => 'Limite de requisições excedido. Aguarde e tente novamente.',
-                'retry_after' => 60,
-            ]);
-            exit;
+            $this->blockSuspiciousActivity($ip, $path);
         }
 
         // ----------------------------------------------------------------
@@ -185,10 +179,7 @@ final class GlobalSecurityLayer
             $this->penalties->evaluate($ip, $newScore, 'burst_detected', $routeProfile);
 
             if ($newScore >= SecurityConfig::SCORE_BLOCK) {
-                http_response_code(429);
-                header('Content-Type: application/json; charset=utf-8');
-                echo json_encode(['error' => 'Tráfego anormal detectado.']);
-                exit;
+                $this->blockSuspiciousActivity($ip, $path);
             }
         }
 
@@ -228,9 +219,10 @@ final class GlobalSecurityLayer
             if ($action === 'ban') {
                 $freshBan = $this->banManager->getActiveBan($ip);
                 if ($freshBan) {
-                    $shouldExit = $this->banManager->enforceBan($freshBan);
-                    if ($shouldExit) {
-                        exit;
+                    if (($freshBan['ban_type'] ?? '') === 'shadow') {
+                        $this->banManager->enforceBan($freshBan);
+                    } else {
+                        $this->blockSuspiciousActivity($ip, $path, ($freshBan['ban_type'] ?? '') === 'hard' ? 403 : 429);
                     }
                 }
             }
@@ -297,6 +289,51 @@ final class GlobalSecurityLayer
         }
 
         return '127.0.0.1';
+    }
+
+    private function blockSuspiciousActivity(string $ip, string $path, int $code = 429): never
+    {
+        $resumeTarget = $path;
+        if (str_starts_with($path, '/api/') || str_starts_with($path, '/cdn/')) {
+            $refererPath = parse_url($_SERVER['HTTP_REFERER'] ?? '', PHP_URL_PATH);
+            $resumeTarget = is_string($refererPath) && str_starts_with($refererPath, '/')
+                ? $refererPath
+                : '/home';
+        }
+
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            $hasActiveChallenge = !empty($_SESSION['_sec_resume_token'])
+                && !empty($_SESSION['_sec_resume_ip'])
+                && hash_equals((string) $_SESSION['_sec_resume_ip'], $ip);
+
+            if (!$hasActiveChallenge) {
+                $_SESSION['_sec_resume_token'] = bin2hex(random_bytes(24));
+                $_SESSION['_sec_resume_ip'] = $ip;
+            }
+
+            $_SESSION['_sec_resume_target'] = $resumeTarget;
+        }
+
+        if (str_starts_with($path, '/api/') || str_starts_with($path, '/cdn/')) {
+            http_response_code($code);
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode([
+                'error' => 'Atividade suspeita detectada.',
+                'code' => $code,
+                'security_challenge' => true,
+                'challenge_url' => '/security/challenge',
+            ]);
+            exit;
+        }
+
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            \SuspiciousActivityModal::render($_SESSION['_sec_resume_token'], $resumeTarget, $code);
+            exit;
+        }
+
+        http_response_code($code);
+        header('Content-Type: text/plain; charset=utf-8');
+        exit('Atividade suspeita detectada.');
     }
 
     private function resolveRouteGroup(): string

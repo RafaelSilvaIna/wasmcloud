@@ -217,7 +217,7 @@ if (!isset($_SESSION['user_id'])) {
         /* ── GRID ─────────────────────────────────────────────────── */
         .lib-grid {
             display: grid;
-            grid-template-columns: repeat(5, 1fr);
+            grid-template-columns: repeat(5, minmax(0, 1fr));
             gap: 24px 16px;
             align-items: start;
         }
@@ -226,6 +226,7 @@ if (!isset($_SESSION['user_id'])) {
         .lib-card {
             cursor: pointer;
             width: 100%;
+            min-width: 0;
         }
 
         .lib-card-thumb {
@@ -300,6 +301,7 @@ if (!isset($_SESSION['user_id'])) {
 
         .lib-card-info {
             margin-top: 10px;
+            min-width: 0;
         }
 
         .lib-card-title {
@@ -423,14 +425,14 @@ if (!isset($_SESSION['user_id'])) {
             .lib-content     { padding: 0 20px; margin-top: 32px; }
             .lib-stats       { gap: 24px; }
             .lib-stat-num    { font-size: 20px; }
-            .lib-grid        { grid-template-columns: repeat(4, 1fr); gap: 20px 12px; }
+            .lib-grid        { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px 12px; }
             .lib-tab         { padding: 14px 14px 16px; font-size: 12px; }
         }
 
         @media (max-width: 480px) {
             .lib-header      { gap: 24px; }
             .lib-stats       { gap: 20px; }
-            .lib-grid        { grid-template-columns: repeat(3, 1fr) !important; gap: 16px 10px; }
+            .lib-grid        { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; gap: 16px 10px; }
             .lib-tabs        { overflow-x: auto; scrollbar-width: none; }
             .lib-tabs::-webkit-scrollbar { display: none; }
             .lib-tab         { white-space: nowrap; }
