@@ -73,7 +73,7 @@ $phone = htmlspecialchars($_SESSION['user_phone'] ?? '', ENT_QUOTES, 'UTF-8');
                 <ul class="plan-benefits">
                     <li><i data-lucide="smartphone"></i><span>Mobile Pipocine e downloads offline</span></li>
                     <li><i data-lucide="monitor-smartphone"></i><span>4 dispositivos e 8 perfis</span></li>
-                    <li><i data-lucide="user-plus"></i><span>Até 2 membros na família</span></li>
+                    <li><i data-lucide="user-plus"></i><span>Até 3 membros na família com benefícios específicos</span></li>
                     <li><i data-lucide="shield-check"></i><span>Segurança avançada para perfis</span></li>
                     <li><i data-lucide="badge-x"></i><span>Sem anúncios e suporte prioritário</span></li>
                 </ul>

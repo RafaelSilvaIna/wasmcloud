@@ -277,6 +277,22 @@ body.plan-body {
     color: var(--plan-gold);
 }
 
+.plan-inline-link {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 6px;
+    color: rgba(255, 255, 255, .72);
+    font-size: .88rem;
+    font-weight: 750;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    transition: color .18s;
+}
+
+.plan-inline-link:hover {
+    color: #ffffff;
+}
+
 .plan-note {
     margin-top: 26px;
     color: var(--plan-muted);

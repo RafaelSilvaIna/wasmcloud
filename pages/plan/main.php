@@ -60,12 +60,15 @@ $ownerName = htmlspecialchars($_SESSION['full_name'] ?? 'Usuario', ENT_QUOTES, '
                 </div>
                 <p class="plan-desc">Desbloqueie o Pipocine completo para voce e sua familia.</p>
                 <a class="plan-action gold" href="/plan/checkout"><i data-lucide="credit-card"></i>Assinar Plano Gold</a>
-                <ul class="plan-benefits">
+                <ul class="plan-benefits" id="beneficios-gold">
                     <li><i data-lucide="smartphone"></i><span>Acesso ao aplicativo Mobile Pipocine</span></li>
                     <li><i data-lucide="download-cloud"></i><span>Download offline de filmes e séries</span></li>
                     <li><i data-lucide="monitor-smartphone"></i><span>4 dispositivos</span></li>
                     <li><i data-lucide="users-round"></i><span>8 perfis</span></li>
-                    <li><i data-lucide="user-plus"></i><span>Até 2 membros na família com os mesmos benefícios</span></li>
+                    <li>
+                        <i data-lucide="user-plus"></i>
+                        <span>Até 3 membros na família com benefícios específicos <a class="plan-inline-link" href="/docs/beneficios-familiar">Saiba mais</a></span>
+                    </li>
                     <li><i data-lucide="infinity"></i><span>Download ilimitado dentro do aplicativo</span></li>
                     <li><i data-lucide="screen-share"></i><span>Filmes e séries com qualidade 2K</span></li>
                     <li><i data-lucide="palette"></i><span>Personalização de perfil</span></li>

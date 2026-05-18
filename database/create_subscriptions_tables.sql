@@ -24,12 +24,12 @@ VALUES
         'Com anúncios',
         'Qualidade até 1080p'
     )),
-    ('gold', 'Plano Gold', 20.99, 30, 4, 8, 2, JSON_ARRAY(
+    ('gold', 'Plano Gold', 20.99, 30, 4, 8, 3, JSON_ARRAY(
         'Aplicativo Mobile Pipocine',
         'Download offline de filmes e séries',
         '4 dispositivos',
         '8 perfis',
-        'Até 2 membros na família',
+        'Até 3 membros na família com benefícios específicos',
         'Download ilimitado no aplicativo',
         'Filmes e séries em qualidade 2K',
         'Personalização de perfil',
