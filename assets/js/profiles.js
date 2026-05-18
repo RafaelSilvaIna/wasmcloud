@@ -53,6 +53,9 @@ document.addEventListener('DOMContentLoaded', () => {
             currentProfiles = data;
             renderProfiles();
         } catch (err) {
+            if (grid) {
+                grid.innerHTML = '<p class="profile-name">Não foi possível carregar os perfis.</p>';
+            }
             if (typeof PipoNotification !== 'undefined') PipoNotification.error('Erro ao carregar perfis.');
         }
     };

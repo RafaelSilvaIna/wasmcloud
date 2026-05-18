@@ -83,6 +83,7 @@ final class DeviceHook
         '/error/',
         '/login/',
         '/suporte',
+        '/ads',
         '/pipocine/suporte',
         '/plan/payment/active=',
         '/create/profile/edit=',

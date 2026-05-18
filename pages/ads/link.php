@@ -1,0 +1,8 @@
+<?php
+declare(strict_types=1);
+require_once __DIR__ . '/../../hooks/ads/AdsAuthHook.php';
+\Hooks\Ads\AdsAuthHook::requireCommercialLogin();
+require_once __DIR__ . '/../../components/ads/AdsHeader.php';
+?>
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Vincular conta — PipoCine Ads</title><link rel="icon" type="image/png" href="/assets/img/ads/favicon.png"><style>
+body{margin:0;background:#05070d;color:#fff;font-family:Inter,system-ui}.shell{width:min(560px,calc(100% - 32px));margin:auto}.ads-topbar{padding:24px 0}.ads-brand img{width:52px;height:52px}.card{margin:48px 0;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.05);padding:28px;border-radius:28px}.muted{color:#9aa6bd;line-height:1.7}.actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:22px}.btn{padding:14px 18px;border-radius:14px;color:#fff;text-decoration:none;border:0;font-weight:750;cursor:pointer}.primary{background:linear-gradient(135deg,#0a7aff,#8b5cf6)}.ghost{background:transparent;border:1px solid rgba(255,255,255,.1)}</style></head><body><div class="shell"><?php AdsHeader::render(); ?><main class="card"><h1>Vincular conta comercial</h1><p class="muted">Como você já está autenticado no Pipocine, pode vincular esta conta Ads à sua conta principal para ter login mais simples e uma camada extra de segurança.</p><div class="actions"><button id="link" class="btn primary">Vincular conta</button><a class="btn ghost" href="/ads/dashboard">Agora não</a></div></main></div><script>link.onclick=async()=>{const r=await fetch('/api/ads/link',{method:'POST'}),j=await r.json();if(j.success)location.href=j.redirect;}</script></body></html>

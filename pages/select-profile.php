@@ -115,6 +115,43 @@ if (!isset($_SESSION['user_id'])) {
             text-align: center;
         }
 
+        .profile-skeleton {
+            pointer-events: none;
+        }
+
+        .profile-skeleton:hover {
+            transform: none;
+        }
+
+        .skeleton-avatar,
+        .skeleton-name {
+            background: linear-gradient(
+                90deg,
+                rgba(255,255,255,.06) 0%,
+                rgba(255,255,255,.14) 50%,
+                rgba(255,255,255,.06) 100%
+            );
+            background-size: 220% 100%;
+            animation: profileSkeletonShimmer 1.35s ease-in-out infinite;
+        }
+
+        .skeleton-avatar {
+            width: var(--profile-card-size);
+            height: var(--profile-card-size);
+            border-radius: 50%;
+        }
+
+        .skeleton-name {
+            width: 84px;
+            height: 16px;
+            border-radius: 999px;
+        }
+
+        @keyframes profileSkeletonShimmer {
+            0%   { background-position: 100% 0; }
+            100% { background-position: -120% 0; }
+        }
+
         /* Botão Adicionar na Grelha (Círculo com Borda) */
         .add-profile-btn {
             justify-content: flex-start;
@@ -663,6 +700,32 @@ if (!isset($_SESSION['user_id'])) {
             color: rgba(255, 255, 255, 0.72);
         }
 
+        .account-menu-item.featured {
+            margin-top: 4px;
+            border-color: rgba(10, 122, 255, .22);
+            background:
+                linear-gradient(135deg, rgba(10,122,255,.16), rgba(114,72,255,.10)),
+                rgba(255,255,255,.02);
+        }
+
+        .account-menu-item.featured i,
+        .account-menu-item.featured svg {
+            color: #63a8ff;
+        }
+
+        .account-menu-badge {
+            margin-left: auto;
+            border-radius: 999px;
+            padding: 3px 8px;
+            font-size: .68rem;
+            font-weight: 700;
+            letter-spacing: .05em;
+            text-transform: uppercase;
+            color: #9ec8ff;
+            background: rgba(10,122,255,.16);
+            border: 1px solid rgba(10,122,255,.22);
+        }
+
         /* Espaço reservado — numpad removido, usa PinInputModal */
 
         @media (max-width: 560px) {
@@ -736,6 +799,11 @@ if (!isset($_SESSION['user_id'])) {
 
                 <div class="account-menu-section" aria-label="Conta">
                     <div class="account-menu-label">Conta</div>
+                    <a class="account-menu-item featured" href="/ads">
+                        <i data-lucide="megaphone" aria-hidden="true"></i>
+                        <span>Ads</span>
+                        <span class="account-menu-badge">Novo</span>
+                    </a>
                     <a class="account-menu-item" href="/plan/me">
                         <i data-lucide="credit-card" aria-hidden="true"></i>
                         <span>Minha Assinatura</span>
@@ -762,28 +830,18 @@ if (!isset($_SESSION['user_id'])) {
 
         <div id="pipo-profiles-root">
             <div class="profiles-grid" id="profiles-grid">
-
-                <div class="profile-item">
-                    <div class="avatar-wrapper">
-                        <img src="https://api.dicebear.com/7.x/adventurer/svg?seed=Pipo" alt="Pipo" class="avatar-img">
-                    </div>
-                    <span class="profile-name">Pipo</span>
+                <div class="profile-item profile-skeleton" aria-hidden="true">
+                    <div class="skeleton-avatar"></div>
+                    <span class="skeleton-name"></span>
                 </div>
-
-                <div class="profile-item">
-                    <div class="avatar-wrapper">
-                        <img src="https://api.dicebear.com/7.x/adventurer/svg?seed=Ana" alt="Ana" class="avatar-img">
-                    </div>
-                    <span class="profile-name">Ana</span>
+                <div class="profile-item profile-skeleton" aria-hidden="true">
+                    <div class="skeleton-avatar"></div>
+                    <span class="skeleton-name"></span>
                 </div>
-
-                <div class="profile-item add-profile-btn" id="trigger-add-profile">
-                    <div class="add-icon-wrapper">
-                        <i data-lucide="plus" style="width: 48px; height: 48px;"></i>
-                    </div>
-                    <span class="profile-name">Adicionar Perfil</span>
+                <div class="profile-item profile-skeleton" aria-hidden="true">
+                    <div class="skeleton-avatar"></div>
+                    <span class="skeleton-name"></span>
                 </div>
-
             </div>
         </div>
 
