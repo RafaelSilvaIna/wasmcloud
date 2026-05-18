@@ -56,8 +56,22 @@ body.ads-dashboard-body {
 
 .ads-sidebar-nav {
     display: grid;
-    gap: 6px;
+    gap: 18px;
     padding: 16px 14px;
+}
+
+.ads-sidebar-group {
+    display: grid;
+    gap: 6px;
+}
+
+.ads-sidebar-group-label {
+    padding: 0 12px 4px;
+    color: rgba(152,165,189,.72);
+    text-transform: uppercase;
+    letter-spacing: .14em;
+    font-size: .66rem;
+    font-weight: 800;
 }
 
 .ads-sidebar-item {

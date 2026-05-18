@@ -120,7 +120,7 @@ $account = $activeAdsAccount ?? [];
                 <h2>Seu espaço comercial está pronto.</h2>
                 <p>Crie campanhas, acompanhe o desempenho e transforme atenção em resultado com métricas claras.</p>
             </div>
-            <a class="primary-action" href="#">Nova campanha</a>
+            <a class="primary-action" href="/ads/anuncios">Novo anúncio</a>
         </article>
 
         <article class="dashboard-card metric">

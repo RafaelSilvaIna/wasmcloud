@@ -13,31 +13,39 @@ require_once $rootDir . '/models/admin/AdminUserModerationModel.php';
 require_once $rootDir . '/models/admin/AdminUsageMetricsModel.php';
 require_once $rootDir . '/models/admin/AdminApiMetricsModel.php';
 require_once $rootDir . '/models/admin/AdminSubscriptionModel.php';
+require_once $rootDir . '/models/admin/AdminAdsReviewModel.php';
+require_once $rootDir . '/models/ads/AdsCampaignModel.php';
 require_once $rootDir . '/services/admin/AdminAuthService.php';
 require_once $rootDir . '/services/admin/AdminUserModerationService.php';
 require_once $rootDir . '/services/admin/AdminUsageMetricsService.php';
 require_once $rootDir . '/services/admin/AdminApiMetricsService.php';
 require_once $rootDir . '/services/admin/AdminSubscriptionService.php';
+require_once $rootDir . '/services/admin/AdminAdsReviewService.php';
 require_once $rootDir . '/controllers/admin/AdminController.php';
 require_once $rootDir . '/controllers/admin/AdminUsageMetricsController.php';
 require_once $rootDir . '/controllers/admin/AdminApiMetricsController.php';
 require_once $rootDir . '/controllers/admin/AdminSubscriptionController.php';
 require_once $rootDir . '/controllers/admin/SecurityAdminController.php';
+require_once $rootDir . '/controllers/admin/AdminAdsReviewController.php';
 
 use Controllers\Admin\AdminController;
 use Controllers\Admin\AdminSubscriptionController;
 use Controllers\Admin\AdminUsageMetricsController;
 use Controllers\Admin\AdminApiMetricsController;
+use Controllers\Admin\AdminAdsReviewController;
 use Models\Admin\AdminModel;
 use Models\Admin\AdminSubscriptionModel;
 use Models\Admin\AdminUserModerationModel;
 use Models\Admin\AdminUsageMetricsModel;
 use Models\Admin\AdminApiMetricsModel;
+use Models\Admin\AdminAdsReviewModel;
+use Models\Ads\AdsCampaignModel;
 use Services\Admin\AdminAuthService;
 use Services\Admin\AdminSubscriptionService;
 use Services\Admin\AdminUserModerationService;
 use Services\Admin\AdminUsageMetricsService;
 use Services\Admin\AdminApiMetricsService;
+use Services\Admin\AdminAdsReviewService;
 
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
@@ -86,6 +94,19 @@ try {
         $subscriptions = new AdminSubscriptionService(new AdminSubscriptionModel($pdo));
         $subscriptionController = new AdminSubscriptionController($auth, $subscriptions);
         $subscriptionController->handle($action, $method);
+        exit;
+    }
+
+    if (str_starts_with($action, 'ads-reviews')) {
+        $adsReviewController = new AdminAdsReviewController(
+            $auth,
+            new AdminAdsReviewService(
+                $pdo,
+                new AdminAdsReviewModel($pdo),
+                new AdsCampaignModel($pdo)
+            )
+        );
+        $adsReviewController->handle($action, $method);
         exit;
     }
 

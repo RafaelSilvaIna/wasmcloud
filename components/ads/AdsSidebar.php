@@ -5,11 +5,21 @@ final class AdsSidebar
 {
     public static function render(string $active = 'dashboard', bool $onboardingPending = false): void
     {
-        $items = [
-            'dashboard' => ['href' => '/ads/dashboard', 'icon' => 'layout-dashboard', 'label' => 'Dashboard'],
-            'campaigns' => ['href' => '#', 'icon' => 'megaphone', 'label' => 'Campanhas'],
-            'analytics' => ['href' => '#', 'icon' => 'chart-no-axes-combined', 'label' => 'Analytics'],
-            'billing' => ['href' => '#', 'icon' => 'credit-card', 'label' => 'Faturamento'],
+        $groups = [
+            'Visão geral' => [
+                'dashboard' => ['href' => '/ads/dashboard', 'icon' => 'layout-dashboard', 'label' => 'Dashboard'],
+            ],
+            'Anúncios' => [
+                'campaigns' => ['href' => '/ads/anuncios', 'icon' => 'megaphone', 'label' => 'Anúncios'],
+                'campaign_create' => ['href' => '/ads/anuncios/criar', 'icon' => 'circle-plus', 'label' => 'Criar anúncio'],
+                'campaign_status' => ['href' => '/ads/anuncios/status', 'icon' => 'activity', 'label' => 'Monitoramento'],
+            ],
+            'Inteligência' => [
+                'analytics' => ['href' => '#', 'icon' => 'chart-no-axes-combined', 'label' => 'Analytics'],
+            ],
+            'Conta' => [
+                'billing' => ['href' => '#', 'icon' => 'credit-card', 'label' => 'Faturamento'],
+            ],
         ];
         ?>
         <aside class="ads-dashboard-sidebar" id="ads-dashboard-sidebar">
@@ -17,12 +27,17 @@ final class AdsSidebar
                 <img src="/assets/img/ads/logo-icone.png" alt="">
             </a>
             <nav class="ads-sidebar-nav" aria-label="Navegação Ads">
-                <?php foreach ($items as $key => $item): ?>
-                    <a class="ads-sidebar-item <?= $active === $key ? 'active' : '' ?> <?= $onboardingPending && $key !== 'dashboard' ? 'locked' : '' ?>"
-                       href="<?= htmlspecialchars($item['href'], ENT_QUOTES, 'UTF-8') ?>">
-                        <i data-lucide="<?= htmlspecialchars($item['icon'], ENT_QUOTES, 'UTF-8') ?>"></i>
-                        <span><?= htmlspecialchars($item['label'], ENT_QUOTES, 'UTF-8') ?></span>
-                    </a>
+                <?php foreach ($groups as $groupLabel => $items): ?>
+                    <section class="ads-sidebar-group">
+                        <span class="ads-sidebar-group-label"><?= htmlspecialchars($groupLabel, ENT_QUOTES, 'UTF-8') ?></span>
+                        <?php foreach ($items as $key => $item): ?>
+                            <a class="ads-sidebar-item <?= $active === $key ? 'active' : '' ?> <?= $onboardingPending && $key !== 'dashboard' ? 'locked' : '' ?>"
+                               href="<?= htmlspecialchars($item['href'], ENT_QUOTES, 'UTF-8') ?>">
+                                <i data-lucide="<?= htmlspecialchars($item['icon'], ENT_QUOTES, 'UTF-8') ?>"></i>
+                                <span><?= htmlspecialchars($item['label'], ENT_QUOTES, 'UTF-8') ?></span>
+                            </a>
+                        <?php endforeach; ?>
+                    </section>
                 <?php endforeach; ?>
             </nav>
             <div class="ads-sidebar-foot">

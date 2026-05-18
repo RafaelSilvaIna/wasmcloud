@@ -13,6 +13,7 @@ require_once __DIR__ . '/../components/admin/magner/AdminApiMetricsPanel.php';
 require_once __DIR__ . '/../components/admin/subscriptions/AdminSubscriptionsPanel.php';
 require_once __DIR__ . '/../components/admin/suporte/AdminSupportPanel.php';
 require_once __DIR__ . '/../components/admin/security/AdminSecurityPanel.php';
+require_once __DIR__ . '/../components/admin/ads/AdminAdsReviewPanel.php';
 
 use Models\Admin\AdminModel;
 use Services\Admin\AdminAuthService;
@@ -276,6 +277,7 @@ $adminRoute = preg_replace('/[^a-z0-9_-]/i', '', (string) ($_GET['route'] ?? 'ov
                 <?php AdminApiMetricsPanel::render(); ?>
                 <?php AdminSupportPanel::render(); ?>
                 <?php AdminSecurityPanel::render(); ?>
+                <?php AdminAdsReviewPanel::render(); ?>
             </section>
         </main>
     </div>
@@ -357,6 +359,9 @@ $adminRoute = preg_replace('/[^a-z0-9_-]/i', '', (string) ($_GET['route'] ?? 'ov
         }
         if (route === 'security' && window.AdminSecurityPanel) {
             window.AdminSecurityPanel.refresh();
+        }
+        if (route === 'ads-review' && window.AdminAdsReviewPanel) {
+            window.AdminAdsReviewPanel.init();
         }
     }
 

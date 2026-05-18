@@ -23,6 +23,13 @@ final class AdsAccountModel
         return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
     }
 
+    public function findByIdForUpdate(int $id): ?array
+    {
+        $stmt = $this->pdo->prepare('SELECT * FROM ads_accounts WHERE id = ? LIMIT 1 FOR UPDATE');
+        $stmt->execute([$id]);
+        return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+    }
+
     public function findByPipocineUserId(int $userId): ?array
     {
         $stmt = $this->pdo->prepare('SELECT * FROM ads_accounts WHERE pipocine_user_id = ? LIMIT 1');
@@ -74,5 +81,14 @@ final class AdsAccountModel
             $data['business_description'],
             $id,
         ]);
+    }
+
+    public function claimFirstAdDemo(int $id): void
+    {
+        $this->pdo->prepare(
+            'UPDATE ads_accounts
+                SET first_ad_demo_claimed_at = COALESCE(first_ad_demo_claimed_at, NOW())
+              WHERE id = ?'
+        )->execute([$id]);
     }
 }

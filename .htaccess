@@ -50,6 +50,12 @@ DirectoryIndex index.php index.html
     # Redirecionamento para páginas específicas
     RewriteRule ^ads/?$ pages/ads/index.php [QSA,L]
     RewriteRule ^ads/dashboard/onboarding/?$ pages/ads/index.php?view=dashboard_onboarding [QSA,L]
+    RewriteRule ^ads/anuncios/?$ pages/ads/index.php?view=campaigns [QSA,L]
+    RewriteRule ^ads/anuncios/status/?$ pages/ads/index.php?view=campaign_status [QSA,L]
+    RewriteRule ^ads/anuncios/criar/?$ pages/ads/index.php?view=campaign_create_select [QSA,L]
+    RewriteRule ^ads/anuncios/criar/upload/?$ pages/ads/index.php?view=campaign_create_upload [QSA,L]
+    RewriteRule ^ads/anuncios/criar/detalhes/?$ pages/ads/index.php?view=campaign_create_details [QSA,L]
+    RewriteRule ^ads/anuncios/criar/revisao/?$ pages/ads/index.php?view=campaign_create_review [QSA,L]
     RewriteRule ^ads/([^/]+)/?$ pages/ads/index.php?view=$1 [QSA,L]
     RewriteRule ^suporte/?$ pages/suporte/index.php [QSA,L]
     RewriteRule ^developer/?$ pages/developer/index.php [L]

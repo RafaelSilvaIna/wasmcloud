@@ -799,11 +799,6 @@ if (!isset($_SESSION['user_id'])) {
 
                 <div class="account-menu-section" aria-label="Conta">
                     <div class="account-menu-label">Conta</div>
-                    <a class="account-menu-item featured" href="/ads">
-                        <i data-lucide="megaphone" aria-hidden="true"></i>
-                        <span>Ads</span>
-                        <span class="account-menu-badge">Novo</span>
-                    </a>
                     <a class="account-menu-item" href="/plan/me">
                         <i data-lucide="credit-card" aria-hidden="true"></i>
                         <span>Minha Assinatura</span>
