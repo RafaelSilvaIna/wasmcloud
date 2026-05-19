@@ -28,7 +28,7 @@ $familyBenefit = $dashboard['family_benefit'] ?? null;
 $active = $realActive ?: ($familyBenefit ?: []);
 $isCourtesy = (($active['source'] ?? 'paid') === 'admin_courtesy');
 $isFamilyBenefit = !$realActive && !empty($familyBenefit);
-$hasFamilyBadge = !empty($familyBenefit);
+$hasPremiumBadge = (bool) $realActive || (bool) $familyBenefit;
 $paidPayments = array_values(array_filter($dashboard['payments'] ?? [], static function (array $payment): bool {
     return ($payment['status'] ?? '') === 'paid';
 }));
@@ -58,13 +58,19 @@ function brMoney($value): string {
 </head>
 <body class="plan-body">
     <main class="me-shell">
+        <a class="me-back" href="/select-profile" aria-label="Voltar aos perfis">
+            <i data-lucide="arrow-left"></i>
+            <span>Voltar</span>
+        </a>
 
         <header class="me-header">
             <div>
                 <p class="me-eyebrow">Minha assinatura</p>
                 <h1 class="me-heading"><?= htmlspecialchars($active['plan_name'] ?? 'Plano Gold', ENT_QUOTES, 'UTF-8') ?></h1>
-                <?php if ($hasFamilyBadge): ?>
-                    <span class="me-family-badge"><i data-lucide="badge-check"></i>Membro da familia</span>
+                <?php if ($hasPremiumBadge): ?>
+                    <span class="me-plan-icon-badge" title="<?= $isFamilyBenefit ? 'Membro da familia' : 'Plano premium ativo' ?>" aria-label="<?= $isFamilyBenefit ? 'Membro da familia' : 'Plano premium ativo' ?>">
+                        <i data-lucide="<?= $isFamilyBenefit ? 'badge-check' : 'sparkles' ?>"></i>
+                    </span>
                 <?php endif; ?>
             </div>
             <?php if ($isCourtesy || $isFamilyBenefit): ?>
@@ -79,8 +85,8 @@ function brMoney($value): string {
                 <i data-lucide="<?= $isFamilyBenefit ? 'users-round' : 'sparkles' ?>"></i>
                 <?php if ($isFamilyBenefit): ?>
                     <p>
-                        <strong>Beneficio familiar ativo<?= $daysLeft !== null ? ' por mais ' . $daysLeft . ' dia' . ($daysLeft === 1 ? '' : 's') : '' ?>.</strong>
-                        Voce recebeu beneficios do Gold pela familia de <?= htmlspecialchars($familyBenefit['owner_name'] ?? 'um titular Pipocine', ENT_QUOTES, 'UTF-8') ?>, mas ainda pode assinar seu proprio Plano Gold.
+                        <strong>Beneficio familiar ativo.</strong>
+                        Voce recebeu beneficios selecionados do Gold por vinculo familiar, mas ainda pode assinar seu proprio Plano Gold.
                     </p>
                 <?php else: ?>
                     <p>
@@ -91,8 +97,9 @@ function brMoney($value): string {
             </div>
         <?php endif; ?>
 
-        <div class="me-grid">
+        <div class="me-grid <?= $isFamilyBenefit ? 'single' : '' ?>">
 
+            <?php if (!$isFamilyBenefit): ?>
             <section class="plan-panel me-status-panel">
                 <div class="me-section-label">
                     Status do plano
@@ -133,6 +140,7 @@ function brMoney($value): string {
                     <span>Ver beneficios do plano</span>
                 </a>
             </section>
+            <?php endif; ?>
 
             <section class="plan-panel me-history-panel">
                 <div class="me-section-label">Historico de pagamentos</div>
@@ -214,6 +222,17 @@ function brMoney($value): string {
                     <button class="plan-action gold" type="submit"><i data-lucide="send"></i>Enviar convite</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <div class="plan-alert" id="family-remove-modal" aria-hidden="true">
+        <div class="plan-alert-card plan-alert-card-compact">
+            <h2 class="plan-alert-title">Remover membro?</h2>
+            <p class="plan-alert-text" id="family-remove-text">Essa pessoa perdera os beneficios familiares imediatamente.</p>
+            <div class="plan-actions-row">
+                <button class="plan-secondary" type="button" id="cancel-family-remove">Cancelar</button>
+                <button class="plan-danger" type="button" id="confirm-family-remove">Remover</button>
+            </div>
         </div>
     </div>
 

@@ -275,9 +275,9 @@ class SubscriptionService
             'source' => 'family_benefit',
             'badge' => 'Membro da familia',
             'accepted_at' => (string) ($benefit['accepted_at'] ?? ''),
-            'expires_at' => (string) ($benefit['owner_subscription_expires_at'] ?? ''),
-            'device_limit' => (int) ($benefit['device_limit'] ?? 4),
-            'profile_limit' => (int) ($benefit['profile_limit'] ?? 8),
+            'expires_at' => '',
+            'device_limit' => 1,
+            'profile_limit' => 2,
             'benefits' => [
                 'Sem anuncios',
                 'Personalizacao de perfil',

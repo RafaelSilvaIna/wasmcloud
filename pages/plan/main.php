@@ -27,7 +27,7 @@ try {
         <header class="plan-topbar plan-topbar-minimal">
             <span class="plan-pill"><i data-lucide="user-round"></i><?= $ownerName ?></span>
             <?php if ($familyBenefit): ?>
-                <span class="plan-pill family"><i data-lucide="badge-check"></i>Membro da familia</span>
+                <span class="plan-pill family plan-pill-icon" title="Membro da familia" aria-label="Membro da familia"><i data-lucide="badge-check"></i></span>
             <?php endif; ?>
         </header>
 

@@ -24,6 +24,10 @@ class ProfileService
      */
     private function isPremiumActive(int $userId): bool
     {
+        if (method_exists($this->authModel, 'hasActiveRealPremiumSubscription')) {
+            return $this->authModel->hasActiveRealPremiumSubscription($userId);
+        }
+
         return $this->authModel->hasActivePremiumSubscription($userId);
     }
 

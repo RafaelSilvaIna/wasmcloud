@@ -131,6 +131,10 @@ class AuthModel {
      * O sistema novo de planos fica no banco Pipocine; o fallback mantém compatibilidade.
      */
     public function hasActivePremiumSubscription(int $userId): bool {
+        if ($this->hasActiveRealPremiumSubscription($userId)) {
+            return true;
+        }
+
         foreach ([$this->dbPipocine, $this->dbCineveo] as $db) {
             if (!$db) {
                 continue;
@@ -167,6 +171,32 @@ class AuthModel {
                      AND p.family_member_limit > 0
                     WHERE fm.member_user_id = ?
                       AND fm.status = 'active'
+                    LIMIT 1
+                ");
+                $stmt->execute([$userId]);
+                if ($stmt->fetchColumn()) {
+                    return true;
+                }
+            } catch (Throwable $e) {}
+        }
+
+        return false;
+    }
+
+    public function hasActiveRealPremiumSubscription(int $userId): bool {
+        foreach ([$this->dbPipocine, $this->dbCineveo] as $db) {
+            if (!$db) {
+                continue;
+            }
+
+            try {
+                $stmt = $db->prepare("
+                    SELECT 1
+                    FROM user_subscriptions
+                    WHERE user_id = ?
+                      AND status = 'active'
+                      AND expires_at > NOW()
+                      AND plan_code <> 'casual'
                     LIMIT 1
                 ");
                 $stmt->execute([$userId]);

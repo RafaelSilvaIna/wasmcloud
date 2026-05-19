@@ -629,15 +629,19 @@ if (!isset($_SESSION['user_id'])) {
         .account-family-badge {
             display: inline-flex;
             align-items: center;
-            min-height: 22px;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
             border: 1px solid rgba(229, 9, 20, .34);
-            border-radius: 999px;
-            padding: 0 8px;
+            border-radius: 50%;
+            padding: 0;
             color: #ffd7da;
             background: rgba(229, 9, 20, .14);
-            font-size: .68rem;
-            font-weight: 800;
-            line-height: 1;
+        }
+
+        .account-family-badge svg {
+            width: 13px;
+            height: 13px;
         }
 
         .account-chevron {
@@ -704,14 +708,20 @@ if (!isset($_SESSION['user_id'])) {
             max-width: 100%;
             display: inline-flex;
             align-items: center;
+            justify-content: center;
             margin-top: 4px;
             border: 1px solid rgba(229, 9, 20, .28);
-            border-radius: 999px;
-            padding: 5px 9px;
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            padding: 0;
             color: #ffd7da;
             background: rgba(229, 9, 20, .12);
-            font-size: .74rem;
-            font-weight: 750;
+        }
+
+        .account-menu-family svg {
+            width: 14px;
+            height: 14px;
         }
 
         .account-menu-section {
@@ -835,6 +845,15 @@ if (!isset($_SESSION['user_id'])) {
     } catch (Throwable $e) {
         $familyBadge = null;
     }
+    $realPremiumBadge = false;
+    try {
+        $stmt = $pdo->prepare("SELECT 1 FROM user_subscriptions WHERE user_id = ? AND status = 'active' AND expires_at > NOW() AND plan_code <> 'casual' LIMIT 1");
+        $stmt->execute([(int) $_SESSION['user_id']]);
+        $realPremiumBadge = (bool) $stmt->fetchColumn();
+    } catch (Throwable $e) {
+        $realPremiumBadge = false;
+    }
+    $premiumBadge = $realPremiumBadge || (bool) $familyBadge;
     ?>
 
     <div class="account-header" aria-label="Menu da conta">
@@ -858,8 +877,10 @@ if (!isset($_SESSION['user_id'])) {
                     <?php endif; ?>
                 </span>
                 <span class="account-owner-name"><?= htmlspecialchars($ownerName, ENT_QUOTES, 'UTF-8') ?></span>
-                <?php if ($familyBadge): ?>
-                    <span class="account-family-badge">Familia</span>
+                <?php if ($premiumBadge): ?>
+                    <span class="account-family-badge" title="<?= $familyBadge ? 'Membro da familia' : 'Plano premium ativo' ?>" aria-label="<?= $familyBadge ? 'Membro da familia' : 'Plano premium ativo' ?>">
+                        <i data-lucide="<?= $familyBadge ? 'badge-check' : 'sparkles' ?>"></i>
+                    </span>
                 <?php endif; ?>
                 <i data-lucide="chevron-down" class="account-chevron" aria-hidden="true"></i>
             </button>
@@ -868,8 +889,10 @@ if (!isset($_SESSION['user_id'])) {
                 <div class="account-menu-heading">
                     <span class="account-menu-kicker"><?= $familyBadge ? 'Conta familiar' : 'Dono da conta' ?></span>
                     <span class="account-menu-name"><?= htmlspecialchars($ownerName, ENT_QUOTES, 'UTF-8') ?></span>
-                    <?php if ($familyBadge): ?>
-                        <span class="account-menu-family">Membro da familia Pipocine</span>
+                    <?php if ($premiumBadge): ?>
+                        <span class="account-menu-family" title="<?= $familyBadge ? 'Membro da familia' : 'Plano premium ativo' ?>" aria-label="<?= $familyBadge ? 'Membro da familia' : 'Plano premium ativo' ?>">
+                            <i data-lucide="<?= $familyBadge ? 'badge-check' : 'sparkles' ?>"></i>
+                        </span>
                     <?php endif; ?>
                 </div>
 
