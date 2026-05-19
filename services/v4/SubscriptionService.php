@@ -26,11 +26,15 @@ class SubscriptionService
     public function state(int $userId): array
     {
         $active = $this->subscriptions->activeSubscription($userId);
+        $familyBenefit = $this->subscriptions->activeFamilyBenefit($userId);
 
         return [
             'success' => true,
-            'active' => (bool) $active,
+            'active' => (bool) $active || (bool) $familyBenefit,
+            'real_active' => (bool) $active,
+            'family_active' => (bool) $familyBenefit,
             'subscription' => $this->normalizeSubscription($active),
+            'family_benefit' => $this->normalizeFamilyBenefit($familyBenefit),
             'history' => $this->subscriptions->paymentHistory($userId),
         ];
     }
@@ -43,7 +47,7 @@ class SubscriptionService
         }
 
         $active = $this->subscriptions->activeSubscription($userId);
-        if ($active && (($active['source'] ?? 'paid') === 'paid')) {
+        if ($active && (($active['source'] ?? 'paid') === 'paid') && (($active['plan_code'] ?? '') !== 'casual')) {
             return ['success' => false, 'code' => 'SUBSCRIPTION_ACTIVE', 'message' => 'Sua assinatura ja esta ativa.'];
         }
 
@@ -153,7 +157,7 @@ class SubscriptionService
         }
 
         $activeSubscription = $this->subscriptions->activeSubscription($userId);
-        if ($activeSubscription && (($activeSubscription['source'] ?? 'paid') === 'paid')) {
+        if ($activeSubscription && (($activeSubscription['source'] ?? 'paid') === 'paid') && (($activeSubscription['plan_code'] ?? '') !== 'casual')) {
             return ['success' => true, 'already_active' => true, 'redirect' => '/plan/me'];
         }
 
@@ -185,6 +189,7 @@ class SubscriptionService
     {
         return [
             'active' => $this->normalizeSubscription($this->subscriptions->activeSubscription($userId)),
+            'family_benefit' => $this->normalizeFamilyBenefit($this->subscriptions->activeFamilyBenefit($userId)),
             'payments' => $this->subscriptions->paymentHistory($userId),
             'subscriptions' => $this->subscriptions->subscriptionHistory($userId),
         ];
@@ -252,6 +257,34 @@ class SubscriptionService
 
         $subscription['benefits'] = json_decode((string) ($subscription['benefits_json'] ?? '[]'), true) ?: [];
         return $subscription;
+    }
+
+    private function normalizeFamilyBenefit(?array $benefit): ?array
+    {
+        if (!$benefit) {
+            return null;
+        }
+
+        return [
+            'membership_id' => (int) $benefit['membership_id'],
+            'owner_user_id' => (int) $benefit['owner_user_id'],
+            'owner_name' => (string) ($benefit['owner_name'] ?? 'Titular Pipocine'),
+            'owner_email' => (string) ($benefit['owner_email'] ?? ''),
+            'plan_code' => (string) ($benefit['plan_code'] ?? 'gold'),
+            'plan_name' => 'Beneficio familiar',
+            'source' => 'family_benefit',
+            'badge' => 'Membro da familia',
+            'accepted_at' => (string) ($benefit['accepted_at'] ?? ''),
+            'expires_at' => (string) ($benefit['owner_subscription_expires_at'] ?? ''),
+            'device_limit' => (int) ($benefit['device_limit'] ?? 4),
+            'profile_limit' => (int) ($benefit['profile_limit'] ?? 8),
+            'benefits' => [
+                'Sem anuncios',
+                'Personalizacao de perfil',
+                'Player completo',
+                'Qualidade 2K',
+            ],
+        ];
     }
 
     private function isPaidPayload(array $payload): bool

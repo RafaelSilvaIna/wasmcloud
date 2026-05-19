@@ -143,11 +143,34 @@ class AuthModel {
                     WHERE user_id = ?
                       AND status = 'active'
                       AND expires_at > NOW()
+                      AND plan_code <> 'casual'
                     LIMIT 1
                 ");
                 $stmt->execute([$userId]);
                 $row = $stmt->fetch(PDO::FETCH_ASSOC);
                 if ((int) ($row['cnt'] ?? 0) > 0) {
+                    return true;
+                }
+            } catch (Throwable $e) {}
+
+            try {
+                $stmt = $db->prepare("
+                    SELECT 1
+                    FROM family_memberships fm
+                    JOIN user_subscriptions s
+                      ON s.user_id = fm.owner_user_id
+                     AND s.status = 'active'
+                     AND s.expires_at > NOW()
+                    JOIN subscription_plans p
+                      ON p.code = s.plan_code
+                     AND p.is_active = 1
+                     AND p.family_member_limit > 0
+                    WHERE fm.member_user_id = ?
+                      AND fm.status = 'active'
+                    LIMIT 1
+                ");
+                $stmt->execute([$userId]);
+                if ($stmt->fetchColumn()) {
                     return true;
                 }
             } catch (Throwable $e) {}

@@ -201,6 +201,12 @@ body.plan-body {
     color: #fde68a;
 }
 
+.plan-pill.family {
+    border: 1px solid rgba(229, 9, 20, .28);
+    background: rgba(229, 9, 20, .12);
+    color: #ffd7da;
+}
+
 .plan-price {
     display: flex;
     align-items: baseline;
@@ -542,6 +548,12 @@ body.plan-body {
     color: #fde68a;
     background: rgba(245, 158, 11, .12);
     border: 1px solid rgba(245, 158, 11, .24);
+}
+
+.plan-origin.family {
+    color: #ffd7da;
+    background: rgba(229, 9, 20, .12);
+    border: 1px solid rgba(229, 9, 20, .24);
 }
 
 .plan-courtesy-banner {
@@ -897,6 +909,27 @@ body.plan-body {
     line-height: 1.1;
 }
 
+.me-family-badge {
+    width: max-content;
+    max-width: 100%;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    margin-top: 12px;
+    border: 1px solid rgba(229, 9, 20, .28);
+    border-radius: 999px;
+    padding: 7px 11px;
+    color: #ffd7da;
+    background: rgba(229, 9, 20, .12);
+    font-size: .8rem;
+    font-weight: 800;
+}
+
+.me-family-badge svg {
+    width: 15px;
+    height: 15px;
+}
+
 .me-notice {
     display: flex;
     align-items: flex-start;
@@ -1224,5 +1257,134 @@ body.plan-body {
     .pix-actions .plan-danger,
     .pix-actions .plan-secondary {
         width: 100%;
+    }
+}
+
+/* Minimal professional pass for /plan/me */
+.me-shell {
+    width: min(960px, calc(100% - 44px));
+    padding-top: 40px;
+}
+
+.me-header {
+    margin-bottom: 30px;
+}
+
+.me-eyebrow,
+.me-panel-eyebrow,
+.me-section-label {
+    letter-spacing: .08em;
+    font-weight: 700;
+}
+
+.me-heading {
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: 620;
+    letter-spacing: 0;
+}
+
+.me-grid {
+    gap: 14px;
+}
+
+.me-grid .plan-panel,
+.me-family-panel,
+.plan-alert-card {
+    border-color: rgba(255, 255, 255, .09);
+    border-radius: 14px;
+    background: #0f1116;
+    box-shadow: none;
+}
+
+.me-grid .plan-panel {
+    background: #0f1116;
+}
+
+.me-notice {
+    border-color: rgba(229, 9, 20, .2);
+    border-radius: 14px;
+    background: rgba(229, 9, 20, .075);
+}
+
+.me-notice strong {
+    color: #fff;
+    font-weight: 680;
+}
+
+.me-stat-list,
+.me-payment-list,
+.me-family-list {
+    border-top-color: rgba(255, 255, 255, .08);
+}
+
+.me-stat-list li,
+.me-payment-list li,
+.me-family-list li {
+    border-bottom-color: rgba(255, 255, 255, .08);
+}
+
+.me-family-meter {
+    border-color: rgba(229, 9, 20, .16);
+    border-radius: 12px;
+    background: rgba(229, 9, 20, .055);
+}
+
+.me-family-avatar {
+    background: rgba(229, 9, 20, .12);
+    color: #ffd7da;
+}
+
+.me-family-remove,
+.plan-benefits-link {
+    border-color: rgba(229, 9, 20, .24);
+    border-radius: 999px;
+    color: #ffd7da;
+    background: rgba(229, 9, 20, .08);
+}
+
+.me-family-remove:hover,
+.plan-benefits-link:hover {
+    background: rgba(229, 9, 20, .14);
+}
+
+.me-shell .plan-action,
+.plan-alert-card .plan-action,
+.plan-alert-card .plan-secondary,
+.plan-alert-card .plan-danger,
+.plan-alert-card .plan-field input {
+    border-radius: 999px;
+}
+
+.me-shell .plan-action.gold,
+.plan-alert-card .plan-action.gold {
+    background: #e50914;
+}
+
+.me-shell .plan-action.gold:hover,
+.plan-alert-card .plan-action.gold:hover {
+    background: #f40612;
+}
+
+.plan-alert {
+    background: rgba(6, 7, 11, .78);
+}
+
+.plan-alert-card {
+    box-shadow: 0 26px 90px rgba(0, 0, 0, .42);
+}
+
+.family-invite-form .plan-field {
+    gap: 10px;
+}
+
+.family-invite-form .plan-field span {
+    color: var(--plan-muted);
+    font-size: .86rem;
+    font-weight: 700;
+}
+
+@media (max-width: 900px) {
+    .me-shell {
+        width: min(100% - 28px, 640px);
     }
 }

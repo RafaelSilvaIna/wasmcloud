@@ -132,6 +132,45 @@ class FamilyBoxModel
         return $membership ?: null;
     }
 
+    public function activeFamilyBenefitForMember(int $memberUserId): ?array
+    {
+        try {
+            $stmt = $this->db->prepare("
+                SELECT
+                    fm.*,
+                    owner.full_name AS owner_name,
+                    owner.email AS owner_email,
+                    s.id AS owner_subscription_id,
+                    s.plan_code,
+                    s.expires_at AS owner_subscription_expires_at,
+                    p.name AS plan_name,
+                    p.device_limit,
+                    p.profile_limit,
+                    p.family_member_limit,
+                    p.benefits_json
+                FROM family_memberships fm
+                JOIN platform_users owner ON owner.id = fm.owner_user_id
+                JOIN user_subscriptions s
+                  ON s.user_id = fm.owner_user_id
+                 AND s.status = 'active'
+                 AND s.expires_at > NOW()
+                JOIN subscription_plans p
+                  ON p.code = s.plan_code
+                 AND p.is_active = 1
+                 AND p.family_member_limit > 0
+                WHERE fm.member_user_id = ?
+                  AND fm.status = 'active'
+                ORDER BY s.expires_at DESC
+                LIMIT 1
+            ");
+            $stmt->execute([$memberUserId]);
+            $benefit = $stmt->fetch(PDO::FETCH_ASSOC);
+            return $benefit ?: null;
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
     public function pendingInvite(int $ownerUserId, int $targetUserId): ?array
     {
         $stmt = $this->db->prepare("
@@ -202,7 +241,7 @@ class FamilyBoxModel
         $stmt->execute([$itemId, $userId]);
     }
 
-    public function acceptInvite(array $item): int
+    public function acceptInvite(array $item, int $limit): bool
     {
         $ownerUserId = (int) $item['actor_user_id'];
         $memberUserId = (int) $item['target_user_id'];
@@ -210,22 +249,50 @@ class FamilyBoxModel
         $this->db->beginTransaction();
         try {
             $stmt = $this->db->prepare("
-                INSERT INTO family_memberships (owner_user_id, member_user_id, status, accepted_at)
-                VALUES (?, ?, 'active', NOW())
-                ON DUPLICATE KEY UPDATE status = 'active', accepted_at = NOW(), removed_at = NULL, updated_at = NOW()
-            ");
-            $stmt->execute([$ownerUserId, $memberUserId]);
-            $membershipId = (int) $this->db->lastInsertId();
-
-            $stmt = $this->db->prepare("
                 UPDATE pipocine_box_items
                 SET status = 'read', action_status = 'accepted', acted_at = NOW(), updated_at = NOW()
                 WHERE id = ? AND target_user_id = ? AND action_status = 'pending'
             ");
             $stmt->execute([(int) $item['id'], $memberUserId]);
+            if ($stmt->rowCount() !== 1) {
+                $this->db->rollBack();
+                return false;
+            }
+
+            $stmt = $this->db->prepare("
+                SELECT id
+                FROM family_memberships
+                WHERE owner_user_id = ? AND status = 'active'
+                FOR UPDATE
+            ");
+            $stmt->execute([$ownerUserId]);
+            if (count($stmt->fetchAll(PDO::FETCH_ASSOC)) >= $limit) {
+                $this->db->rollBack();
+                return false;
+            }
+
+            $stmt = $this->db->prepare("
+                SELECT owner_user_id
+                FROM family_memberships
+                WHERE member_user_id = ? AND status = 'active'
+                FOR UPDATE
+            ");
+            $stmt->execute([$memberUserId]);
+            $existingFamily = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($existingFamily && (int) $existingFamily['owner_user_id'] !== $ownerUserId) {
+                $this->db->rollBack();
+                return false;
+            }
+
+            $stmt = $this->db->prepare("
+                INSERT INTO family_memberships (owner_user_id, member_user_id, status, accepted_at)
+                VALUES (?, ?, 'active', NOW())
+                ON DUPLICATE KEY UPDATE status = 'active', accepted_at = NOW(), removed_at = NULL, updated_at = NOW()
+            ");
+            $stmt->execute([$ownerUserId, $memberUserId]);
 
             $this->db->commit();
-            return $membershipId;
+            return true;
         } catch (\Throwable $e) {
             $this->db->rollBack();
             throw $e;

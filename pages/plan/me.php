@@ -23,13 +23,19 @@ $service = new SubscriptionService(
 $dashboard = $service->dashboard((int) $_SESSION['user_id']);
 $familyService = new FamilyBoxService(new FamilyBoxModel($pdo));
 $familyDashboard = $familyService->familyDashboard((int) $_SESSION['user_id']);
-$active = $dashboard['active'] ?? [];
+$realActive = $dashboard['active'] ?? null;
+$familyBenefit = $dashboard['family_benefit'] ?? null;
+$active = $realActive ?: ($familyBenefit ?: []);
 $isCourtesy = (($active['source'] ?? 'paid') === 'admin_courtesy');
+$isFamilyBenefit = !$realActive && !empty($familyBenefit);
+$hasFamilyBadge = !empty($familyBenefit);
 $paidPayments = array_values(array_filter($dashboard['payments'] ?? [], static function (array $payment): bool {
     return ($payment['status'] ?? '') === 'paid';
 }));
 $expiresAt = !empty($active['expires_at']) ? strtotime((string) $active['expires_at']) : null;
 $daysLeft = $expiresAt ? max(0, (int) ceil(($expiresAt - time()) / 86400)) : null;
+$statusLabel = $isFamilyBenefit ? 'Familia' : ($isCourtesy ? 'Cortesia' : 'Ativo');
+$statusClass = $isFamilyBenefit ? 'family' : ($isCourtesy ? 'courtesy' : 'paid');
 
 function brDate(?string $date): string {
     if (!$date) return '-';
@@ -57,21 +63,31 @@ function brMoney($value): string {
             <div>
                 <p class="me-eyebrow">Minha assinatura</p>
                 <h1 class="me-heading"><?= htmlspecialchars($active['plan_name'] ?? 'Plano Gold', ENT_QUOTES, 'UTF-8') ?></h1>
+                <?php if ($hasFamilyBadge): ?>
+                    <span class="me-family-badge"><i data-lucide="badge-check"></i>Membro da familia</span>
+                <?php endif; ?>
             </div>
-            <?php if ($isCourtesy): ?>
+            <?php if ($isCourtesy || $isFamilyBenefit): ?>
                 <a class="plan-action gold compact" href="/plan">
                     <i data-lucide="arrow-up-right"></i>Assinar plano real
                 </a>
             <?php endif; ?>
         </header>
 
-        <?php if ($isCourtesy): ?>
+        <?php if ($isCourtesy || $isFamilyBenefit): ?>
             <div class="me-notice">
-                <i data-lucide="sparkles"></i>
-                <p>
-                    <strong>Cortesia ativa &mdash; termina em <?= $daysLeft !== null ? $daysLeft . ' dia' . ($daysLeft === 1 ? '' : 's') : 'breve' ?>.</strong>
-                    Para manter o acesso, assine o plano real do PipoCine.
-                </p>
+                <i data-lucide="<?= $isFamilyBenefit ? 'users-round' : 'sparkles' ?>"></i>
+                <?php if ($isFamilyBenefit): ?>
+                    <p>
+                        <strong>Beneficio familiar ativo<?= $daysLeft !== null ? ' por mais ' . $daysLeft . ' dia' . ($daysLeft === 1 ? '' : 's') : '' ?>.</strong>
+                        Voce recebeu beneficios do Gold pela familia de <?= htmlspecialchars($familyBenefit['owner_name'] ?? 'um titular Pipocine', ENT_QUOTES, 'UTF-8') ?>, mas ainda pode assinar seu proprio Plano Gold.
+                    </p>
+                <?php else: ?>
+                    <p>
+                        <strong>Cortesia ativa &mdash; termina em <?= $daysLeft !== null ? $daysLeft . ' dia' . ($daysLeft === 1 ? '' : 's') : 'breve' ?>.</strong>
+                        Para manter o acesso, assine o plano real do PipoCine.
+                    </p>
+                <?php endif; ?>
             </div>
         <?php endif; ?>
 
@@ -80,14 +96,14 @@ function brMoney($value): string {
             <section class="plan-panel me-status-panel">
                 <div class="me-section-label">
                     Status do plano
-                    <span class="plan-origin <?= $isCourtesy ? 'courtesy' : 'paid' ?>">
-                        <?= $isCourtesy ? 'Cortesia' : 'Ativo' ?>
+                    <span class="plan-origin <?= $statusClass ?>">
+                        <?= $statusLabel ?>
                     </span>
                 </div>
 
                 <ul class="me-stat-list">
                     <li>
-                        <span>Validade</span>
+                        <span><?= $isFamilyBenefit ? 'Beneficio ate' : 'Validade' ?></span>
                         <strong><?= brDate($active['expires_at'] ?? null) ?></strong>
                     </li>
                     <li>
@@ -98,10 +114,16 @@ function brMoney($value): string {
                         <span>Perfis</span>
                         <strong><?= (int) ($active['profile_limit'] ?? 8) ?></strong>
                     </li>
-                    <?php if (!$isCourtesy): ?>
+                    <?php if (!$isCourtesy && !$isFamilyBenefit): ?>
                     <li>
                         <span>Valor mensal</span>
                         <strong><?= brMoney($active['amount_paid'] ?? 0) ?></strong>
+                    </li>
+                    <?php endif; ?>
+                    <?php if ($isFamilyBenefit): ?>
+                    <li>
+                        <span>Titular familiar</span>
+                        <strong><?= htmlspecialchars($familyBenefit['owner_name'] ?? 'Titular Pipocine', ENT_QUOTES, 'UTF-8') ?></strong>
                     </li>
                     <?php endif; ?>
                 </ul>

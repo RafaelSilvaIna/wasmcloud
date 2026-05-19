@@ -60,6 +60,48 @@ class SubscriptionModel
         return $subscription ?: null;
     }
 
+    public function activeFamilyBenefit(int $userId): ?array
+    {
+        try {
+            $stmt = $this->db->prepare("
+                SELECT
+                    fm.id AS membership_id,
+                    fm.owner_user_id,
+                    fm.member_user_id,
+                    fm.accepted_at,
+                    owner.full_name AS owner_name,
+                    owner.email AS owner_email,
+                    s.id AS owner_subscription_id,
+                    s.plan_code,
+                    s.expires_at AS owner_subscription_expires_at,
+                    p.name AS plan_name,
+                    p.device_limit,
+                    p.profile_limit,
+                    p.family_member_limit,
+                    p.benefits_json
+                FROM family_memberships fm
+                JOIN platform_users owner ON owner.id = fm.owner_user_id
+                JOIN user_subscriptions s
+                  ON s.user_id = fm.owner_user_id
+                 AND s.status = 'active'
+                 AND s.expires_at > NOW()
+                JOIN subscription_plans p
+                  ON p.code = s.plan_code
+                 AND p.is_active = 1
+                 AND p.family_member_limit > 0
+                WHERE fm.member_user_id = ?
+                  AND fm.status = 'active'
+                ORDER BY s.expires_at DESC
+                LIMIT 1
+            ");
+            $stmt->execute([$userId]);
+            $benefit = $stmt->fetch(PDO::FETCH_ASSOC);
+            return $benefit ?: null;
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
     public function expireOldSubscriptions(): void
     {
         $this->db->exec("UPDATE user_subscriptions SET status = 'expired' WHERE status = 'active' AND expires_at <= NOW()");

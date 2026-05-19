@@ -17,9 +17,13 @@ class FamilyBoxService
 
     public function summary(int $userId): array
     {
+        $familyBenefit = $this->model->activeFamilyBenefitForMember($userId);
+
         return [
             'success' => true,
             'unread' => $this->model->unreadCount($userId),
+            'family_member' => (bool) $familyBenefit,
+            'family_badge' => $familyBenefit ? 'Membro da familia' : null,
         ];
     }
 
@@ -124,8 +128,16 @@ class FamilyBoxService
             return ['success' => false, 'message' => 'Sua conta ja esta vinculada a outra familia.'];
         }
 
-        $this->model->acceptInvite($item);
-        return ['success' => true, 'message' => 'Convite aceito. Voce agora faz parte da familia Pipocine.'];
+        if (!$this->model->acceptInvite($item, $limit)) {
+            return ['success' => false, 'message' => 'Nao foi possivel confirmar o convite com seguranca. Atualize a Box e tente novamente.'];
+        }
+
+        return [
+            'success' => true,
+            'message' => 'Convite aceito. Voce agora faz parte da familia Pipocine.',
+            'family_member' => true,
+            'family_badge' => 'Membro da familia',
+        ];
     }
 
     public function decline(int $userId, int $itemId): array

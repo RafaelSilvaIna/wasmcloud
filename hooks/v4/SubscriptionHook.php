@@ -31,14 +31,15 @@ class SubscriptionHook
         $model->expireOldSubscriptions();
 
         $active = $model->activeSubscription((int) $_SESSION['user_id']);
-        $isPaidActive = $active && (($active['source'] ?? 'paid') === 'paid');
+        $isPaidActive = $active && (($active['source'] ?? 'paid') === 'paid') && (($active['plan_code'] ?? '') !== 'casual');
+        $familyBenefit = $model->activeFamilyBenefit((int) $_SESSION['user_id']);
 
         if ($isPaidActive && (in_array($uri, ['/plan', '/plan/', '/plan/checkout', '/plan/pix', '/plan/payment'], true) || str_starts_with($uri, '/plan/payment/active='))) {
             header('Location: /plan/me');
             exit;
         }
 
-        if (!$active && $uri === '/plan/me') {
+        if (!$active && !$familyBenefit && $uri === '/plan/me') {
             header('Location: /plan');
             exit;
         }

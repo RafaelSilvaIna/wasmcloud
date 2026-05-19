@@ -1,7 +1,17 @@
 <?php
 declare(strict_types=1);
 
+require_once __DIR__ . '/../../models/v4/FamilyBoxModel.php';
+
+use Models\V4\FamilyBoxModel;
+
 $ownerName = htmlspecialchars($_SESSION['full_name'] ?? 'Usuario', ENT_QUOTES, 'UTF-8');
+$familyBenefit = null;
+try {
+    $familyBenefit = (new FamilyBoxModel($pdo))->activeFamilyBenefitForMember((int) ($_SESSION['user_id'] ?? 0));
+} catch (Throwable $e) {
+    $familyBenefit = null;
+}
 ?>
 <!DOCTYPE html>
 <html lang="pt-br">
@@ -16,6 +26,9 @@ $ownerName = htmlspecialchars($_SESSION['full_name'] ?? 'Usuario', ENT_QUOTES, '
     <main class="plan-shell">
         <header class="plan-topbar plan-topbar-minimal">
             <span class="plan-pill"><i data-lucide="user-round"></i><?= $ownerName ?></span>
+            <?php if ($familyBenefit): ?>
+                <span class="plan-pill family"><i data-lucide="badge-check"></i>Membro da familia</span>
+            <?php endif; ?>
         </header>
 
         <section class="plan-hero">

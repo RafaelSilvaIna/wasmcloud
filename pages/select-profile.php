@@ -1,5 +1,8 @@
 <?php
 require_once __DIR__ . '/../database/db.php';
+require_once __DIR__ . '/../models/v4/FamilyBoxModel.php';
+
+use Models\V4\FamilyBoxModel;
 
 if (!isset($_SESSION['user_id'])) {
     header("Location: /login");
@@ -623,6 +626,20 @@ if (!isset($_SESSION['user_id'])) {
             line-height: 1;
         }
 
+        .account-family-badge {
+            display: inline-flex;
+            align-items: center;
+            min-height: 22px;
+            border: 1px solid rgba(229, 9, 20, .34);
+            border-radius: 999px;
+            padding: 0 8px;
+            color: #ffd7da;
+            background: rgba(229, 9, 20, .14);
+            font-size: .68rem;
+            font-weight: 800;
+            line-height: 1;
+        }
+
         .account-chevron {
             width: 16px;
             height: 16px;
@@ -680,6 +697,21 @@ if (!isset($_SESSION['user_id'])) {
             font-size: 1rem;
             font-weight: 700;
             overflow-wrap: anywhere;
+        }
+
+        .account-menu-family {
+            width: max-content;
+            max-width: 100%;
+            display: inline-flex;
+            align-items: center;
+            margin-top: 4px;
+            border: 1px solid rgba(229, 9, 20, .28);
+            border-radius: 999px;
+            padding: 5px 9px;
+            color: #ffd7da;
+            background: rgba(229, 9, 20, .12);
+            font-size: .74rem;
+            font-weight: 750;
         }
 
         .account-menu-section {
@@ -770,6 +802,10 @@ if (!isset($_SESSION['user_id'])) {
                 display: none;
             }
 
+            .account-family-badge {
+                display: none;
+            }
+
             .account-menu-toggle {
                 padding-right: 8px;
                 max-width: none;
@@ -793,6 +829,12 @@ if (!isset($_SESSION['user_id'])) {
     <?php
     $ownerName = trim($_SESSION['full_name'] ?? $_SESSION['username'] ?? 'Dono da conta');
     $ownerAvatar = trim($_SESSION['profile_pic_url'] ?? '');
+    $familyBadge = null;
+    try {
+        $familyBadge = (new FamilyBoxModel($pdo))->activeFamilyBenefitForMember((int) $_SESSION['user_id']);
+    } catch (Throwable $e) {
+        $familyBadge = null;
+    }
     ?>
 
     <div class="account-header" aria-label="Menu da conta">
@@ -816,13 +858,19 @@ if (!isset($_SESSION['user_id'])) {
                     <?php endif; ?>
                 </span>
                 <span class="account-owner-name"><?= htmlspecialchars($ownerName, ENT_QUOTES, 'UTF-8') ?></span>
+                <?php if ($familyBadge): ?>
+                    <span class="account-family-badge">Familia</span>
+                <?php endif; ?>
                 <i data-lucide="chevron-down" class="account-chevron" aria-hidden="true"></i>
             </button>
 
             <nav id="account-menu-content" class="account-menu-content" aria-label="Caminhos da conta">
                 <div class="account-menu-heading">
-                    <span class="account-menu-kicker">Dono da conta</span>
+                    <span class="account-menu-kicker"><?= $familyBadge ? 'Conta familiar' : 'Dono da conta' ?></span>
                     <span class="account-menu-name"><?= htmlspecialchars($ownerName, ENT_QUOTES, 'UTF-8') ?></span>
+                    <?php if ($familyBadge): ?>
+                        <span class="account-menu-family">Membro da familia Pipocine</span>
+                    <?php endif; ?>
                 </div>
 
                 <div class="account-menu-section" aria-label="Principal">
