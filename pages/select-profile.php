@@ -520,6 +520,7 @@ if (!isset($_SESSION['user_id'])) {
         }
 
         .account-settings-btn,
+        .account-box-btn,
         .account-menu-toggle {
             background: rgba(255, 255, 255, 0.03);
             border: 1px solid rgba(255, 255, 255, 0.18);
@@ -529,13 +530,16 @@ if (!isset($_SESSION['user_id'])) {
         }
 
         .account-settings-btn:hover,
+        .account-box-btn:hover,
         .account-menu-toggle:hover,
         .account-menu-toggle[aria-expanded="true"] {
             border-color: rgba(255, 255, 255, 0.42);
             background: rgba(255, 255, 255, 0.08);
         }
 
-        .account-settings-btn {
+        .account-settings-btn,
+        .account-box-btn {
+            position: relative;
             width: 44px;
             height: 44px;
             border-radius: 50%;
@@ -544,9 +548,36 @@ if (!isset($_SESSION['user_id'])) {
             justify-content: center;
         }
 
-        .account-settings-btn i {
+        .account-settings-btn i,
+        .account-box-btn i {
             width: 20px;
             height: 20px;
+        }
+
+        .account-box-btn {
+            text-decoration: none;
+        }
+
+        .account-box-badge {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            min-width: 18px;
+            height: 18px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            border-radius: 999px;
+            padding: 0 5px;
+            color: #fff;
+            background: #e50914;
+            font-size: .68rem;
+            font-weight: 900;
+            line-height: 1;
+        }
+
+        .account-box-badge.visible {
+            display: flex;
         }
 
         .account-menu-wrap {
@@ -769,6 +800,11 @@ if (!isset($_SESSION['user_id'])) {
             <i data-lucide="settings" aria-hidden="true"></i>
         </button>
 
+        <a id="btn-box" class="account-box-btn" href="/box" aria-label="Abrir Box Pipocine">
+            <i data-lucide="mail" aria-hidden="true"></i>
+            <span class="account-box-badge" id="account-box-badge"></span>
+        </a>
+
         <div class="account-menu-wrap">
             <button id="account-menu-toggle" class="account-menu-toggle" type="button" aria-haspopup="true"
                 aria-expanded="false" aria-controls="account-menu-content">
@@ -976,6 +1012,17 @@ if (!isset($_SESSION['user_id'])) {
                 }
             }, 500);
         }
+
+        fetch('/api/v4/box/summary')
+            .then((res) => res.ok ? res.json() : null)
+            .then((data) => {
+                const badge = document.getElementById('account-box-badge');
+                const unread = Number(data?.unread || 0);
+                if (!badge || unread < 1) return;
+                badge.textContent = unread > 9 ? '9+' : String(unread);
+                badge.classList.add('visible');
+            })
+            .catch(() => {});
     </script>
 
 </body>

@@ -266,6 +266,11 @@ if ($requestUri === '/manage-profiles') {
     exit;
 }
 
+if ($requestUri === '/box' || $requestUri === '/box/') {
+    require_once __DIR__ . '/../pages/box.php';
+    exit;
+}
+
 if ($requestUri === '/settings') {
     require_once __DIR__ . '/../pages/settings.php';
     exit;

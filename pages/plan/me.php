@@ -4,12 +4,16 @@ declare(strict_types=1);
 require_once __DIR__ . '/../../helpers/v4/EvoPayClient.php';
 require_once __DIR__ . '/../../models/v4/PlatformUserModel.php';
 require_once __DIR__ . '/../../models/v4/SubscriptionModel.php';
+require_once __DIR__ . '/../../models/v4/FamilyBoxModel.php';
 require_once __DIR__ . '/../../services/v4/SubscriptionService.php';
+require_once __DIR__ . '/../../services/v4/FamilyBoxService.php';
 
 use Helpers\V4\EvoPayClient;
 use Models\V4\PlatformUserModel;
 use Models\V4\SubscriptionModel;
+use Models\V4\FamilyBoxModel;
 use Services\V4\SubscriptionService;
+use Services\V4\FamilyBoxService;
 
 $service = new SubscriptionService(
     new SubscriptionModel($pdo),
@@ -17,6 +21,8 @@ $service = new SubscriptionService(
     new EvoPayClient(require __DIR__ . '/../../config/evopay.php')
 );
 $dashboard = $service->dashboard((int) $_SESSION['user_id']);
+$familyService = new FamilyBoxService(new FamilyBoxModel($pdo));
+$familyDashboard = $familyService->familyDashboard((int) $_SESSION['user_id']);
 $active = $dashboard['active'] ?? [];
 $isCourtesy = (($active['source'] ?? 'paid') === 'admin_courtesy');
 $paidPayments = array_values(array_filter($dashboard['payments'] ?? [], static function (array $payment): bool {
@@ -41,6 +47,7 @@ function brMoney($value): string {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PipoCine - Minha Assinatura</title>
     <link rel="stylesheet" href="/assets/css/plan.css">
+    <link rel="stylesheet" href="/assets/css/notification.css">
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" defer></script>
 </head>
 <body class="plan-body">
@@ -124,7 +131,72 @@ function brMoney($value): string {
             </section>
 
         </div>
+
+        <?php if (!empty($familyDashboard['enabled'])): ?>
+            <section class="plan-panel me-family-panel">
+                <div class="me-family-head">
+                    <div>
+                        <span class="me-panel-eyebrow">Membros da familia</span>
+                        <h2>Compartilhe beneficios especificos.</h2>
+                        <p>Convide contas Pipocine por e-mail. A pessoa recebe uma solicitacao na Box e so entra na familia depois de aceitar.</p>
+                    </div>
+                    <button class="plan-action gold compact" type="button" id="open-family-invite">
+                        <i data-lucide="user-plus"></i>Adicionar membro
+                    </button>
+                </div>
+
+                <div class="me-family-meter">
+                    <span><?= (int) ($familyDashboard['used'] ?? 0) ?> de <?= (int) ($familyDashboard['limit'] ?? 0) ?> membros usados</span>
+                    <strong><?= max(0, (int) ($familyDashboard['limit'] ?? 0) - (int) ($familyDashboard['used'] ?? 0)) ?> disponiveis</strong>
+                </div>
+
+                <?php if (empty($familyDashboard['members'])): ?>
+                    <p class="me-empty">Nenhum membro familiar adicionado ainda.</p>
+                <?php else: ?>
+                    <ul class="me-family-list" id="family-member-list">
+                        <?php foreach ($familyDashboard['members'] as $member): ?>
+                            <li data-member-id="<?= (int) $member['id'] ?>">
+                                <span class="me-family-avatar">
+                                    <?php if (!empty($member['avatar'])): ?>
+                                        <img src="<?= htmlspecialchars($member['avatar'], ENT_QUOTES, 'UTF-8') ?>" alt="">
+                                    <?php else: ?>
+                                        <i data-lucide="user-round"></i>
+                                    <?php endif; ?>
+                                </span>
+                                <span class="me-family-copy">
+                                    <strong><?= htmlspecialchars($member['name'], ENT_QUOTES, 'UTF-8') ?></strong>
+                                    <small><?= htmlspecialchars($member['email'], ENT_QUOTES, 'UTF-8') ?></small>
+                                </span>
+                                <button class="me-family-remove" type="button" data-remove-member="<?= (int) $member['id'] ?>">
+                                    Remover
+                                </button>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                <?php endif; ?>
+            </section>
+        <?php endif; ?>
     </main>
+
+    <div class="plan-alert" id="family-invite-modal" aria-hidden="true">
+        <div class="plan-alert-card">
+            <h2 class="plan-alert-title">Adicionar membro familiar</h2>
+            <p class="plan-alert-text">Digite o e-mail vinculado a conta Pipocine da pessoa. Ela recebera uma solicitacao segura na Box.</p>
+            <form class="family-invite-form" id="family-invite-form">
+                <label class="plan-field" for="family-email">
+                    <span>E-mail da conta</span>
+                    <input id="family-email" name="email" type="email" required autocomplete="email" placeholder="pessoa@email.com">
+                </label>
+                <div class="plan-actions-row">
+                    <button class="plan-secondary" type="button" id="close-family-invite">Cancelar</button>
+                    <button class="plan-action gold" type="submit"><i data-lucide="send"></i>Enviar convite</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="/assets/js/notification.js"></script>
+    <script src="/assets/js/plan-family.js"></script>
     <script>document.addEventListener('DOMContentLoaded',()=>{ if (typeof lucide !== 'undefined') lucide.createIcons(); });</script>
 </body>
 </html>

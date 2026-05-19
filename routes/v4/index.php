@@ -56,6 +56,9 @@ require_once __DIR__ . '/../../controllers/v4/SubscriptionController.php';
 require_once __DIR__ . '/../../models/v4/AccountStatusModel.php';
 require_once __DIR__ . '/../../services/v4/AccountStatusService.php';
 require_once __DIR__ . '/../../controllers/v4/AccountStatusController.php';
+require_once __DIR__ . '/../../models/v4/FamilyBoxModel.php';
+require_once __DIR__ . '/../../services/v4/FamilyBoxService.php';
+require_once __DIR__ . '/../../controllers/v4/FamilyBoxController.php';
 
 use Middleware\PinRateLimitMiddleware;
 use Models\V4\PinModel;
@@ -77,6 +80,9 @@ use Controllers\V4\SubscriptionController;
 use Models\V4\AccountStatusModel;
 use Services\V4\AccountStatusService;
 use Controllers\V4\AccountStatusController;
+use Models\V4\FamilyBoxModel;
+use Services\V4\FamilyBoxService;
+use Controllers\V4\FamilyBoxController;
 
 // ── Inicia sessão ────────────────────────────────────────────
 if (session_status() === PHP_SESSION_NONE) {
@@ -186,6 +192,15 @@ try {
         $model = new AccountStatusModel($pdo);
         $service = new AccountStatusService($model);
         $controller = new AccountStatusController($service);
+
+        $controller->handle($action, $method, $userId);
+        exit;
+    }
+
+    if (str_starts_with($action, 'box/') || str_starts_with($action, 'family/')) {
+        $model = new FamilyBoxModel($pdo);
+        $service = new FamilyBoxService($model);
+        $controller = new FamilyBoxController($service);
 
         $controller->handle($action, $method, $userId);
         exit;

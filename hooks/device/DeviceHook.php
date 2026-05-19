@@ -60,6 +60,7 @@ final class DeviceHook
     private const EXEMPT_EXACT = [
         '/select-profile',
         '/settings',
+        '/box',
         '/plan',
         '/plan/',
         '/plan/checkout',
@@ -81,6 +82,8 @@ final class DeviceHook
         '/assets/',
         '/webhooks/',
         '/error/',
+        '/box/',
+        '/docs/',
         '/login/',
         '/suporte',
         '/ads',

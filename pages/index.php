@@ -61,6 +61,11 @@ if ($requestUri === '/select-profile') {
     exit;
 }
 
+if ($requestUri === '/box' || $requestUri === '/box/') {
+    require_once __DIR__ . '/box.php';
+    exit;
+}
+
 // ROTA: Gerenciamento de Perfis
 if ($requestUri === '/manage-profiles') {
     require_once __DIR__ . '/manage-profiles.php';

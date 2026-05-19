@@ -83,6 +83,7 @@ class ProfileHook {
             '/manage-profiles',
             '/settings',
             '/d2xs8d3sdfsegequ6249f',
+            '/box',
             '/docs',
             '/docs/',
             '/plan',
@@ -94,7 +95,7 @@ class ProfileHook {
             '/create/profile',
         ];
 
-        if (strpos($uri, '/api/') === 0 || strpos($uri, '/login/') === 0 || strpos($uri, '/webhooks/') === 0 || str_starts_with($uri, '/docs/') || str_starts_with($uri, '/plan/payment/active=') || str_starts_with($uri, '/create/profile/edit=') || in_array($uri, $exempt, true) || preg_match('/^\/verify=/', $uri)) {
+        if (strpos($uri, '/api/') === 0 || strpos($uri, '/login/') === 0 || strpos($uri, '/webhooks/') === 0 || str_starts_with($uri, '/box/') || str_starts_with($uri, '/docs/') || str_starts_with($uri, '/plan/payment/active=') || str_starts_with($uri, '/create/profile/edit=') || in_array($uri, $exempt, true) || preg_match('/^\/verify=/', $uri)) {
             return;
         }
 
