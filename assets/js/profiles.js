@@ -98,11 +98,11 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         grid.innerHTML += `
-            <div class="add-profile-btn" id="trigger-add-profile">
+            <div class="profile-item add-profile-btn" id="trigger-add-profile">
                 <div class="add-icon-wrapper">
                     <svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                 </div>
-                <span class="profile-name" style="color:var(--text-muted)">Adicionar Perfil</span>
+                <span class="profile-name" style="color:var(--profile-text-muted)">Adicionar Perfil</span>
             </div>
         `;
     };

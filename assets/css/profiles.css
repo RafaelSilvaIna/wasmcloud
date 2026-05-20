@@ -61,6 +61,8 @@ body {
     flex-direction: column;
     align-items: center;
     gap: 12px;
+    width: var(--profile-card-size);
+    min-width: var(--profile-card-size);
     cursor: pointer;
     transition: transform 0.2s;
 }
@@ -129,12 +131,21 @@ body {
 
 /* Botão Adicionar na Grelha (Círculo com Borda) */
 .add-profile-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    width: var(--profile-card-size);
+    min-width: var(--profile-card-size);
     justify-content: flex-start;
+    cursor: pointer;
+    text-align: center;
 }
 
 .add-icon-wrapper {
     width: var(--profile-card-size);
     height: var(--profile-card-size);
+    box-sizing: border-box;
     border-radius: 50%;
     display: flex;
     align-items: center;

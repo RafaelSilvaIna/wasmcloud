@@ -46,6 +46,7 @@ if (!isset($_SESSION['user_id'])) {
             margin: 0;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             overflow-x: hidden;
+            position: relative;
         }
 
         /* ============================================================
@@ -93,6 +94,8 @@ if (!isset($_SESSION['user_id'])) {
             flex-direction: column;
             align-items: center;
             gap: 12px;
+            width: var(--profile-card-size);
+            min-width: var(--profile-card-size);
             cursor: pointer;
             transition: transform 0.2s;
         }
@@ -161,12 +164,21 @@ if (!isset($_SESSION['user_id'])) {
 
         /* Botão Adicionar na Grelha (Círculo com Borda) */
         .add-profile-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            width: var(--profile-card-size);
+            min-width: var(--profile-card-size);
             justify-content: flex-start;
+            cursor: pointer;
+            text-align: center;
         }
 
         .add-icon-wrapper {
             width: var(--profile-card-size);
             height: var(--profile-card-size);
+            box-sizing: border-box;
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -517,7 +529,7 @@ if (!isset($_SESSION['user_id'])) {
            MENU DA CONTA
            ============================================================ */
         .account-header {
-            position: fixed;
+            position: absolute;
             top: 24px;
             right: 24px;
             z-index: 100;
@@ -829,7 +841,8 @@ if (!isset($_SESSION['user_id'])) {
 
             .profiles-grid {
                 display: grid;
-                grid-template-columns: repeat(2, minmax(0, 1fr));
+                grid-template-columns: repeat(2, var(--profile-card-size));
+                justify-content: center;
                 gap: 34px 28px;
                 max-width: 390px;
                 align-items: start;
@@ -837,7 +850,7 @@ if (!isset($_SESSION['user_id'])) {
 
             .profile-item {
                 min-width: 0;
-                width: 100%;
+                width: var(--profile-card-size);
             }
 
             .profile-name {
@@ -870,9 +883,9 @@ if (!isset($_SESSION['user_id'])) {
             }
 
             .account-menu-content {
-                position: fixed;
-                top: 66px;
-                right: 14px;
+                position: absolute;
+                top: calc(100% + 12px);
+                right: 0;
                 width: min(292px, calc(100vw - 28px));
                 max-height: calc(100vh - 86px);
                 border-radius: 12px;
