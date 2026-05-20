@@ -35,6 +35,7 @@ $queryInicial = htmlspecialchars(trim($_GET['q'] ?? ''), ENT_QUOTES, 'UTF-8');
     <link rel="icon" type="image/png" href="/assets/img/favicon.png">
     <link rel="stylesheet" href="/assets/css/style.css">
     <link rel="stylesheet" href="/assets/css/header.css">
+    <link rel="stylesheet" href="/assets/css/content-card.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -673,11 +674,13 @@ $queryInicial = htmlspecialchars(trim($_GET['q'] ?? ''), ENT_QUOTES, 'UTF-8');
             .filter-sep { display: none; }
         }
     </style>
+    <link rel="stylesheet" href="/assets/css/search.css">
 </head>
 <body>
 
 <?php require_once __DIR__ . '/../components/Header.php'; ?>
 <?php require_once __DIR__ . '/../components/SessionModal.php'; ?>
+<?php require_once __DIR__ . '/../components/ContentCard.php'; ?>
 
 <main>
 
@@ -720,8 +723,20 @@ $queryInicial = htmlspecialchars(trim($_GET['q'] ?? ''), ENT_QUOTES, 'UTF-8');
             </div>
         </div>
 
+        <div class="filters-header">
+            <button id="filters-toggle" class="filters-toggle" type="button" aria-expanded="true" aria-controls="filters-panel">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M4 6h16"/>
+                    <path d="M7 12h10"/>
+                    <path d="M10 18h4"/>
+                </svg>
+                <span>Filtros</span>
+                <strong id="filters-count" class="filters-count" hidden>0</strong>
+            </button>
+        </div>
+
         <!-- Filtros -->
-        <div class="filters-row" role="group" aria-label="Filtros de busca">
+        <div class="filters-row" id="filters-panel" role="group" aria-label="Filtros de busca">
             <span class="filter-label">Filtrar</span>
 
             <!-- Tipo -->
@@ -1150,6 +1165,7 @@ const Search = {
 // Inicia
 document.addEventListener('DOMContentLoaded', () => Search.init());
 </script>
+<script src="/assets/js/search-page.js"></script>
 
 <?php if (!empty($__diag_errors)): ?>
 <div style="position:fixed;bottom:0;left:0;right:0;background:#c00;color:#fff;padding:12px;z-index:99999;font-family:monospace;font-size:12px;max-height:200px;overflow:auto;">

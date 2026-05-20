@@ -73,15 +73,14 @@ class SearchService {
             $tmdbId = (int) ($item['id_tmdb'] ?? 0);
             $isTv   = ($item['tipo'] === 'serie');
 
-            // Poster: banco local (apenas se for URL absoluta) com fallback TMDB
-            $poster = (!empty($item['poster']) && str_starts_with($item['poster'], 'http'))
-                ? $item['poster']
-                : (!empty($t['poster_path']) ? self::IMG_W300 . $t['poster_path'] : null);
+            // Imagens sempre priorizam TMDB em tempo real para evitar URLs locais quebradas.
+            $poster = !empty($t['poster_path'])
+                ? self::IMG_W300 . $t['poster_path']
+                : null;
 
-            // Backdrop: banco local (apenas se for URL absoluta) com fallback TMDB
-            $backdrop = (!empty($item['capa']) && str_starts_with($item['capa'], 'http'))
-                ? $item['capa']
-                : (!empty($t['backdrop_path']) ? self::IMG_ORIGINAL . $t['backdrop_path'] : null);
+            $backdrop = !empty($t['backdrop_path'])
+                ? self::IMG_ORIGINAL . $t['backdrop_path']
+                : null;
 
             // Nota TMDB tem prioridade sobre a do banco
             $nota = round((float)($t['vote_average'] ?? $item['nota'] ?? 0), 1);

@@ -41,6 +41,11 @@ function checkProfileSessionConflictInHeader(): void {
 
 // Executa verificação
 checkProfileSessionConflictInHeader();
+
+$currentHeaderPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+$headerActive = static function (string $path) use ($currentHeaderPath): string {
+    return $currentHeaderPath === $path ? ' active' : '';
+};
 ?>
 
 <header id="main-header" class="header-transparent">
@@ -50,14 +55,14 @@ checkProfileSessionConflictInHeader();
         </a>
         
         <nav class="desktop-nav">
-            <a href="/home" class="nav-link active">Início</a>
-            <a href="/catalogo" class="nav-link">Catálogo</a>
-            <a href="/minha-lista" class="nav-link">Minha Lista</a>
-            <a href="/canais" class="nav-link">Canais</a>
+            <a href="/home" class="nav-link<?= $headerActive('/home') ?>">Início</a>
+            <a href="/catalogo" class="nav-link<?= $headerActive('/catalogo') ?>">Catálogo</a>
+            <a href="/minha-lista" class="nav-link<?= $headerActive('/minha-lista') ?>">Minha Lista</a>
+            <a href="/canais" class="nav-link<?= $headerActive('/canais') ?>">Canais</a>
         </nav>
 
         <div class="header-actions">
-            <a href="/busca" class="search-btn" aria-label="Pesquisar" id="header-search-btn">
+            <a href="/busca" class="search-btn<?= $headerActive('/busca') ?>" aria-label="Pesquisar" id="header-search-btn">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="11" cy="11" r="8"></circle>
                     <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
@@ -71,14 +76,14 @@ checkProfileSessionConflictInHeader();
 </header>
 
 <nav class="mobile-bottom-nav">
-    <a href="/home" class="mobile-nav-item active">
+    <a href="/home" class="mobile-nav-item<?= $headerActive('/home') ?>">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
             <polyline points="9 22 9 12 15 12 15 22"></polyline>
         </svg>
         <span>Início</span>
     </a>
-    <a href="/catalogo" class="mobile-nav-item">
+    <a href="/catalogo" class="mobile-nav-item<?= $headerActive('/catalogo') ?>">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <rect x="3" y="3" width="7" height="7"></rect>
             <rect x="14" y="3" width="7" height="7"></rect>
@@ -87,20 +92,20 @@ checkProfileSessionConflictInHeader();
         </svg>
         <span>Catálogo</span>
     </a>
-    <a href="/minha-lista" class="mobile-nav-item" id="mobile-nav-lista">
+    <a href="/minha-lista" class="mobile-nav-item<?= $headerActive('/minha-lista') ?>" id="mobile-nav-lista">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
         </svg>
         <span>Minha Lista</span>
     </a>
-    <a href="/busca" class="mobile-nav-item">
+    <a href="/busca" class="mobile-nav-item<?= $headerActive('/busca') ?>">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="11" cy="11" r="8"></circle>
             <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
         </svg>
         <span>Buscar</span>
     </a>
-    <a href="/canais" class="mobile-nav-item">
+    <a href="/canais" class="mobile-nav-item<?= $headerActive('/canais') ?>">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="2"></circle>
             <path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48 0a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"></path>

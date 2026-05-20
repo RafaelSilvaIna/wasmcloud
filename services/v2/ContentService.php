@@ -50,6 +50,14 @@ class ContentService {
                 }
             }
 
+            $poster = !empty($t['poster_path'])
+                ? 'https://image.tmdb.org/t/p/w500' . $t['poster_path']
+                : null;
+
+            $backdrop = !empty($t['backdrop_path'])
+                ? 'https://image.tmdb.org/t/p/original' . $t['backdrop_path']
+                : null;
+
             $backdrops = [];
             if (isset($t['images']['backdrops'])) {
                 foreach (array_slice($t['images']['backdrops'], 0, 5) as $b) {
@@ -80,8 +88,9 @@ class ContentService {
                 'classificacao' => $certification ?? 'L',
                 'generos' => $generos,
                 'atores' => $atores,
-                'capa' => $item['poster'],
-                'backdrop' => $item['capa'],
+                'poster' => $poster,
+                'capa' => $poster,
+                'backdrop' => $backdrop,
                 'logo' => $logo,
                 'galeria' => $backdrops,
                 'nota' => $t['vote_average'] ?? $item['nota']
