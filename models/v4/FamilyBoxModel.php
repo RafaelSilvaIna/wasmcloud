@@ -220,6 +220,109 @@ class FamilyBoxModel
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    public function renewalSubscriptionsDueForNotice(int $userId): array
+    {
+        try {
+            $stmt = $this->db->prepare("
+                SELECT
+                    s.id,
+                    s.user_id,
+                    s.plan_code,
+                    COALESCE(s.source, 'paid') AS source,
+                    s.expires_at,
+                    CEIL(TIMESTAMPDIFF(SECOND, NOW(), s.expires_at) / 86400) AS days_left
+                FROM user_subscriptions s
+                WHERE s.user_id = ?
+                  AND s.status = 'active'
+                  AND s.plan_code = 'gold'
+                  AND s.expires_at > NOW()
+                  AND COALESCE(s.source, 'paid') IN ('paid', 'admin_courtesy')
+                HAVING days_left IN (14, 5, 1)
+                ORDER BY s.expires_at ASC
+            ");
+            $stmt->execute([$userId]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (\Throwable) {
+            return [];
+        }
+    }
+
+    public function renewalSubscriptionsDueForNotices(int $limit = 1000): array
+    {
+        $limit = max(1, min(5000, $limit));
+
+        try {
+            $stmt = $this->db->prepare("
+                SELECT
+                    s.id,
+                    s.user_id,
+                    s.plan_code,
+                    COALESCE(s.source, 'paid') AS source,
+                    s.expires_at,
+                    CEIL(TIMESTAMPDIFF(SECOND, NOW(), s.expires_at) / 86400) AS days_left
+                FROM user_subscriptions s
+                WHERE s.status = 'active'
+                  AND s.plan_code = 'gold'
+                  AND s.expires_at > NOW()
+                  AND COALESCE(s.source, 'paid') IN ('paid', 'admin_courtesy')
+                HAVING days_left IN (14, 5, 1)
+                ORDER BY s.expires_at ASC, s.id ASC
+                LIMIT {$limit}
+            ");
+            $stmt->execute();
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (\Throwable) {
+            return [];
+        }
+    }
+
+    public function createNoticeIfMissing(
+        int $targetUserId,
+        ?int $actorUserId,
+        string $type,
+        string $dedupeKey,
+        string $title,
+        string $body,
+        array $payload = []
+    ): ?int {
+        $payload['dedupe_key'] = $dedupeKey;
+        $jsonPayload = json_encode($payload, JSON_UNESCAPED_UNICODE);
+
+        try {
+            $stmt = $this->db->prepare("
+                SELECT id
+                FROM pipocine_box_items
+                WHERE target_user_id = ?
+                  AND type = ?
+                  AND JSON_UNQUOTE(JSON_EXTRACT(payload, '$.dedupe_key')) = ?
+                LIMIT 1
+            ");
+            $stmt->execute([$targetUserId, $type, $dedupeKey]);
+            if ($stmt->fetchColumn()) {
+                return null;
+            }
+        } catch (\Throwable) {
+            $stmt = $this->db->prepare("
+                SELECT id
+                FROM pipocine_box_items
+                WHERE target_user_id = ? AND type = ? AND body = ?
+                LIMIT 1
+            ");
+            $stmt->execute([$targetUserId, $type, $body]);
+            if ($stmt->fetchColumn()) {
+                return null;
+            }
+        }
+
+        $stmt = $this->db->prepare("
+            INSERT INTO pipocine_box_items
+                (target_user_id, actor_user_id, type, title, body, action_status, payload)
+            VALUES (?, ?, ?, ?, ?, 'none', ?)
+        ");
+        $stmt->execute([$targetUserId, $actorUserId, $type, $title, $body, $jsonPayload]);
+        return (int) $this->db->lastInsertId();
+    }
+
     public function unreadCount(int $userId): int
     {
         $stmt = $this->db->prepare("SELECT COUNT(*) FROM pipocine_box_items WHERE target_user_id = ? AND status = 'unread'");

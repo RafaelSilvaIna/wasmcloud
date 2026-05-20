@@ -775,6 +775,23 @@ $ownerName = htmlspecialchars($_SESSION['full_name'] ?? $_SESSION['username'] ??
                 <div class="box-empty">Carregando sua Box...</div>
             </div>
         </section>
+
+        <section class="box-reader-page" id="box-reader-page" aria-hidden="true" hidden>
+            <button class="box-reader-page-back" type="button" id="box-reader-page-back">
+                <i data-lucide="arrow-left"></i>
+                <span>Voltar para a Box</span>
+            </button>
+
+            <article class="box-reader-page-card" aria-labelledby="box-reader-page-title">
+                <header class="box-reader-page-head">
+                    <span class="box-label" id="box-reader-page-date">Mensagem</span>
+                    <h2 id="box-reader-page-title">Mensagem</h2>
+                </header>
+
+                <div class="box-reader-page-body" id="box-reader-page-body"></div>
+                <footer class="box-reader-page-actions" id="box-reader-page-actions"></footer>
+            </article>
+        </section>
     </main>
 
     <div class="box-reader" id="box-reader" aria-hidden="true">

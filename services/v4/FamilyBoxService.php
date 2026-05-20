@@ -17,6 +17,7 @@ class FamilyBoxService
 
     public function summary(int $userId): array
     {
+        $this->ensureRenewalNotices($userId);
         $familyBenefit = $this->model->activeFamilyBenefitForMember($userId);
 
         return [
@@ -29,10 +30,53 @@ class FamilyBoxService
 
     public function inbox(int $userId): array
     {
+        $this->ensureRenewalNotices($userId);
+
         return [
             'success' => true,
             'unread' => $this->model->unreadCount($userId),
             'items' => array_map([$this, 'normalizeBoxItem'], $this->model->inbox($userId)),
+        ];
+    }
+
+    public function item(int $userId, int $itemId): array
+    {
+        $item = $this->model->boxItemForUser($itemId, $userId);
+        if (!$item) {
+            return ['success' => false, 'message' => 'Mensagem nao encontrada.'];
+        }
+
+        return [
+            'success' => true,
+            'item' => $this->normalizeBoxItem($item),
+            'unread' => $this->model->unreadCount($userId),
+        ];
+    }
+
+    public function processRenewalNotices(int $limit = 1000): array
+    {
+        $created = 0;
+        $checked = 0;
+        $errors = 0;
+
+        foreach ($this->model->renewalSubscriptionsDueForNotices($limit) as $subscription) {
+            $checked++;
+
+            try {
+                if ($this->createRenewalNoticeFromSubscription($subscription)) {
+                    $created++;
+                }
+            } catch (\Throwable) {
+                $errors++;
+            }
+        }
+
+        return [
+            'success' => $errors === 0,
+            'checked' => $checked,
+            'created' => $created,
+            'skipped' => max(0, $checked - $created - $errors),
+            'errors' => $errors,
         ];
     }
 
@@ -162,6 +206,22 @@ class FamilyBoxService
         }
 
         $removed = $this->model->removeMember($ownerUserId, $memberUserId);
+        if ($removed) {
+            $this->model->createNoticeIfMissing(
+                $memberUserId,
+                $ownerUserId,
+                'family_removed',
+                'family_removed:' . $ownerUserId . ':' . $memberUserId . ':' . date('Y-m-d'),
+                'Beneficio familiar encerrado',
+                'Voce foi removido do beneficio familiar Pipocine. Assine o Plano Gold para continuar com seus beneficios e desbloquear muito mais.',
+                [
+                    'action_url' => '/plan',
+                    'action_label' => 'Assinar Plano Gold',
+                    'tone' => 'warning',
+                ]
+            );
+        }
+
         return [
             'success' => $removed,
             'message' => $removed ? 'Membro removido da familia.' : 'Nao foi possivel remover este membro.',
@@ -184,12 +244,85 @@ class FamilyBoxService
             'status' => (string) $item['status'],
             'action_status' => (string) $item['action_status'],
             'created_at' => (string) $item['created_at'],
+            'payload' => $this->safePayload($item['payload'] ?? null),
             'actor' => [
                 'name' => (string) ($item['actor_name'] ?? 'Pipocine'),
                 'email' => (string) ($item['actor_email'] ?? ''),
                 'avatar' => (string) ($item['actor_avatar'] ?? ''),
             ],
         ];
+    }
+
+    private function ensureRenewalNotices(int $userId): void
+    {
+        foreach ($this->model->renewalSubscriptionsDueForNotice($userId) as $subscription) {
+            $this->createRenewalNoticeFromSubscription($subscription);
+        }
+    }
+
+    private function createRenewalNoticeFromSubscription(array $subscription): bool
+    {
+        $userId = (int) ($subscription['user_id'] ?? 0);
+        $daysLeft = (int) ($subscription['days_left'] ?? 0);
+        $source = (string) ($subscription['source'] ?? 'paid');
+        $subscriptionId = (int) ($subscription['id'] ?? 0);
+
+        if ($userId < 1 || $subscriptionId < 1 || !in_array($daysLeft, [14, 5, 1], true)) {
+            return false;
+        }
+
+        if ($source === 'admin_courtesy') {
+            return $this->model->createNoticeIfMissing(
+                $userId,
+                null,
+                'courtesy_expiring',
+                'courtesy_expiring:' . $subscriptionId . ':' . $daysLeft,
+                'Sua cortesia Pipocine esta perto de acabar',
+                'Sua cortesia esta perto de acabar. Assine o Plano Gold do Pipocine para continuar com beneficios premium, mais controle e uma experiencia completa.',
+                [
+                    'action_url' => '/plan',
+                    'action_label' => 'Assinar Plano Gold',
+                    'days_left' => $daysLeft,
+                    'subscription_id' => $subscriptionId,
+                ]
+            ) !== null;
+        }
+
+        return $this->model->createNoticeIfMissing(
+            $userId,
+            null,
+            'subscription_renewal',
+            'subscription_renewal:' . $subscriptionId . ':' . $daysLeft,
+            'Seu Plano Gold esta perto de acabar',
+            'Seu plano esta perto de acabar. Faca uma renovacao do seu plano para continuar com seus beneficios Pipocine.',
+            [
+                'action_url' => '/plan/me',
+                'action_label' => 'Renovar agora',
+                'days_left' => $daysLeft,
+                'subscription_id' => $subscriptionId,
+            ]
+        ) !== null;
+    }
+
+    private function safePayload($payload): array
+    {
+        if (!is_string($payload) || trim($payload) === '') {
+            return [];
+        }
+
+        $decoded = json_decode($payload, true);
+        if (!is_array($decoded)) {
+            return [];
+        }
+
+        $allowed = [];
+        foreach (['action_url', 'action_label', 'tone', 'days_left'] as $key) {
+            if (array_key_exists($key, $decoded)) {
+                $allowed[$key] = is_scalar($decoded[$key]) ? (string) $decoded[$key] : '';
+            }
+        }
+
+        return $allowed;
     }
 
     private function normalizeMember(array $member): array

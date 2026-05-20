@@ -57,7 +57,8 @@ if (!isset($_SESSION['user_id'])) {
             align-items: center;
             justify-content: center;
             min-height: 100vh;
-            padding: 40px 20px;
+            min-height: 100svh;
+            padding: 104px 20px 48px;
             box-sizing: border-box;
         }
 
@@ -65,8 +66,10 @@ if (!isset($_SESSION['user_id'])) {
             color: var(--profile-text-pure);
             font-size: clamp(2rem, 5vw, 2.5rem);
             font-weight: 700;
-            margin-bottom: 50px;
+            margin: 0 0 50px;
             text-align: center;
+            max-width: min(100%, 760px);
+            line-height: 1.08;
         }
 
         #pipo-profiles-root {
@@ -82,6 +85,7 @@ if (!isset($_SESSION['user_id'])) {
             justify-content: center;
             gap: 30px;
             max-width: 800px;
+            width: 100%;
         }
 
         .profile-item {
@@ -688,6 +692,13 @@ if (!isset($_SESSION['user_id'])) {
             gap: 4px;
         }
 
+        .account-menu-name-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 0;
+        }
+
         .account-menu-kicker {
             color: var(--profile-text-muted);
             font-size: 0.72rem;
@@ -802,6 +813,43 @@ if (!isset($_SESSION['user_id'])) {
         /* Espaço reservado — numpad removido, usa PinInputModal */
 
         @media (max-width: 560px) {
+            :root {
+                --profile-card-size: clamp(112px, 31vw, 130px);
+            }
+
+            .profiles-wrapper {
+                justify-content: flex-start;
+                padding: 124px 18px 42px;
+            }
+
+            .main-title {
+                font-size: clamp(1.85rem, 7.4vw, 2.25rem);
+                margin-bottom: 42px;
+            }
+
+            .profiles-grid {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 34px 28px;
+                max-width: 390px;
+                align-items: start;
+            }
+
+            .profile-item {
+                min-width: 0;
+                width: 100%;
+            }
+
+            .profile-name {
+                max-width: 100%;
+                overflow-wrap: anywhere;
+                line-height: 1.15;
+            }
+
+            .manage-profiles-container {
+                margin-top: 6px;
+            }
+
             .account-header {
                 top: 14px;
                 right: 14px;
@@ -887,13 +935,15 @@ if (!isset($_SESSION['user_id'])) {
 
             <nav id="account-menu-content" class="account-menu-content" aria-label="Caminhos da conta">
                 <div class="account-menu-heading">
-                    <span class="account-menu-kicker"><?= $familyBadge ? 'Conta familiar' : 'Dono da conta' ?></span>
-                    <span class="account-menu-name"><?= htmlspecialchars($ownerName, ENT_QUOTES, 'UTF-8') ?></span>
-                    <?php if ($premiumBadge): ?>
-                        <span class="account-menu-family" title="<?= $familyBadge ? 'Membro da familia' : 'Plano premium ativo' ?>" aria-label="<?= $familyBadge ? 'Membro da familia' : 'Plano premium ativo' ?>">
-                            <i data-lucide="<?= $familyBadge ? 'badge-check' : 'sparkles' ?>"></i>
-                        </span>
-                    <?php endif; ?>
+                    <span class="account-menu-kicker">Dono da conta</span>
+                    <span class="account-menu-name-row">
+                        <span class="account-menu-name"><?= htmlspecialchars($ownerName, ENT_QUOTES, 'UTF-8') ?></span>
+                        <?php if ($premiumBadge): ?>
+                            <span class="account-menu-family" title="<?= $familyBadge ? 'Membro da familia' : 'Plano premium ativo' ?>" aria-label="<?= $familyBadge ? 'Membro da familia' : 'Plano premium ativo' ?>">
+                                <i data-lucide="<?= $familyBadge ? 'badge-check' : 'sparkles' ?>"></i>
+                            </span>
+                        <?php endif; ?>
+                    </span>
                 </div>
 
                 <div class="account-menu-section" aria-label="Principal">

@@ -8,6 +8,13 @@
     const readerBody = document.getElementById('box-reader-body');
     const readerActions = document.getElementById('box-reader-actions');
     const readerClose = document.getElementById('box-reader-close');
+    const shell = document.querySelector('.box-shell');
+    const readerPage = document.getElementById('box-reader-page');
+    const readerPageBack = document.getElementById('box-reader-page-back');
+    const readerPageTitle = document.getElementById('box-reader-page-title');
+    const readerPageDate = document.getElementById('box-reader-page-date');
+    const readerPageBody = document.getElementById('box-reader-page-body');
+    const readerPageActions = document.getElementById('box-reader-page-actions');
     let currentItems = [];
 
     const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({
@@ -26,10 +33,21 @@
         none: 'Informativo'
     })[status] || 'Informativo';
 
-    const dateKey = (value) => {
+    const pad = (value) => String(value).padStart(2, '0');
+
+    const localDateKey = (date) => {
+        return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+    };
+
+    const parseBoxDate = (value) => {
         const date = new Date(String(value || '').replace(' ', 'T'));
-        if (Number.isNaN(date.getTime())) return 'Sem data';
-        return date.toISOString().slice(0, 10);
+        return Number.isNaN(date.getTime()) ? null : date;
+    };
+
+    const dateKey = (value) => {
+        const date = parseBoxDate(value);
+        if (!date) return 'Sem data';
+        return localDateKey(date);
     };
 
     const dateLabel = (key) => {
@@ -37,15 +55,16 @@
         const today = new Date();
         const yesterday = new Date();
         yesterday.setDate(today.getDate() - 1);
-        const keyDate = new Date(`${key}T00:00:00`);
-        if (key === today.toISOString().slice(0, 10)) return 'Hoje';
-        if (key === yesterday.toISOString().slice(0, 10)) return 'Ontem';
+        const [year, month, day] = key.split('-').map(Number);
+        const keyDate = new Date(year, month - 1, day);
+        if (key === localDateKey(today)) return 'Hoje';
+        if (key === localDateKey(yesterday)) return 'Ontem';
         return keyDate.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
     };
 
     const fullDate = (value) => {
-        const date = new Date(String(value || '').replace(' ', 'T'));
-        if (Number.isNaN(date.getTime())) return 'Mensagem';
+        const date = parseBoxDate(value);
+        if (!date) return 'Mensagem';
         return date.toLocaleString('pt-BR', {
             day: '2-digit',
             month: 'long',
@@ -99,7 +118,73 @@
             `;
         }
 
+        if (item.type === 'subscription_renewal') {
+            return `
+                <p><strong>Seu Plano Gold esta perto de acabar.</strong></p>
+                <p>${esc(item.body || 'Faca uma renovacao do seu plano para continuar com seus beneficios Pipocine.')}</p>
+                <ul>
+                    <li>Beneficios ativos</li>
+                    <li>Perfis e seguranca</li>
+                    <li>Player completo</li>
+                    <li>Experiencia sem anuncios</li>
+                </ul>
+            `;
+        }
+
+        if (item.type === 'courtesy_expiring') {
+            return `
+                <p><strong>Sua cortesia Pipocine esta perto de acabar.</strong></p>
+                <p>${esc(item.body || 'Assine o Plano Gold do Pipocine para continuar com a experiencia completa.')}</p>
+                <ul>
+                    <li>Plano Gold proprio</li>
+                    <li>Continuidade dos beneficios</li>
+                    <li>Mais controle da conta</li>
+                    <li>Suporte prioritario</li>
+                </ul>
+            `;
+        }
+
+        if (item.type === 'family_removed') {
+            return `
+                <p><strong>Seu beneficio familiar foi encerrado.</strong></p>
+                <p>${esc(item.body || 'Assine o Plano Gold para continuar com seus beneficios e desbloquear muito mais.')}</p>
+                <ul>
+                    <li>Plano Gold proprio</li>
+                    <li>Sem depender de vinculo familiar</li>
+                    <li>Beneficios premium</li>
+                    <li>Controle total da assinatura</li>
+                </ul>
+            `;
+        }
+
         return `<p>${esc(item.body || 'Mensagem informativa do Pipocine.')}</p>`;
+    }
+
+    function actionUrl(item) {
+        const url = String(item.payload?.action_url || '');
+        if (url === '/plan' || url === '/plan/me') return url;
+        return '';
+    }
+
+    function actionLabel(item) {
+        return String(item.payload?.action_label || 'Abrir');
+    }
+
+    function readerActionsHtml(item) {
+        const pendingFamilyInvite = item.type === 'family_invite' && item.action_status === 'pending';
+        if (pendingFamilyInvite) {
+            return `
+                <button class="box-btn decline" type="button" data-reader-action="decline" data-id="${item.id}">Recusar</button>
+                <button class="box-btn accept" type="button" data-reader-action="accept" data-id="${item.id}">Aceitar convite</button>
+            `;
+        }
+
+        const url = actionUrl(item);
+        if (url) {
+            return `<a class="box-btn accept" href="${esc(url)}">${esc(actionLabel(item))}</a>`;
+        }
+
+        return '<button class="box-btn decline" type="button" data-reader-page-close>Fechar</button>';
     }
 
     function render(items, unread) {
@@ -152,33 +237,78 @@
         readerActions.innerHTML = '';
     }
 
+    function showList() {
+        shell?.classList.remove('reading');
+        if (readerPage) {
+            readerPage.hidden = true;
+            readerPage.setAttribute('aria-hidden', 'true');
+        }
+    }
+
+    async function fetchItem(id) {
+        const response = await fetch('/api/v4/box/item?id=' + encodeURIComponent(id));
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || !data.success || !data.item) {
+            throw new Error(data.message || 'Nao foi possivel abrir esta mensagem.');
+        }
+        return data.item;
+    }
+
+    async function markItemRead(item) {
+        if (!item || item.status !== 'unread') return;
+
+        await api('/api/v4/box/read', { id: item.id });
+        item.status = 'read';
+        const unread = currentItems.filter((entry) => entry.status === 'unread').length;
+        render(currentItems, unread);
+    }
+
     async function openReader(id) {
         const item = currentItems.find((entry) => Number(entry.id) === Number(id));
         if (!item) return;
 
-        readerTitle.textContent = item.title;
-        readerDate.textContent = fullDate(item.created_at);
-        readerBody.innerHTML = messageBody(item);
+        let safeItem = item;
+        try {
+            safeItem = await fetchItem(id);
+            const index = currentItems.findIndex((entry) => Number(entry.id) === Number(id));
+            if (index >= 0) currentItems[index] = safeItem;
+        } catch (error) {
+            window.PipoNotification?.error(error.message);
+            return;
+        }
 
-        const pendingFamilyInvite = item.type === 'family_invite' && item.action_status === 'pending';
-        readerActions.innerHTML = pendingFamilyInvite ? `
-            <button class="box-btn decline" type="button" data-reader-action="decline" data-id="${item.id}">Recusar</button>
-            <button class="box-btn accept" type="button" data-reader-action="accept" data-id="${item.id}">Aceitar convite</button>
-        ` : '<button class="box-btn decline" type="button" data-reader-close>Fechar</button>';
+        if (readerPage && readerPageTitle && readerPageDate && readerPageBody && readerPageActions) {
+            readerPageTitle.textContent = safeItem.title;
+            readerPageDate.textContent = fullDate(safeItem.created_at);
+            readerPageBody.innerHTML = messageBody(safeItem);
+            readerPageActions.innerHTML = readerActionsHtml(safeItem);
+            readerPage.hidden = false;
+            readerPage.setAttribute('aria-hidden', 'false');
+            shell?.classList.add('reading');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+
+            try {
+                await markItemRead(safeItem);
+            } catch (_) {}
+
+            return;
+        }
+
+        readerTitle.textContent = safeItem.title;
+        readerDate.textContent = fullDate(safeItem.created_at);
+        readerBody.innerHTML = messageBody(safeItem);
+
+        readerActions.innerHTML = readerActionsHtml(safeItem);
 
         reader?.classList.add('open');
         reader?.setAttribute('aria-hidden', 'false');
 
-        if (item.status === 'unread') {
-            try {
-                await api('/api/v4/box/read', { id: item.id });
-                item.status = 'read';
-                const unread = currentItems.filter((entry) => entry.status === 'unread').length;
-                render(currentItems, unread);
-            } catch (_) {}
-        }
-
         if (typeof lucide !== 'undefined') lucide.createIcons();
+
+        try {
+            await markItemRead(safeItem);
+        } catch (_) {}
     }
 
     list?.addEventListener('click', (event) => {
@@ -212,6 +342,34 @@
             button.disabled = false;
         }
     });
+
+    readerPageActions?.addEventListener('click', async (event) => {
+        const close = event.target.closest('[data-reader-page-close]');
+        if (close) {
+            showList();
+            return;
+        }
+
+        const button = event.target.closest('[data-reader-action]');
+        if (!button) return;
+
+        const endpoint = button.dataset.readerAction === 'accept'
+            ? '/api/v4/box/family/accept'
+            : '/api/v4/box/family/decline';
+
+        button.disabled = true;
+        try {
+            const data = await api(endpoint, { id: Number(button.dataset.id || 0) });
+            window.PipoNotification?.success(data.message || 'Acao concluida.');
+            showList();
+            await load();
+        } catch (error) {
+            window.PipoNotification?.error(error.message);
+            button.disabled = false;
+        }
+    });
+
+    readerPageBack?.addEventListener('click', showList);
 
     readerClose?.addEventListener('click', closeReader);
     reader?.addEventListener('click', (event) => {

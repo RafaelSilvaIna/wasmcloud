@@ -204,6 +204,10 @@ function applyUserToSession(array $user): void
     $_SESSION['auth_provider'] = 'cineveo';
 }
 
+if (defined('PIPOCINE_DB_CONFIG_ONLY') && PIPOCINE_DB_CONFIG_ONLY === true) {
+    return;
+}
+
 // ======================
 // BOOTSTRAP
 // ======================

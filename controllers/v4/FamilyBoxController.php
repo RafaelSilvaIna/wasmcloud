@@ -25,6 +25,11 @@ class FamilyBoxController
             \ResponseUtil::json($this->service->inbox($userId));
         }
 
+        if ($action === 'box/item' && $method === 'GET') {
+            $result = $this->service->item($userId, (int) ($_GET['id'] ?? 0));
+            \ResponseUtil::json($result, $result['success'] ? 200 : 404);
+        }
+
         if ($action === 'box/read' && $method === 'POST') {
             $data = $this->json();
             \ResponseUtil::json($this->service->markRead($userId, (int) ($data['id'] ?? 0)));
