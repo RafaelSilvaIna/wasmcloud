@@ -90,8 +90,8 @@ class SearchService {
             $generos = [];
             if (!empty($t['genres'])) {
                 foreach ($t['genres'] as $g) $generos[] = $g['name'];
-            } elseif (!empty($item['genero'])) {
-                $generos = array_map('trim', explode(',', $item['genero']));
+            } elseif (!empty($item['generos'])) {
+                $generos = array_map('trim', explode(',', $item['generos']));
             }
 
             // Ano de lancamento

@@ -86,8 +86,8 @@ class InfoService {
             foreach ($tmdbData['genres'] as $g) {
                 $genres[] = $g['name'];
             }
-        } elseif (!empty($base['genero'])) {
-            $genres = array_map('trim', explode(',', $base['genero']));
+        } elseif (!empty($base['generos'])) {
+            $genres = array_map('trim', explode(',', $base['generos']));
         }
 
         // 6. Logo (PT-BR → EN → primeira disponível)
@@ -155,7 +155,7 @@ class InfoService {
 
         // Se TMDB não retornou recomendados suficientes, complementa com o BD local
         if (count($recommendations) < 6) {
-            $localRelated = $this->model->getRelated($tmdbId, $tipo, $base['genero'] ?? '', 8);
+            $localRelated = $this->model->getRelated($tmdbId, $tipo, $base['generos'] ?? '', 8);
             foreach ($localRelated as $rel) {
                 if (!$rel['poster']) continue;
                 $recommendations[] = [

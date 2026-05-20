@@ -119,7 +119,7 @@ class SearchModel {
     public function getGenres(): array {
         try {
             $stmt = $this->db->query(
-                "SELECT DISTINCT genero FROM conteudo WHERE genero IS NOT NULL AND genero != '' ORDER BY genero"
+                "SELECT DISTINCT generos FROM conteudo WHERE generos IS NOT NULL AND generos != '' ORDER BY generos"
             );
             $raw    = $stmt->fetchAll(PDO::FETCH_COLUMN);
             $genres = [];

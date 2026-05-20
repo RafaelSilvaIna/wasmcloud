@@ -84,23 +84,24 @@ class ContentModel {
         }
 
         if ($conf['gen']) {
-            $sql .= " AND genero LIKE ?";
+            $sql .= " AND generos LIKE ?";
             $params[] = '%' . $conf['gen'] . '%';
         }
 
         // Para perfis infantis: exclui qualquer conteúdo que contenha gêneros bloqueados
         if ($isKids) {
             foreach (self::KIDS_BLOCKED_GENRES as $blocked) {
-                $sql .= " AND (genero NOT LIKE ? OR genero IS NULL)";
+                $sql .= " AND (generos NOT LIKE ? OR generos IS NULL)";
                 $params[] = '%' . $blocked . '%';
             }
         }
 
-        $sql .= " ORDER BY " . $conf['ord'] . " LIMIT " . (int)$limit;
+        $queryLimit = $isKids ? min(120, max((int)$limit * 4, (int)$limit)) : (int)$limit;
+        $sql .= " ORDER BY " . $conf['ord'] . " LIMIT " . $queryLimit;
 
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
-}
+}

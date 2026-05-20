@@ -28,7 +28,7 @@ if (!isset($_SESSION['profile_is_kids']) && isset($_SESSION['profile_id'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#0a0c10">
+    <meta name="theme-color" content="<?= $isKidsProfile ? '#7cc7ff' : '#0a0c10' ?>">
     <title>PipoCine — Início</title>
     <link rel="icon" type="image/png" href="/assets/img/favicon.png">
 
@@ -236,10 +236,195 @@ if (!isset($_SESSION['profile_is_kids']) && isset($_SESSION['profile_id'])) {
             width: 13px;
             height: 13px;
         }
+
+        body.kids-home {
+            --bg-base: #061726;
+            --bg-surface: #0f2d46;
+            --color-text: #ffffff;
+            --color-muted: rgba(255, 255, 255, .72);
+            background:
+                linear-gradient(180deg, #6fc8ff 0%, #193b71 42%, #061726 100%);
+            color: #fff;
+        }
+
+        body.kids-home #main-header {
+            background: linear-gradient(180deg, rgba(7, 38, 77, .78), rgba(7, 38, 77, .22));
+            border-bottom: 1px solid rgba(255, 255, 255, .10);
+            backdrop-filter: blur(16px);
+        }
+
+        body.kids-home .desktop-nav .nav-link,
+        body.kids-home .profile-header-btn,
+        body.kids-home .search-btn {
+            color: #fff;
+        }
+
+        body.kids-home .nav-link.active {
+            color: #ffdf5d;
+        }
+
+        body.kids-home .hero-slider {
+            --hero-accent: #ff7a1a;
+            --hero-yellow: #ffdf5d;
+            --hero-radius: 18px;
+            background: #0b3b73;
+            min-height: 560px;
+        }
+
+        body.kids-home .hero-vignette {
+            background:
+                linear-gradient(105deg,
+                    rgba(6, 23, 38, .88) 0%,
+                    rgba(6, 23, 38, .56) 30%,
+                    rgba(6, 23, 38, .14) 58%,
+                    transparent 78%),
+                linear-gradient(to top,
+                    #061726 0%,
+                    rgba(6, 23, 38, .70) 22%,
+                    rgba(6, 23, 38, .12) 58%,
+                    transparent 78%),
+                linear-gradient(to bottom,
+                    rgba(7, 38, 77, .62) 0%,
+                    transparent 26%);
+        }
+
+        body.kids-home .hero-slider::before {
+            content: "Pipo Kids";
+            position: absolute;
+            left: 5.5%;
+            top: 112px;
+            z-index: 12;
+            display: inline-flex;
+            align-items: center;
+            min-height: 34px;
+            padding: 0 14px;
+            border-radius: 999px;
+            color: #08385b;
+            background: linear-gradient(135deg, #ffdf5d, #ff9f1a);
+            font-size: .78rem;
+            font-weight: 900;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            box-shadow: 0 12px 30px rgba(255, 159, 26, .24);
+        }
+
+        body.kids-home .hero-info-area {
+            gap: 14px;
+        }
+
+        body.kids-home .hero-type-label {
+            color: #ffdf5d;
+        }
+
+        body.kids-home .type-dot {
+            background: #ffdf5d;
+        }
+
+        body.kids-home .hero-btn {
+            border-radius: 999px;
+            font-weight: 900;
+        }
+
+        body.kids-home .hero-btn--primary {
+            color: #062033;
+            background: linear-gradient(135deg, #ffffff, #ffdf5d);
+            box-shadow: 0 14px 34px rgba(255, 223, 93, .22);
+        }
+
+        body.kids-home .hero-btn--secondary {
+            background: rgba(255, 255, 255, .18);
+            border-color: rgba(255, 255, 255, .28);
+        }
+
+        body.kids-home .hero-pagination .swiper-pagination-bullet-active {
+            background: #ffdf5d;
+        }
+
+        body.kids-home .hero-nav {
+            background: rgba(255, 255, 255, .18);
+            border-color: rgba(255, 255, 255, .24);
+        }
+
+        body.kids-home .kids-profile-badge {
+            position: relative;
+            z-index: 12;
+            margin-top: -66px;
+            margin-bottom: 22px;
+            padding: 9px 14px;
+            color: #07385c;
+            background: linear-gradient(135deg, #ffffff, #ffdf5d);
+            box-shadow: 0 14px 30px rgba(255, 159, 26, .22);
+        }
+
+        body.kids-home .content-rails-container {
+            background:
+                linear-gradient(180deg, rgba(6, 23, 38, .94), #061726 18%),
+                #061726;
+            padding-top: 34px;
+        }
+
+        body.kids-home .slick-section {
+            margin-bottom: 34px;
+        }
+
+        body.kids-home .slick-title {
+            color: #ffffff;
+            font-size: clamp(1.18rem, 1.8vw, 1.7rem);
+            font-weight: 900;
+            letter-spacing: 0;
+        }
+
+        body.kids-home .slick-title::before {
+            content: "";
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            margin-right: 10px;
+            border-radius: 50%;
+            background: #ffdf5d;
+            box-shadow: 14px 0 0 #40d7a7, 28px 0 0 #ff7a1a;
+            vertical-align: middle;
+        }
+
+        body.kids-home .slick-card {
+            border-radius: 18px;
+            background: #0f2d46;
+            box-shadow: 0 12px 26px rgba(0, 0, 0, .20);
+        }
+
+        body.kids-home .slick-card:hover,
+        body.kids-home .slick-card.is-hovered {
+            box-shadow: 0 18px 36px rgba(64, 215, 167, .20);
+        }
+
+        body.kids-home .slick-badge {
+            border-radius: 999px;
+            color: #062033;
+            background: #ffdf5d;
+        }
+
+        body.kids-home .card-title-outside {
+            color: rgba(255, 255, 255, .94);
+            font-weight: 800;
+        }
+
+        body.kids-home .play-overlay svg circle {
+            fill: rgba(255, 223, 93, .92);
+        }
+
+        @media (max-width: 768px) {
+            body.kids-home .hero-slider::before {
+                top: 86px;
+            }
+
+            body.kids-home .kids-profile-badge {
+                margin-top: -44px;
+            }
+        }
     </style>
 </head>
 
-<body>
+<body class="<?= $isKidsProfile ? 'kids-home' : '' ?>">
 
     <?php require_once __DIR__ . '/../components/Header.php'; ?>
 

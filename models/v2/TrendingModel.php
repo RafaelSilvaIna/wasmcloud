@@ -8,6 +8,10 @@
 class TrendingModel {
     private $db;
 
+    private const KIDS_ALLOWED_GENRES = [
+        'AnimaÃ§Ã£o', 'FamÃ­lia', 'ComÃ©dia', 'Aventura', 'Fantasia', 'MÃºsica'
+    ];
+
     private const KIDS_BLOCKED_GENRES = [
         'Terror', 'Suspense', 'Crime', 'Guerra', 'Mistério', 'Drama'
     ];
@@ -26,9 +30,9 @@ class TrendingModel {
      */
     public function getTrending(int $limit = 20, bool $isKids = false, ?string $tipo = null): array {
         // Busca 3x o limite para compensar a filtragem pós-TMDB (logo/galeria/sinopse)
-        $fetchLimit = $limit * 3;
+        $fetchLimit = $isKids ? $limit * 10 : $limit * 3;
 
-        $sql  = "SELECT id, id_tmdb, titulo, poster, capa, nota, data_lancamento, tipo, genero
+        $sql  = "SELECT id, id_tmdb, titulo, poster, capa, nota, data_lancamento, tipo, generos
                  FROM conteudo
                  WHERE id_tmdb IS NOT NULL
                    AND id_tmdb != ''
@@ -44,7 +48,7 @@ class TrendingModel {
 
         if ($isKids) {
             foreach (self::KIDS_BLOCKED_GENRES as $blocked) {
-                $sql .= " AND (genero NOT LIKE ? OR genero IS NULL)";
+                $sql .= " AND (generos NOT LIKE ? OR generos IS NULL)";
                 $params[] = '%' . $blocked . '%';
             }
         }

@@ -1,6 +1,11 @@
 <?php
+
 class ContentService {
     private $model;
+
+    private const KIDS_ALLOWED_CERTIFICATIONS = ['L', '10', '12'];
+    private const KIDS_ALLOWED_GENRES = ['animacao', 'familia', 'comedia', 'aventura', 'fantasia', 'musica'];
+    private const KIDS_BLOCKED_GENRES = ['terror', 'suspense', 'crime', 'guerra', 'misterio', 'drama'];
 
     public function __construct($model) {
         $this->model = $model;
@@ -14,24 +19,10 @@ class ContentService {
         $result = [];
 
         foreach ($localData as $index => $item) {
-            $t = $tmdbData[$index] ?? [];
-            $certification = 'L';
+            if (count($result) >= $limit) break;
 
-            if ($item['tipo'] === 'filme' && isset($t['release_dates']['results'])) {
-                foreach ($t['release_dates']['results'] as $rd) {
-                    if ($rd['iso_3166_1'] === 'BR' && !empty($rd['release_dates'][0]['certification'])) {
-                        $certification = $rd['release_dates'][0]['certification'];
-                        break;
-                    }
-                }
-            } elseif ($item['tipo'] === 'serie' && isset($t['content_ratings']['results'])) {
-                foreach ($t['content_ratings']['results'] as $cr) {
-                    if ($cr['iso_3166_1'] === 'BR') {
-                        $certification = $cr['rating'];
-                        break;
-                    }
-                }
-            }
+            $t = $tmdbData[$index] ?? [];
+            $certification = $this->extractCertification($item, $t);
 
             $atores = [];
             if (isset($t['credits']['cast'])) {
@@ -49,7 +40,7 @@ class ContentService {
             $logo = null;
             if (isset($t['images']['logos'])) {
                 foreach ($t['images']['logos'] as $l) {
-                    if ($l['iso_639_1'] === 'pt' || $l['iso_639_1'] === 'en') {
+                    if (($l['iso_639_1'] ?? '') === 'pt' || ($l['iso_639_1'] ?? '') === 'en') {
                         $logo = 'https://image.tmdb.org/t/p/w500' . $l['file_path'];
                         break;
                     }
@@ -62,7 +53,9 @@ class ContentService {
             $backdrops = [];
             if (isset($t['images']['backdrops'])) {
                 foreach (array_slice($t['images']['backdrops'], 0, 5) as $b) {
-                    $backdrops[] = 'https://image.tmdb.org/t/p/w780' . $b['file_path'];
+                    if (!empty($b['file_path'])) {
+                        $backdrops[] = 'https://image.tmdb.org/t/p/w780' . $b['file_path'];
+                    }
                 }
             }
 
@@ -73,6 +66,10 @@ class ContentService {
                 }
             }
 
+            if ($isKids && !$this->isKidsSafe($certification, $generos)) {
+                continue;
+            }
+
             $result[] = [
                 'id' => $item['id'],
                 'id_tmdb' => $item['id_tmdb'],
@@ -80,7 +77,7 @@ class ContentService {
                 'titulo' => $item['titulo'],
                 'sinopse' => $t['overview'] ?? '',
                 'ano' => !empty($item['data_lancamento']) ? substr($item['data_lancamento'], 0, 4) : '',
-                'classificacao' => $certification,
+                'classificacao' => $certification ?? 'L',
                 'generos' => $generos,
                 'atores' => $atores,
                 'capa' => $item['poster'],
@@ -92,5 +89,70 @@ class ContentService {
         }
 
         return $result;
+    }
+
+    private function extractCertification(array $item, array $tmdb): ?string {
+        if ($item['tipo'] === 'filme' && isset($tmdb['release_dates']['results'])) {
+            foreach ($tmdb['release_dates']['results'] as $rd) {
+                if (($rd['iso_3166_1'] ?? '') === 'BR' && !empty($rd['release_dates'][0]['certification'])) {
+                    return trim((string)$rd['release_dates'][0]['certification']);
+                }
+            }
+        }
+
+        if ($item['tipo'] === 'serie' && isset($tmdb['content_ratings']['results'])) {
+            foreach ($tmdb['content_ratings']['results'] as $cr) {
+                if (($cr['iso_3166_1'] ?? '') === 'BR' && !empty($cr['rating'])) {
+                    return trim((string)$cr['rating']);
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private function isKidsSafe(?string $certification, array $genres): bool {
+        $cert = strtoupper(trim((string)$certification));
+        if ($cert === '') {
+            return false;
+        }
+
+        $cert = preg_replace('/[^0-9A-Z]/', '', $cert);
+        if (!in_array($cert, self::KIDS_ALLOWED_CERTIFICATIONS, true)) {
+            return false;
+        }
+
+        $hasAllowedGenre = false;
+        foreach ($genres as $genre) {
+            $genre = $this->normalizeText((string)$genre);
+            foreach (self::KIDS_BLOCKED_GENRES as $blocked) {
+                if (str_contains($genre, $blocked)) {
+                    return false;
+                }
+            }
+            foreach (self::KIDS_ALLOWED_GENRES as $allowed) {
+                if (str_contains($genre, $allowed)) {
+                    $hasAllowedGenre = true;
+                }
+            }
+        }
+
+        return $hasAllowedGenre;
+    }
+
+    private function normalizeText(string $value): string {
+        $value = trim($value);
+        if ($value === '') {
+            return '';
+        }
+
+        if (function_exists('iconv')) {
+            $converted = @iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $value);
+            if (is_string($converted) && $converted !== '') {
+                $value = $converted;
+            }
+        }
+
+        return strtolower(preg_replace('/[^a-z0-9]+/i', '', $value) ?? '');
     }
 }
