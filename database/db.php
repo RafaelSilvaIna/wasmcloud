@@ -32,6 +32,35 @@ const DB_PIPO = [
 ];
 
 // ======================
+// LIGHTWEIGHT REQUEST GUARD
+// ======================
+function applyRequestGuard(): void
+{
+    $guard = __DIR__ . '/../security/ratelimit/ClientRequestGuard.php';
+    if (is_file($guard)) {
+        require_once $guard;
+        \Security\RateLimit\ClientRequestGuard::handle();
+    }
+}
+
+function shouldSkipGlobalSecurity(): bool
+{
+    $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+    return in_array($path, ['/security/continue', '/security/challenge'], true);
+}
+
+function applyGlobalSecurityLayer(?PDO $pdo): void
+{
+    if ($pdo === null || shouldSkipGlobalSecurity() || defined('PIPOCINE_GLOBAL_SECURITY_RAN')) {
+        return;
+    }
+
+    define('PIPOCINE_GLOBAL_SECURITY_RAN', true);
+    require_once __DIR__ . '/../middleware/GlobalSecurityMiddleware.php';
+    \Middleware\GlobalSecurityMiddleware::handle($pdo);
+}
+
+// ======================
 // SESSION INIT
 // ======================
 function initSession(): void
@@ -57,25 +86,7 @@ function initSession(): void
 // ======================
 function applyRateLimit(): void
 {
-    $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?? '/';
-    if ($path === '/security/continue') {
-        return;
-    }
-
-    $_SESSION['req_cnt'] = $_SESSION['req_cnt'] ?? 0;
-    $_SESSION['req_time'] = $_SESSION['req_time'] ?? time();
-
-    if (time() - $_SESSION['req_time'] < 2) {
-        $_SESSION['req_cnt']++;
-
-        if ($_SESSION['req_cnt'] > 20) {
-            http_response_code(429);
-            exit;
-        }
-    } else {
-        $_SESSION['req_cnt'] = 0;
-        $_SESSION['req_time'] = time();
-    }
+    applyRequestGuard();
 }
 
 // ======================
@@ -211,8 +222,8 @@ if (defined('PIPOCINE_DB_CONFIG_ONLY') && PIPOCINE_DB_CONFIG_ONLY === true) {
 // ======================
 // BOOTSTRAP
 // ======================
-initSession();
 applyRateLimit();
+initSession();
 
 // DB connections
 $pdoCineveo = createPDO(DB_CINE['name'], DB_CINE['user'], DB_CINE['pass']);
@@ -233,6 +244,8 @@ if ($pdoPipocine) {
     require_once __DIR__ . '/../hooks/admin/UsageMetricsHook.php';
     \Hooks\Admin\UsageMetricsHook::register($pdoPipocine);
 }
+
+applyGlobalSecurityLayer($pdoPipocine);
 
 // AUTH
 if (!isset($_SESSION['user_id'])) {

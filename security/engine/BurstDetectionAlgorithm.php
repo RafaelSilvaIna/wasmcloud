@@ -56,21 +56,15 @@ final class BurstDetectionAlgorithm
      */
     private function computeRps(string $ip): float
     {
-        if (session_status() !== PHP_SESSION_ACTIVE) {
-            return 0.0;
-        }
-
         $now    = microtime(true);
-        $window = $_SESSION[self::SESSION_KEY] ?? [];
-
-        // Adiciona timestamp atual
+        $path   = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+        $key    = 'sec_burst_' . hash('sha256', $ip . ':' . $path);
+        $window = $this->loadWindow($key);
         $window[] = $now;
 
-        // Remove timestamps fora da janela
         $window = array_filter($window, fn($ts) => ($now - $ts) <= self::WINDOW_SECS);
         $window = array_values($window);
-
-        $_SESSION[self::SESSION_KEY] = $window;
+        $this->saveWindow($key, $window);
 
         if (count($window) < 2) {
             return 0.0;
@@ -82,6 +76,30 @@ final class BurstDetectionAlgorithm
         }
 
         return count($window) / $elapsed;
+    }
+
+    private function loadWindow(string $key): array
+    {
+        if (function_exists('apcu_fetch')) {
+            $data = apcu_fetch($key, $success);
+            return ($success && is_array($data)) ? $data : [];
+        }
+
+        $file = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'pipocine_burst_' . hash('sha256', $key) . '.json';
+        $raw = is_file($file) ? @file_get_contents($file) : '';
+        $data = is_string($raw) && $raw !== '' ? json_decode($raw, true) : null;
+        return is_array($data) ? $data : [];
+    }
+
+    private function saveWindow(string $key, array $window): void
+    {
+        if (function_exists('apcu_store')) {
+            apcu_store($key, $window, self::WINDOW_SECS + 2);
+            return;
+        }
+
+        $file = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'pipocine_burst_' . hash('sha256', $key) . '.json';
+        @file_put_contents($file, json_encode($window), LOCK_EX);
     }
 
     private function classifyBurst(string $routeGroup): string

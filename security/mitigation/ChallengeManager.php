@@ -126,7 +126,7 @@ final class ChallengeManager
         if (strlen($cookie) < 16) {
             return false;
         }
-        $expected = hash_hmac('sha256', $ip, 'pipocine_sec_v1');
+        $expected = hash_hmac('sha256', $ip, SecurityConfig::secret());
         return hash_equals(substr($expected, 0, 32), substr($cookie, 0, 32));
     }
 
@@ -135,7 +135,7 @@ final class ChallengeManager
         if (headers_sent()) {
             return;
         }
-        $value = substr(hash_hmac('sha256', $ip, 'pipocine_sec_v1'), 0, 32);
+        $value = substr(hash_hmac('sha256', $ip, SecurityConfig::secret()), 0, 32);
         setcookie(self::BYPASS_COOKIE, $value, [
             'expires'  => time() + self::BYPASS_TTL,
             'path'     => '/',

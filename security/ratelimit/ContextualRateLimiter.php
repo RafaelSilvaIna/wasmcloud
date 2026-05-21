@@ -79,15 +79,12 @@ final class ContextualRateLimiter
     private function checkApcu(string $key, int $limit): array
     {
         $cacheKey = 'sec_rl_' . $key;
-        $current  = apcu_fetch($cacheKey, $success);
-
+        apcu_add($cacheKey, 0, self::WINDOW_SECONDS);
+        $newCount = apcu_inc($cacheKey, 1, $success, self::WINDOW_SECONDS);
         if (!$success) {
             apcu_store($cacheKey, 1, self::WINDOW_SECONDS);
-            return [false, 1, $limit];
+            $newCount = 1;
         }
-
-        $newCount = (int) $current + 1;
-        apcu_store($cacheKey, $newCount, self::WINDOW_SECONDS);
 
         return [$newCount > $limit, $newCount, $limit];
     }

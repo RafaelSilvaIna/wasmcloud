@@ -32,6 +32,12 @@ final class GlobalSecurityMiddleware
             return;
         }
 
+        static $handled = false;
+        if ($handled) {
+            return;
+        }
+        $handled = true;
+
         try {
             self::requireAll();
             $layer = new GlobalSecurityLayer($pdo);
@@ -56,6 +62,7 @@ final class GlobalSecurityMiddleware
         require_once $base . 'engine/BehavioralThreatDetector.php';
         require_once $base . 'engine/BurstDetectionAlgorithm.php';
         require_once $base . 'engine/DistributedPatternDetector.php';
+        require_once $base . 'ratelimit/ClientRequestGuard.php';
         require_once $base . 'ratelimit/ContextualRateLimiter.php';
         require_once $base . 'mitigation/AdaptiveSlowdown.php';
         require_once $base . 'mitigation/BanManager.php';

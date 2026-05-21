@@ -54,10 +54,10 @@ final class SecurityConfig
     // =========================================================================
 
     /** Delay para score 250–499 (500ms) */
-    public const DELAY_LEVEL_3_US   = 500_000;
+    public const DELAY_LEVEL_3_US   = 250_000;
 
     /** Delay para score 500–749 (1.5s) */
-    public const DELAY_LEVEL_4_US   = 1_500_000;
+    public const DELAY_LEVEL_4_US   = 750_000;
 
     /** Delay máximo em quarentena (3s) */
     public const DELAY_QUARANTINE_US = 3_000_000;
@@ -178,15 +178,27 @@ final class SecurityConfig
     // =========================================================================
 
     public const ROUTE_GROUPS = [
-        'auth'     => ['/api/auth/', '/auth/'],
-        'stream'   => ['/player', '/api/v2/stream'],
+        'auth'     => ['/api/auth/', '/api/v4/auth/', '/api/v4/qr-login/', '/auth/', '/login'],
+        'stream'   => ['/player', '/api/v2/stream', '/api/v2/exhibition', '/api/v2/episode-url', '/cdn/video/', '/cdn/audio/'],
         'search'   => ['/busca', '/api/v2/busca'],
         'api_v4'   => ['/api/v4/'],
         'api_v3'   => ['/api/v3/'],
         'api_v2'   => ['/api/v2/'],
         'admin'    => ['/admin/', '/api/admin/'],
         'support'  => ['/suporte', '/api/suporte'],
+        'profiles' => ['/api/profiles/'],
         'recovery' => ['/recuperar'],
         'devices'  => ['/api/devices/'],
+        'cdn'      => ['/cdn/'],
     ];
+
+    public static function secret(): string
+    {
+        $env = getenv('PIPOCINE_SECURITY_SECRET');
+        if (is_string($env) && strlen($env) >= 32) {
+            return $env;
+        }
+
+        return hash('sha256', __DIR__ . '|pipocine-security-v2');
+    }
 }

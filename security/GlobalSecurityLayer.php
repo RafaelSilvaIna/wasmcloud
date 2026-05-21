@@ -15,6 +15,7 @@ use Security\Engine\RiskScoreEngine;
 use Security\Engine\BehavioralThreatDetector;
 use Security\Engine\BurstDetectionAlgorithm;
 use Security\Engine\DistributedPatternDetector;
+use Security\RateLimit\ClientRequestGuard;
 use Security\RateLimit\ContextualRateLimiter;
 use Security\Mitigation\BanManager;
 use Security\Mitigation\QuarantineManager;
@@ -191,6 +192,8 @@ final class GlobalSecurityLayer
             'req_count_1min'   => 1,
             'req_count_1hour'  => 1,
             'req_count_24hour' => 1,
+            ...($this->isNewRouteInCurrentWindow($ip, $routeGroup, $path)
+                ? ['unique_routes_1hour' => 1] : []),
             ...(in_array($routeGroup, ['auth', 'admin', 'recovery', 'api_v4'], true)
                 ? ['sensitive_route_hits' => 1] : []),
         ]);
@@ -243,7 +246,8 @@ final class GlobalSecurityLayer
         // ----------------------------------------------------------------
         // [11] Challenge (rotas críticas + tráfego suspeito)
         // ----------------------------------------------------------------
-        if ($threatScore >= SecurityConfig::SCORE_RATE_LIMIT
+        if (!$this->isApiLikePath($path)
+            && $threatScore >= SecurityConfig::SCORE_RATE_LIMIT
             && $this->challenge->requiresChallenge($ip, $routeProfile)
         ) {
             $this->challenge->issueChallenge($ip, $routeGroup);
@@ -270,38 +274,20 @@ final class GlobalSecurityLayer
 
     private function resolveIp(): string
     {
-        $candidates = [
-            'HTTP_CF_CONNECTING_IP',
-            'HTTP_X_REAL_IP',
-            'HTTP_X_FORWARDED_FOR',
-            'REMOTE_ADDR',
-        ];
-
-        foreach ($candidates as $key) {
-            $val = $_SERVER[$key] ?? '';
-            if ($val === '') {
-                continue;
-            }
-            $ip = trim(explode(',', $val)[0]);
-            if (filter_var($ip, FILTER_VALIDATE_IP)) {
-                return $ip;
-            }
-        }
-
-        return '127.0.0.1';
+        return ClientRequestGuard::resolveClientIp();
     }
 
     private function blockSuspiciousActivity(string $ip, string $path, int $code = 429): never
     {
         $resumeTarget = $path;
-        if (str_starts_with($path, '/api/') || str_starts_with($path, '/cdn/')) {
+        if ($this->isApiLikePath($path)) {
             $refererPath = parse_url($_SERVER['HTTP_REFERER'] ?? '', PHP_URL_PATH);
             $resumeTarget = is_string($refererPath) && str_starts_with($refererPath, '/')
                 ? $refererPath
                 : '/home';
         }
 
-        if (session_status() === PHP_SESSION_ACTIVE) {
+        if (!$this->isApiLikePath($path) && session_status() === PHP_SESSION_ACTIVE) {
             $hasActiveChallenge = !empty($_SESSION['_sec_resume_token'])
                 && !empty($_SESSION['_sec_resume_ip'])
                 && hash_equals((string) $_SESSION['_sec_resume_ip'], $ip);
@@ -314,14 +300,14 @@ final class GlobalSecurityLayer
             $_SESSION['_sec_resume_target'] = $resumeTarget;
         }
 
-        if (str_starts_with($path, '/api/') || str_starts_with($path, '/cdn/')) {
+        if ($this->isApiLikePath($path)) {
             http_response_code($code);
             header('Content-Type: application/json; charset=utf-8');
+            header('Retry-After: 5');
             echo json_encode([
                 'error' => 'Atividade suspeita detectada.',
                 'code' => $code,
-                'security_challenge' => true,
-                'challenge_url' => '/security/challenge',
+                'retry_after' => 5,
             ]);
             exit;
         }
@@ -349,6 +335,41 @@ final class GlobalSecurityLayer
         }
 
         return 'global';
+    }
+
+    private function isApiLikePath(string $path): bool
+    {
+        return str_starts_with($path, '/api/') || str_starts_with($path, '/cdn/');
+    }
+
+    private function isNewRouteInCurrentWindow(string $ip, string $routeGroup, string $path): bool
+    {
+        $normalizedPath = parse_url($path, PHP_URL_PATH) ?: '/';
+        $window = (string) floor(time() / 3600);
+        $key = 'sec_seen_route_' . hash('sha256', $ip . ':' . $window . ':' . $routeGroup . ':' . $normalizedPath);
+
+        if (function_exists('apcu_add')) {
+            return apcu_add($key, 1, 3700);
+        }
+
+        if (session_status() !== PHP_SESSION_ACTIVE) {
+            return false;
+        }
+
+        $_SESSION['_sec_seen_routes'] ??= [];
+        $sessionKey = $routeGroup . ':' . $normalizedPath;
+        $currentWindow = $_SESSION['_sec_seen_routes_window'] ?? '';
+        if ($currentWindow !== $window) {
+            $_SESSION['_sec_seen_routes_window'] = $window;
+            $_SESSION['_sec_seen_routes'] = [];
+        }
+
+        if (isset($_SESSION['_sec_seen_routes'][$sessionKey])) {
+            return false;
+        }
+
+        $_SESSION['_sec_seen_routes'][$sessionKey] = true;
+        return true;
     }
 
     /**

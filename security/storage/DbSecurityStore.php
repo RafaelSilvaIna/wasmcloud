@@ -36,7 +36,11 @@ final class DbSecurityStore
             $row = $stmt->fetch();
 
             if ($row) {
-                return $row;
+                if ($this->normalizeReputationWindows($ip, $row)) {
+                    $stmt->execute([$ip]);
+                    $row = $stmt->fetch();
+                }
+                return $row ?: null;
             }
 
             // Cria registro inicial
@@ -63,6 +67,8 @@ final class DbSecurityStore
         array  $counters = []
     ): void {
         try {
+            $this->getOrCreateIpReputation($ip);
+
             $sets   = ['threat_score = LEAST(threat_score + ?, 1000)', 'last_request_at = NOW()'];
             $params = [$delta];
 
@@ -370,10 +376,60 @@ final class DbSecurityStore
                      mitigation_level = 1,
                      behavior_flags = "",
                      req_count_1min = 0,
+                     req_count_1hour = 0,
+                     req_count_24hour = 0,
+                     error_count_1hour = 0,
+                     sensitive_route_hits = 0,
+                     unique_routes_1hour = 0,
                      concurrent_connections = 0
                  WHERE ip_address = ?'
             )->execute([$ip]);
         } catch (Throwable) {}
+    }
+
+    private function normalizeReputationWindows(string $ip, array $row): bool
+    {
+        $last = isset($row['last_request_at']) ? strtotime((string) $row['last_request_at']) : false;
+        if (!$last) {
+            return false;
+        }
+
+        $age = time() - $last;
+        $sets = [];
+
+        if ($age >= 60) {
+            $sets[] = 'req_count_1min = 0';
+            $sets[] = 'concurrent_connections = 0';
+        }
+
+        if ($age >= 3600) {
+            $sets[] = 'req_count_1hour = 0';
+            $sets[] = 'error_count_1hour = 0';
+            $sets[] = 'sensitive_route_hits = 0';
+            $sets[] = 'unique_routes_1hour = 0';
+            $decay = min(300, intdiv($age, 900) * 10);
+            if ($decay > 0) {
+                $sets[] = 'threat_score = GREATEST(threat_score - ' . $decay . ', 0)';
+            }
+        }
+
+        if ($age >= 86400) {
+            $sets[] = 'req_count_24hour = 0';
+            $sets[] = 'behavior_flags = ""';
+        }
+
+        if (!$sets) {
+            return false;
+        }
+
+        try {
+            $this->pdo->prepare(
+                'UPDATE sec_ip_reputation SET ' . implode(', ', array_unique($sets)) . ' WHERE ip_address = ?'
+            )->execute([$ip]);
+            return true;
+        } catch (Throwable) {
+            return false;
+        }
     }
 
     // =========================================================================

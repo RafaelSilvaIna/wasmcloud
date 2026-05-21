@@ -27,6 +27,7 @@ DirectoryIndex index.php index.html
 
     # Bloqueio de arquivos sensíveis
     RewriteRule ^(\.git|\.env|composer\.json|composer\.lock|package\.json|package-lock\.json) - [F,L]
+    RewriteRule ^(config/|security/(config|engine|logger|mitigation|ratelimit|reputation|storage|whitelist)(/.*)?|security/GlobalSecurityLayer\.php) - [F,L]
     
     # Roteamento da API
     RewriteRule ^api/admin/(.*)$ routes/admin/index.php [QSA,L]
