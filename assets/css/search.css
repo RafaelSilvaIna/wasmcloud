@@ -99,6 +99,13 @@ body::before {
     color: #667086;
 }
 
+.search-bar-input::-webkit-search-cancel-button,
+.search-bar-input::-webkit-search-decoration {
+    -webkit-appearance: none;
+    appearance: none;
+    display: none;
+}
+
 .search-bar-input:hover {
     border-color: rgba(255,255,255,.24);
     background: rgba(255,255,255,.055);
@@ -526,6 +533,7 @@ body::before {
 }
 
 .search-card-subline {
+    display: none;
     min-height: 18px;
     margin: 4px 0 0;
     color: var(--search-soft);
@@ -534,6 +542,10 @@ body::before {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+.result-card-subline {
+    display: none;
 }
 
 .search-card-unavailable {

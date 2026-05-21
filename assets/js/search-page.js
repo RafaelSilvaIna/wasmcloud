@@ -509,11 +509,10 @@
 
     Search.renderContentCard = function (item, opts = {}) {
         const isSerie = item.tipo === 'serie';
-        const href = `/info=${item.id_tmdb}`;
+        const href = `/info=${item.id_tmdb}?type=${encodeURIComponent(item.tipo || '')}`;
         const poster = this.normalizeTmdbImage(item.poster || item.capa || '');
         const ano = item.ano || '';
         const genres = Array.isArray(item.generos) ? item.generos.slice(0, 2).join(', ') : '';
-        const subline = [ano, genres].filter(Boolean).join(' | ');
         const unavailable = opts.showAvailability && item.disponivel === false;
 
         return `
@@ -537,7 +536,6 @@
                     ${unavailable ? '<span class="search-card-unavailable">Em breve</span>' : ''}
                 </div>
                 <h3 class="card-title-outside">${this.esc(item.titulo)}</h3>
-                ${subline ? `<p class="search-card-subline">${this.esc(subline)}</p>` : ''}
             </a>`;
     };
 

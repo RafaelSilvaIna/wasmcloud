@@ -18,6 +18,12 @@ class InfoController {
 
     public function handle(): void {
         $tmdbId = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
+        $tipo = $_GET['type'] ?? $_GET['tipo'] ?? null;
+        if ($tipo === 'movie') $tipo = 'filme';
+        if ($tipo === 'tv') $tipo = 'serie';
+        if (!in_array($tipo, ['filme', 'serie'], true)) {
+            $tipo = null;
+        }
 
         if (!$tmdbId || $tmdbId <= 0) {
             ResponseUtil::json([
@@ -27,7 +33,7 @@ class InfoController {
             return;
         }
 
-        $payload = $this->service->getFullDetails($tmdbId);
+        $payload = $this->service->getFullDetails($tmdbId, $tipo);
 
         if ($payload === null) {
             ResponseUtil::json([

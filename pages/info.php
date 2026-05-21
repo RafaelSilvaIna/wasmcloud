@@ -7,6 +7,9 @@ if (!isset($_SESSION['user_id'])) {
 
 // Captura o ID do TMDB passado pelo router (via $_GET['tmdb_id'])
 $tmdbId = isset($_GET['tmdb_id']) ? (int) $_GET['tmdb_id'] : 0;
+$contentType = $_GET['type'] ?? $_GET['tipo'] ?? '';
+$contentType = in_array($contentType, ['filme', 'serie', 'movie', 'tv'], true) ? $contentType : '';
+$contentType = $contentType === 'movie' ? 'filme' : ($contentType === 'tv' ? 'serie' : $contentType);
 
 if ($tmdbId <= 0) {
     header("Location: /home");
@@ -840,6 +843,7 @@ if ($tmdbId <= 0) {
             }
         }
     </style>
+    <link rel="stylesheet" href="/assets/css/info-redesign.css">
 </head>
 
 <body class="info-page">
@@ -977,6 +981,7 @@ if ($tmdbId <= 0) {
 
         /* ── Configuração ────────────────────────────────────────────── */
         const TMDB_ID  = <?= (int)$tmdbId ?>;
+        const CONTENT_TYPE = <?= json_encode($contentType, JSON_UNESCAPED_SLASHES) ?>;
         const API_BASE = '/api/v2/info';
 
         /* ── Referências DOM ──────────────────────────────────���──────── */
@@ -1013,6 +1018,16 @@ if ($tmdbId <= 0) {
             return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
         }
 
+        function tmdbImage(value, size = 'w500') {
+            const raw = String(value ?? '').trim();
+            if (!raw) return '';
+            if (raw.includes('image.tmdb.org/t/p/')) return raw;
+            if (raw.startsWith('/')) return `https://image.tmdb.org/t/p/${size}${raw}`;
+            if (/^https?:\/\/(?:www\.)?pipocine\.site\/.*\.(jpe?g|png|webp)(\?.*)?$/i.test(raw)) return '';
+            if (/^[^:/?#]+\.(jpe?g|png|webp)$/i.test(raw)) return '';
+            return raw;
+        }
+
         function formatDate(dateStr) {
             if (!dateStr) return '—';
             const d = new Date(dateStr + 'T00:00:00');
@@ -1046,7 +1061,8 @@ if ($tmdbId <= 0) {
         /* ── Busca os dados da API ────────────────────────────────────── */
         async function fetchInfo() {
             try {
-                const res = await fetch(`${API_BASE}?id=${TMDB_ID}`);
+                const typeParam = CONTENT_TYPE ? `&type=${encodeURIComponent(CONTENT_TYPE)}` : '';
+                const res = await fetch(`${API_BASE}?id=${TMDB_ID}${typeParam}`);
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 const json = await res.json();
                 if (!json.sucesso) throw new Error(json.erro ?? 'Erro desconhecido');
@@ -1069,7 +1085,7 @@ if ($tmdbId <= 0) {
             document.title = `${d.titulo} — PipoCine`;
 
             // ── Hero: Backdrop
-            const backdropUrl = (d.backdrop && d.backdrop.trim()) ? d.backdrop.trim() : null;
+            const backdropUrl = tmdbImage(d.backdrop, 'original');
             if (backdropUrl) {
                 const img = new Image();
                 img.onload = () => { heroBackdrop.style.backgroundImage = `url('${esc(backdropUrl)}')`; };
@@ -1078,7 +1094,7 @@ if ($tmdbId <= 0) {
             }
 
             // ── Hero: Poster
-            const posterUrl = (d.poster && d.poster.trim()) ? d.poster.trim() : null;
+            const posterUrl = tmdbImage(d.poster, 'w500');
             if (posterUrl) {
                 heroPosterImg.src = posterUrl;
                 heroPosterImg.alt = d.titulo;
@@ -1098,8 +1114,9 @@ if ($tmdbId <= 0) {
 
             // ── Hero: Logo ou Título
             heroTitle.innerHTML = '';
-            if (d.logo) {
-                heroLogo.src = d.logo;
+            const logoUrl = tmdbImage(d.logo, 'w500');
+            if (logoUrl) {
+                heroLogo.src = logoUrl;
                 heroLogo.alt = d.titulo;
                 heroLogo.style.display = 'block';
             } else {
@@ -1202,11 +1219,13 @@ if ($tmdbId <= 0) {
 
             // ── Body: Elenco
             if (d.elenco?.length) {
-                castTrack.innerHTML = d.elenco.map(m => `
+                castTrack.innerHTML = d.elenco.map(m => {
+                    const profileUrl = tmdbImage(m.profile, 'w300');
+                    return `
                     <div class="cast-card">
-                        <div class="cast-card__photo${!m.profile ? ' cast-card__photo--placeholder' : ''}">
-                            ${m.profile
-                                ? `<img src="${esc(m.profile)}" alt="${esc(m.name)}" loading="lazy">`
+                        <div class="cast-card__photo${!profileUrl ? ' cast-card__photo--placeholder' : ''}">
+                            ${profileUrl
+                                ? `<img src="${esc(profileUrl)}" alt="${esc(m.name)}" loading="lazy">`
                                 : `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"
                                        fill="none" stroke="currentColor" stroke-width="1.5"
                                        stroke-linecap="round" stroke-linejoin="round">
@@ -1216,35 +1235,46 @@ if ($tmdbId <= 0) {
                         </div>
                         <div class="cast-card__name">${esc(m.name)}</div>
                         ${m.character ? `<div class="cast-card__character">${esc(m.character)}</div>` : ''}
-                    </div>`).join('');
+                    </div>`;
+                }).join('');
                 castSection.style.display = 'block';
             }
 
             // ── Body: Temporadas
             if (d.tipo === 'serie' && d.temporadas?.length) {
-                seasonsGrid.innerHTML = d.temporadas.map(s => `
+                seasonsGrid.innerHTML = d.temporadas.map(s => {
+                    const seasonPosterUrl = tmdbImage(s.poster, 'w300');
+                    return `
                     <div class="season-card" onclick="window.location.href='/view?id=${d.id_tmdb}&type=serie&s=${s.number}&e=1'">
-                        <div class="season-card__poster">
-                            <img src="${esc(s.poster)}" alt="${esc(s.name)}" loading="lazy">
+                        <div class="season-card__poster${!seasonPosterUrl ? ' season-card__poster--empty' : ''}">
+                            ${seasonPosterUrl
+                                ? `<img src="${esc(seasonPosterUrl)}" alt="${esc(s.name)}" loading="lazy">`
+                                : `<span>${esc(formatYear(s.air_date) || 'S' + s.number)}</span>`}
                         </div>
                         <div class="season-card__info">
                             <div class="season-card__name">${esc(s.name)}</div>
                             <div class="season-card__episodes">${s.episode_count} episódio${s.episode_count !== 1 ? 's' : ''}</div>
                         </div>
-                    </div>`).join('');
+                    </div>`;
+                }).join('');
                 seasonsSection.style.display = 'block';
             }
 
             // ── Body: Recomendados
             if (d.recomendados?.length) {
-                relatedGrid.innerHTML = d.recomendados.map(r => `
-                    <a class="related-card" href="/info=${r.tmdb_id}">
-                        <div class="related-card__poster">
-                            <img src="${esc(r.poster)}" alt="${esc(r.title)}" loading="lazy">
+                relatedGrid.innerHTML = d.recomendados.map(r => {
+                    const relatedPosterUrl = tmdbImage(r.poster, 'w300');
+                    return `
+                    <a class="related-card" href="/info=${r.tmdb_id}?type=${encodeURIComponent(r.type || '')}">
+                        <div class="related-card__poster${!relatedPosterUrl ? ' related-card__poster--empty' : ''}">
+                            ${relatedPosterUrl
+                                ? `<img src="${esc(relatedPosterUrl)}" alt="${esc(r.title)}" loading="lazy">`
+                                : `<span>${esc(r.title?.charAt(0) || '?')}</span>`}
                         </div>
                         <div class="related-card__title">${esc(r.title)}</div>
                         ${r.vote > 0 ? `<div class="related-card__meta">★ ${r.vote}</div>` : ''}
-                    </a>`).join('');
+                    </a>`;
+                }).join('');
                 relatedSection.style.display = 'block';
             }
 

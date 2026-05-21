@@ -698,7 +698,7 @@ $queryInicial = htmlspecialchars(trim($_GET['q'] ?? ''), ENT_QUOTES, 'UTF-8');
 
                 <input
                     id="search-input"
-                    type="search"
+                    type="text"
                     class="search-bar-input"
                     placeholder="Buscar filmes e series..."
                     autocomplete="off"

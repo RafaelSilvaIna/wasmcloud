@@ -20,15 +20,22 @@ class InfoModel {
      * Busca as informações base do conteúdo pelo id_tmdb.
      * Tenta encontrar filme ou série sem precisar que o tipo seja informado.
      */
-    public function getByTmdbId(int $tmdbId): ?array {
+    public function getByTmdbId(int $tmdbId, ?string $tipo = null): ?array {
         try {
+            $params = [$tmdbId];
+            $tipoSql = '';
+            if (in_array($tipo, ['filme', 'serie'], true)) {
+                $tipoSql = ' AND tipo = ?';
+                $params[] = $tipo;
+            }
+
             $stmt = $this->db->prepare(
                 "SELECT id, id_tmdb, titulo, sinopse, poster, capa, nota, data_lancamento, tipo, generos
                  FROM conteudo
-                 WHERE id_tmdb = ?
+                 WHERE id_tmdb = ?{$tipoSql}
                  LIMIT 1"
             );
-            $stmt->execute([$tmdbId]);
+            $stmt->execute($params);
             $result = $stmt->fetch(PDO::FETCH_ASSOC);
             return $result ?: null;
         } catch (PDOException $e) {

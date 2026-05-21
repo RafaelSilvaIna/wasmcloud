@@ -30,9 +30,9 @@ class InfoService {
      * @param int $tmdbId ID do TMDB
      * @return array|null Payload ou null se não encontrado
      */
-    public function getFullDetails(int $tmdbId): ?array {
+    public function getFullDetails(int $tmdbId, ?string $tipoHint = null): ?array {
         // 1. Busca base local
-        $base = $this->model->getByTmdbId($tmdbId);
+        $base = $this->model->getByTmdbId($tmdbId, $tipoHint);
         if (!$base) return null;
 
         $tipo      = $base['tipo'];      // 'filme' | 'serie'
@@ -157,11 +157,13 @@ class InfoService {
         if (count($recommendations) < 6) {
             $localRelated = $this->model->getRelated($tmdbId, $tipo, $base['generos'] ?? '', 8);
             foreach ($localRelated as $rel) {
-                if (!$rel['poster']) continue;
+                $relatedPoster = $this->tmdbImageUrl($rel['poster'] ?? null, 'w300');
+                if (!$relatedPoster) continue;
+
                 $recommendations[] = [
                     'tmdb_id' => (int)$rel['id_tmdb'],
                     'title'   => $rel['titulo'],
-                    'poster'  => $rel['poster'],
+                    'poster'  => $relatedPoster,
                     'vote'    => round((float)($rel['nota'] ?? 0), 1),
                     'type'    => $rel['tipo'],
                 ];
@@ -185,9 +187,7 @@ class InfoService {
                     'name'          => $s['name'],
                     'episode_count' => $s['episode_count'],
                     'air_date'      => $s['air_date'] ?? null,
-                    'poster'        => !empty($s['poster_path'])
-                                       ? self::IMG_BASE_W300 . $s['poster_path']
-                                       : ($base['poster'] ?? null),
+                    'poster'        => $this->tmdbImageUrl($s['poster_path'] ?? null, 'w300'),
                     'overview'      => $s['overview'] ?? '',
                 ];
             }
@@ -224,6 +224,8 @@ class InfoService {
 
         // 13. Verifica disponibilidade de links
         $hasLinks = $this->model->hasLinks($tmdbId, $tipo);
+        $posterUrl = $this->tmdbImageUrl($tmdbData['poster_path'] ?? null, 'w500');
+        $backdropUrl = $this->tmdbImageUrl($tmdbData['backdrop_path'] ?? null, 'original');
 
         // 14. Monta payload final
         return [
@@ -234,12 +236,8 @@ class InfoService {
                 'titulo_original'      => $tmdbData['original_title'] ?? $tmdbData['original_name'] ?? $base['titulo'],
                 'tagline'              => $tagline,
                 'sinopse'              => $tmdbData['overview'] ?? $base['sinopse'] ?? '',
-                'poster'               => !empty($base['poster'])
-                                             ? $base['poster']
-                                             : (!empty($tmdbData['poster_path']) ? self::IMG_BASE_W500 . $tmdbData['poster_path'] : null),
-                'backdrop'             => !empty($base['capa'])
-                                             ? $base['capa']
-                                             : (!empty($tmdbData['backdrop_path']) ? self::IMG_BASE_ORIGINAL . $tmdbData['backdrop_path'] : null),
+                'poster'               => $posterUrl,
+                'backdrop'             => $backdropUrl,
                 'logo'                 => $logo,
                 'backdrops'            => $backdrops,
                 'trailer_key'          => $trailer,
@@ -289,5 +287,22 @@ class InfoService {
             'Canceled'        => 'Cancelado',
             default           => $status,
         };
+    }
+
+    private function tmdbImageUrl(?string $path, string $size = 'w500'): ?string {
+        $path = trim((string)$path);
+        if ($path === '') {
+            return null;
+        }
+
+        if (str_starts_with($path, 'https://image.tmdb.org/t/p/')) {
+            return $path;
+        }
+
+        if (str_starts_with($path, '/')) {
+            return "https://image.tmdb.org/t/p/{$size}{$path}";
+        }
+
+        return null;
     }
 }
