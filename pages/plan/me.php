@@ -23,6 +23,11 @@ $service = new SubscriptionService(
 $dashboard = $service->dashboard((int) $_SESSION['user_id']);
 $familyService = new FamilyBoxService(new FamilyBoxModel($pdo));
 $familyDashboard = $familyService->familyDashboard((int) $_SESSION['user_id']);
+$familyMembers = $familyDashboard['members'] ?? [];
+$familyPendingInvites = $familyDashboard['pending_invites'] ?? [];
+$familyLimit = (int) ($familyDashboard['limit'] ?? 0);
+$familyUsed = (int) ($familyDashboard['used'] ?? 0);
+$familyAvailable = max(0, (int) ($familyDashboard['available'] ?? ($familyLimit - $familyUsed)));
 $realActive = $dashboard['active'] ?? null;
 $familyBenefit = $dashboard['family_benefit'] ?? null;
 $active = $realActive ?: ($familyBenefit ?: []);
@@ -34,6 +39,17 @@ $paidPayments = array_values(array_filter($dashboard['payments'] ?? [], static f
 }));
 $expiresAt = !empty($active['expires_at']) ? strtotime((string) $active['expires_at']) : null;
 $daysLeft = $expiresAt ? max(0, (int) ceil(($expiresAt - time()) / 86400)) : null;
+$renewalWindowDays = 14;
+$canRenew = (bool) $realActive
+    && !$isCourtesy
+    && !$isFamilyBenefit
+    && (($active['plan_code'] ?? '') === 'gold')
+    && $daysLeft !== null
+    && $daysLeft <= $renewalWindowDays;
+$renewalAmount = (float) ($active['plan_price'] ?? $active['amount_paid'] ?? 20.99);
+$renewalDurationDays = max(1, (int) ($active['plan_duration_days'] ?? 30));
+$renewalExpiresLabel = brDate($active['expires_at'] ?? null);
+$renewalNewExpiresLabel = $expiresAt ? date('d/m/Y', strtotime('+' . $renewalDurationDays . ' days', max(time(), $expiresAt))) : '-';
 $statusLabel = $isFamilyBenefit ? 'Familia' : ($isCourtesy ? 'Cortesia' : 'Ativo');
 $statusClass = $isFamilyBenefit ? 'family' : ($isCourtesy ? 'courtesy' : 'paid');
 
@@ -95,6 +111,23 @@ function brMoney($value): string {
                     </p>
                 <?php endif; ?>
             </div>
+        <?php endif; ?>
+
+        <?php if ($canRenew): ?>
+            <section class="me-renewal-panel" aria-labelledby="renewal-title">
+                <div class="me-renewal-copy">
+                    <span class="me-panel-eyebrow">Renovacao disponivel</span>
+                    <h2 id="renewal-title">Seu plano termina em <?= (int) $daysLeft ?> dia<?= $daysLeft === 1 ? '' : 's' ?>.</h2>
+                    <p>Renove agora por Pix e mantenha seus beneficios sem interrupcao. A nova validade sera somada ao fim do ciclo atual.</p>
+                </div>
+                <div class="me-renewal-summary" aria-label="Resumo da renovacao">
+                    <span><?= brMoney($renewalAmount) ?></span>
+                    <strong><?= htmlspecialchars($renewalNewExpiresLabel, ENT_QUOTES, 'UTF-8') ?></strong>
+                </div>
+                <button class="plan-action gold compact" type="button" id="open-renewal-modal">
+                    <i data-lucide="refresh-cw"></i>Renovar com Pix
+                </button>
+            </section>
         <?php endif; ?>
 
         <div class="me-grid <?= $isFamilyBenefit ? 'single' : '' ?>">
@@ -166,7 +199,7 @@ function brMoney($value): string {
             <section class="plan-panel me-family-panel">
                 <div class="me-family-head">
                     <div>
-                        <span class="me-panel-eyebrow">Membros da familia</span>
+                        <span class="me-panel-eyebrow">Familia Gold</span>
                         <h2>Compartilhe beneficios especificos.</h2>
                         <p>Convide contas Pipocine por e-mail. A pessoa recebe uma solicitacao na Box e so entra na familia depois de aceitar.</p>
                     </div>
@@ -175,16 +208,42 @@ function brMoney($value): string {
                     </button>
                 </div>
 
-                <div class="me-family-meter">
-                    <span><?= (int) ($familyDashboard['used'] ?? 0) ?> de <?= (int) ($familyDashboard['limit'] ?? 0) ?> membros usados</span>
-                    <strong><?= max(0, (int) ($familyDashboard['limit'] ?? 0) - (int) ($familyDashboard['used'] ?? 0)) ?> disponiveis</strong>
+                <div class="me-family-tabs" role="tablist" aria-label="Secoes da familia">
+                    <button class="me-family-tab active" type="button" role="tab" aria-selected="true" data-family-tab="overview">Resumo</button>
+                    <button class="me-family-tab" type="button" role="tab" aria-selected="false" data-family-tab="members">Membros <span id="family-members-count"><?= $familyUsed ?></span></button>
+                    <button class="me-family-tab" type="button" role="tab" aria-selected="false" data-family-tab="invites">Convites <span id="family-invites-count"><?= count($familyPendingInvites) ?></span></button>
                 </div>
 
-                <?php if (empty($familyDashboard['members'])): ?>
-                    <p class="me-empty">Nenhum membro familiar adicionado ainda.</p>
-                <?php else: ?>
-                    <ul class="me-family-list" id="family-member-list">
-                        <?php foreach ($familyDashboard['members'] as $member): ?>
+                <div class="me-family-tab-panel active" data-family-panel="overview" role="tabpanel">
+                    <div class="me-family-overview">
+                        <div class="me-family-stat">
+                            <span>Membros ativos</span>
+                            <strong id="family-used-count"><?= $familyUsed ?></strong>
+                        </div>
+                        <div class="me-family-stat">
+                            <span>Convites pendentes</span>
+                            <strong id="family-pending-count"><?= count($familyPendingInvites) ?></strong>
+                        </div>
+                        <div class="me-family-stat">
+                            <span>Vagas disponiveis</span>
+                            <strong id="family-available-count"><?= $familyAvailable ?></strong>
+                        </div>
+                    </div>
+
+                    <div class="me-family-meter">
+                        <span><span id="family-meter-used"><?= $familyUsed ?></span> de <?= $familyLimit ?> membros usados</span>
+                        <strong><span id="family-meter-available"><?= $familyAvailable ?></span> disponiveis</strong>
+                    </div>
+                </div>
+
+                <div class="me-family-tab-panel" data-family-panel="members" role="tabpanel" hidden>
+                    <?php if (empty($familyMembers)): ?>
+                        <p class="me-empty" id="family-members-empty">Nenhum membro familiar adicionado ainda.</p>
+                    <?php else: ?>
+                        <p class="me-empty" id="family-members-empty" hidden>Nenhum membro familiar adicionado ainda.</p>
+                    <?php endif; ?>
+                    <ul class="me-family-list" id="family-member-list" <?= empty($familyMembers) ? 'hidden' : '' ?>>
+                        <?php foreach ($familyMembers as $member): ?>
                             <li data-member-id="<?= (int) $member['id'] ?>">
                                 <span class="me-family-avatar">
                                     <?php if (!empty($member['avatar'])): ?>
@@ -203,10 +262,77 @@ function brMoney($value): string {
                             </li>
                         <?php endforeach; ?>
                     </ul>
-                <?php endif; ?>
+                </div>
+
+                <div class="me-family-tab-panel" data-family-panel="invites" role="tabpanel" hidden>
+                    <?php if (empty($familyPendingInvites)): ?>
+                        <p class="me-empty" id="family-invites-empty">Nenhum convite pendente no momento.</p>
+                    <?php else: ?>
+                        <p class="me-empty" id="family-invites-empty" hidden>Nenhum convite pendente no momento.</p>
+                    <?php endif; ?>
+                    <ul class="me-family-list me-family-invite-list" id="family-invite-list" <?= empty($familyPendingInvites) ? 'hidden' : '' ?>>
+                        <?php foreach ($familyPendingInvites as $invite): ?>
+                            <li data-invite-id="<?= (int) $invite['id'] ?>" data-invite-email="<?= htmlspecialchars(strtolower((string) $invite['email']), ENT_QUOTES, 'UTF-8') ?>">
+                                <span class="me-family-avatar">
+                                    <?php if (!empty($invite['avatar'])): ?>
+                                        <img src="<?= htmlspecialchars($invite['avatar'], ENT_QUOTES, 'UTF-8') ?>" alt="">
+                                    <?php else: ?>
+                                        <i data-lucide="mail"></i>
+                                    <?php endif; ?>
+                                </span>
+                                <span class="me-family-copy">
+                                    <strong><?= htmlspecialchars($invite['name'], ENT_QUOTES, 'UTF-8') ?></strong>
+                                    <small><?= htmlspecialchars($invite['email'], ENT_QUOTES, 'UTF-8') ?> · enviado em <?= brDate($invite['created_at'] ?? null) ?></small>
+                                </span>
+                                <span class="me-family-pending">Aguardando resposta</span>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
             </section>
         <?php endif; ?>
     </main>
+
+    <?php if ($canRenew): ?>
+    <div class="plan-alert renewal-modal" id="renewal-modal" aria-hidden="true">
+        <div class="plan-alert-card renewal-modal-card" role="dialog" aria-modal="true" aria-labelledby="renewal-modal-title">
+            <button class="modal-close-button" type="button" id="close-renewal-modal" aria-label="Fechar">
+                <i data-lucide="x"></i>
+            </button>
+            <span class="modal-icon"><i data-lucide="qr-code"></i></span>
+            <h2 class="plan-alert-title" id="renewal-modal-title">Renovar Plano Gold</h2>
+            <p class="plan-alert-text">Vamos gerar um Pix de renovacao para o proximo ciclo. O QR Code expira em 1 hora e a confirmacao acontece automaticamente.</p>
+
+            <div class="renewal-details">
+                <div>
+                    <span>Vence em</span>
+                    <strong><?= htmlspecialchars($renewalExpiresLabel, ENT_QUOTES, 'UTF-8') ?></strong>
+                </div>
+                <div>
+                    <span>Nova validade</span>
+                    <strong><?= htmlspecialchars($renewalNewExpiresLabel, ENT_QUOTES, 'UTF-8') ?></strong>
+                </div>
+                <div>
+                    <span>Valor</span>
+                    <strong><?= brMoney($renewalAmount) ?></strong>
+                </div>
+            </div>
+
+            <label class="plan-check renewal-check">
+                <input type="checkbox" id="renewal-terms">
+                <span>Confirmo a renovacao manual por Pix para manter meu Plano Gold ativo.</span>
+            </label>
+
+            <div class="plan-actions-row">
+                <button class="plan-secondary" type="button" id="cancel-renewal-modal">Agora nao</button>
+                <button class="plan-action gold" type="button" id="confirm-renewal-button">
+                    <i data-lucide="qr-code"></i>Gerar Pix
+                </button>
+            </div>
+            <p class="renewal-modal-error" id="renewal-modal-error" aria-live="polite"></p>
+        </div>
+    </div>
+    <?php endif; ?>
 
     <div class="plan-alert" id="family-invite-modal" aria-hidden="true">
         <div class="plan-alert-card">
@@ -238,6 +364,7 @@ function brMoney($value): string {
 
     <script src="/assets/js/notification.js"></script>
     <script src="/assets/js/plan-family.js"></script>
+    <script src="/assets/js/plan-renewal.js"></script>
     <script>document.addEventListener('DOMContentLoaded',()=>{ if (typeof lucide !== 'undefined') lucide.createIcons(); });</script>
 </body>
 </html>

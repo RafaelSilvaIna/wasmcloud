@@ -25,6 +25,10 @@ class SubscriptionController
             \ResponseUtil::json($this->service->createCheckout($userId, $this->json(), $this->baseUrl()));
         }
 
+        if ($action === 'subscription/renew' && $method === 'POST') {
+            \ResponseUtil::json($this->service->createRenewalCheckout($userId, $this->json(), $this->baseUrl()));
+        }
+
         if ($action === 'subscription/payment-status' && $method === 'GET') {
             $paymentId = (int) ($_GET['payment_id'] ?? 0);
             \ResponseUtil::json($this->service->paymentStatus($userId, $paymentId, $this->sessionHash()));

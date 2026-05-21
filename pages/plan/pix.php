@@ -30,6 +30,8 @@ function pixDate(?string $date): string {
 }
 
 $amount = pixMoney($payment['amount']);
+$payload = json_decode((string) ($payment['checkout_payload'] ?? '{}'), true) ?: [];
+$isRenewalPayment = (($payload['purpose'] ?? '') === 'renewal');
 $txid = htmlspecialchars((string) ($payment['provider_txid'] ?? ''), ENT_QUOTES, 'UTF-8');
 $qrImage = htmlspecialchars((string) ($payment['qr_code_image'] ?? ''), ENT_QUOTES, 'UTF-8');
 $qrCode = htmlspecialchars((string) ($payment['qr_code'] ?? ''), ENT_QUOTES, 'UTF-8');
@@ -49,13 +51,13 @@ $expiresAt = pixDate($payment['expires_at'] ?? null);
         <section class="pix-payment-layout" aria-label="Pagamento Pix">
             <aside class="pix-summary-card">
                 <p class="plan-kicker">Plano Gold</p>
-                <h1>Pagamento Pix</h1>
-                <p class="pix-lead">Escaneie o QR Code ou copie o codigo Pix. A confirmacao acontece automaticamente nesta pagina.</p>
+                <h1><?= $isRenewalPayment ? 'Renovacao Pix' : 'Pagamento Pix' ?></h1>
+                <p class="pix-lead"><?= $isRenewalPayment ? 'Escaneie o QR Code ou copie o codigo Pix para renovar seu plano. A nova validade sera aplicada depois da confirmacao.' : 'Escaneie o QR Code ou copie o codigo Pix. A confirmacao acontece automaticamente nesta pagina.' ?></p>
 
                 <div class="pix-summary-list">
                     <div>
-                        <span>Plano</span>
-                        <strong>Gold</strong>
+                        <span>Operacao</span>
+                        <strong><?= $isRenewalPayment ? 'Renovacao Gold' : 'Assinatura Gold' ?></strong>
                     </div>
                     <div>
                         <span>Valor</span>

@@ -48,7 +48,7 @@ class SubscriptionModel
     public function activeSubscription(int $userId): ?array
     {
         $stmt = $this->db->prepare("
-            SELECT s.*, p.name AS plan_name, p.device_limit, p.profile_limit, p.family_member_limit, p.benefits_json
+            SELECT s.*, p.name AS plan_name, p.price AS plan_price, p.duration_days AS plan_duration_days, p.device_limit, p.profile_limit, p.family_member_limit, p.benefits_json
             FROM user_subscriptions s
             JOIN subscription_plans p ON p.code = s.plan_code
             WHERE s.user_id = ? AND s.status = 'active' AND s.expires_at > NOW()
@@ -242,6 +242,52 @@ class SubscriptionModel
             return $subscriptionId;
         } catch (\Throwable $e) {
             $this->db->rollBack();
+            throw $e;
+        }
+    }
+
+    public function renewActiveSubscription(int $userId, string $planCode, float $amount, int $paymentId, int $durationDays): int
+    {
+        $this->db->beginTransaction();
+        try {
+            $stmt = $this->db->prepare("
+                SELECT id, payment_id, expires_at
+                FROM user_subscriptions
+                WHERE user_id = ? AND plan_code = ? AND status = 'active' AND expires_at > NOW()
+                ORDER BY expires_at DESC
+                LIMIT 1
+                FOR UPDATE
+            ");
+            $stmt->execute([$userId, $planCode]);
+            $subscription = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$subscription) {
+                $this->db->rollBack();
+                return $this->activateSubscription($userId, $planCode, $amount, $paymentId, $durationDays);
+            }
+
+            $subscriptionId = (int) $subscription['id'];
+            if ((int) ($subscription['payment_id'] ?? 0) === $paymentId) {
+                $this->db->commit();
+                return $subscriptionId;
+            }
+
+            $baseTs = max(time(), strtotime((string) $subscription['expires_at']));
+            $renewedUntil = date('Y-m-d H:i:s', strtotime('+' . $durationDays . ' days', $baseTs));
+
+            $stmt = $this->db->prepare("
+                UPDATE user_subscriptions
+                SET expires_at = ?, amount_paid = ?, payment_id = ?, updated_at = NOW()
+                WHERE id = ?
+            ");
+            $stmt->execute([$renewedUntil, $amount, $paymentId, $subscriptionId]);
+
+            $this->db->commit();
+            return $subscriptionId;
+        } catch (\Throwable $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
             throw $e;
         }
     }

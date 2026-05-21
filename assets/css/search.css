@@ -498,6 +498,33 @@ body::before {
     gap: 26px 14px;
 }
 
+.search-loading-state {
+    width: 100%;
+}
+
+.search-loading-head {
+    width: min(420px, 100%);
+    margin: 0 0 22px;
+    display: grid;
+    gap: 10px;
+}
+
+.search-loading-kicker {
+    width: 118px;
+    height: 12px;
+    border-radius: 999px;
+}
+
+.search-loading-title {
+    width: min(320px, 76vw);
+    height: 22px;
+    border-radius: var(--search-radius);
+}
+
+.skeleton-results {
+    opacity: .98;
+}
+
 .search-content-card.slick-item {
     display: block;
     flex: none;
@@ -505,6 +532,53 @@ body::before {
     min-width: 0;
     color: inherit;
     text-decoration: none;
+}
+
+.search-skeleton-card {
+    pointer-events: none;
+}
+
+.search-skeleton-poster {
+    position: relative;
+    aspect-ratio: 2 / 3;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,.055);
+    background:
+        linear-gradient(110deg, rgba(255,255,255,.045) 0%, rgba(255,255,255,.09) 18%, rgba(255,255,255,.04) 34%),
+        #12161e;
+    background-size: 220% 100%;
+    animation: searchSkeletonSweep 1.25s ease-in-out infinite;
+    box-shadow: 0 14px 28px rgba(0,0,0,.24);
+}
+
+.search-skeleton-badge {
+    position: absolute;
+    top: 9px;
+    left: 9px;
+    width: 52px;
+    height: 24px;
+    border-radius: 999px;
+    background: rgba(255,255,255,.08);
+}
+
+.search-skeleton-title {
+    width: 82%;
+    height: 14px;
+    margin-top: 12px;
+    border-radius: 999px;
+}
+
+.search-skeleton-meta {
+    width: 48%;
+    height: 11px;
+    margin-top: 8px;
+    border-radius: 999px;
+    opacity: .75;
+}
+
+@keyframes searchSkeletonSweep {
+    0% { background-position: 180% 0; }
+    100% { background-position: -40% 0; }
 }
 
 .search-content-card .slick-card {
@@ -709,6 +783,13 @@ body::before {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(142px, 1fr));
     gap: 24px 14px;
+}
+
+.initial-state--loading .trending-term--skeleton {
+    width: 86px;
+    height: 36px;
+    border: 0;
+    pointer-events: none;
 }
 
 .empty-state {

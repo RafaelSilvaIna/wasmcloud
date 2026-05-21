@@ -41,8 +41,15 @@ class InfoService {
         // 2. Busca dados ricos no TMDB em paralelo:
         //    - Detalhes completos (credits, images, keywords, similar)
         //    - Se for série: info de temporadas
-        $detailUrl = "/{$mediaType}/{$tmdbId}?append_to_response=credits,images,keywords,similar,videos,recommendations,external_ids&";
+        $detailUrl = "/{$mediaType}/{$tmdbId}?append_to_response=credits,images,keywords,similar,videos,recommendations,external_ids&include_image_language=pt,en,null&";
         $tmdbData  = $this->tmdb->fetch($detailUrl);
+        $imageData = $tmdbData['images'] ?? [];
+        if (empty($imageData['logos'])) {
+            $fallbackImages = $this->tmdb->getContentImages($tmdbId, $tipo);
+            if (!empty($fallbackImages)) {
+                $imageData = array_replace_recursive($imageData, $fallbackImages);
+            }
+        }
 
         // 3. Monta elenco principal (até 15)
         $cast = [];
@@ -91,24 +98,12 @@ class InfoService {
         }
 
         // 6. Logo (PT-BR → EN → primeira disponível)
-        $logo = null;
-        if (!empty($tmdbData['images']['logos'])) {
-            foreach ($tmdbData['images']['logos'] as $l) {
-                if (($l['iso_639_1'] ?? '') === 'pt') { $logo = $l['file_path']; break; }
-            }
-            if (!$logo) {
-                foreach ($tmdbData['images']['logos'] as $l) {
-                    if (($l['iso_639_1'] ?? '') === 'en') { $logo = $l['file_path']; break; }
-                }
-            }
-            if (!$logo) $logo = $tmdbData['images']['logos'][0]['file_path'] ?? null;
-            if ($logo)  $logo = self::IMG_BASE_W500 . $logo;
-        }
+        $logo = $this->selectLogo($imageData['logos'] ?? []);
 
         // 7. Backdrops extras (galeria, até 8)
         $backdrops = [];
-        if (!empty($tmdbData['images']['backdrops'])) {
-            foreach (array_slice($tmdbData['images']['backdrops'], 0, 8) as $bd) {
+        if (!empty($imageData['backdrops'])) {
+            foreach (array_slice($imageData['backdrops'], 0, 8) as $bd) {
                 $backdrops[] = self::IMG_BASE_W780 . $bd['file_path'];
             }
         }
@@ -287,6 +282,33 @@ class InfoService {
             'Canceled'        => 'Cancelado',
             default           => $status,
         };
+    }
+
+    private function selectLogo(array $logos): ?string {
+        if (empty($logos)) {
+            return null;
+        }
+
+        $preferredLanguages = ['pt', 'en', null, ''];
+        foreach ($preferredLanguages as $language) {
+            $candidates = array_values(array_filter($logos, static function(array $logo) use ($language): bool {
+                return ($logo['iso_639_1'] ?? null) === $language && !empty($logo['file_path']);
+            }));
+
+            if (!$candidates) {
+                continue;
+            }
+
+            usort($candidates, static function(array $a, array $b): int {
+                $aScore = ((float)($a['vote_average'] ?? 0) * 10) + (int)($a['vote_count'] ?? 0) + ((int)($a['width'] ?? 0) / 1000);
+                $bScore = ((float)($b['vote_average'] ?? 0) * 10) + (int)($b['vote_count'] ?? 0) + ((int)($b['width'] ?? 0) / 1000);
+                return $bScore <=> $aScore;
+            });
+
+            return $this->tmdbImageUrl($candidates[0]['file_path'] ?? null, 'w500');
+        }
+
+        return null;
     }
 
     private function tmdbImageUrl(?string $path, string $size = 'w500'): ?string {

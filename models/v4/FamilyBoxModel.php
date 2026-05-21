@@ -99,6 +99,21 @@ class FamilyBoxModel
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    public function pendingInvitesByOwner(int $ownerUserId): array
+    {
+        $stmt = $this->db->prepare("
+            SELECT b.*, u.full_name, u.email, u.avatar_url
+            FROM pipocine_box_items b
+            JOIN platform_users u ON u.id = b.target_user_id
+            WHERE b.actor_user_id = ?
+              AND b.type = 'family_invite'
+              AND b.action_status = 'pending'
+            ORDER BY b.created_at DESC
+        ");
+        $stmt->execute([$ownerUserId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     public function activeMemberCount(int $ownerUserId): int
     {
         $stmt = $this->db->prepare("SELECT COUNT(*) FROM family_memberships WHERE owner_user_id = ? AND status = 'active'");

@@ -262,6 +262,10 @@
     Search.init = async function () {
         this.ensureFilterBar();
         this.ensureFiltersToggle();
+        this.readUrlState();
+        if (this.query) this.renderSkeleton();
+        else this.renderInitialContentSkeletonOnly();
+
         await this.loadFilters();
         this.enhanceSelectMenus();
         this.readUrlState();
@@ -416,6 +420,60 @@
         history.replaceState(null, '', url);
     };
 
+    Search.buildViewHref = function (item) {
+        const id = item.id_tmdb || item.tmdb_id || item.id || '';
+        if (!id) return '#';
+
+        const rawType = item.tipo || item.type || item.media_type || '';
+        const isSerie = ['serie', 'series', 'tv'].includes(String(rawType).toLowerCase());
+        const encodedId = encodeURIComponent(id);
+
+        return isSerie
+            ? `/view?id=${encodedId}&type=serie&s=1&e=1`
+            : `/view?id=${encodedId}&type=movie`;
+    };
+
+    Search.renderSkeletonCard = function () {
+        return `
+            <div class="search-content-card slick-item search-skeleton-card" aria-hidden="true">
+                <div class="slick-card search-skeleton-poster">
+                    <span class="search-skeleton-badge skeleton"></span>
+                </div>
+                <div class="skeleton search-skeleton-title"></div>
+                <div class="skeleton search-skeleton-meta"></div>
+            </div>`;
+    };
+
+    Search.renderSkeleton = function () {
+        this.el.meta.style.display = 'none';
+        this.el.pagination.style.display = 'none';
+
+        const cards = Array.from({ length: 18 }, () => this.renderSkeletonCard()).join('');
+        this.el.container.innerHTML = `
+            <section class="search-loading-state" aria-label="Carregando resultados" aria-busy="true">
+                <div class="search-loading-head">
+                    <span class="skeleton search-loading-kicker"></span>
+                    <span class="skeleton search-loading-title"></span>
+                </div>
+                <div class="results-grid skeleton-results">${cards}</div>
+            </section>`;
+    };
+
+    Search.renderInitialContentSkeletonOnly = function () {
+        this.el.meta.style.display = 'none';
+        this.el.pagination.style.display = 'none';
+        this.el.container.innerHTML = `
+            <div class="initial-state initial-state--loading" aria-busy="true">
+                <p class="initial-hint">Termos populares</p>
+                <div class="trending-terms">
+                    ${Array.from({ length: 8 }, () => '<span class="trending-term trending-term--skeleton skeleton"></span>').join('')}
+                </div>
+                <div class="initial-content">
+                    ${this.renderInitialContentSkeleton()}
+                </div>
+            </div>`;
+    };
+
     Search.renderInitial = function () {
         this.el.meta.style.display = 'none';
         this.el.pagination.style.display = 'none';
@@ -448,12 +506,7 @@
     };
 
     Search.renderInitialContentSkeleton = function () {
-        const cards = Array.from({ length: 6 }, () => `
-            <div class="skeleton-card">
-                <div class="skeleton skeleton-thumb"></div>
-                <div class="skeleton skeleton-line"></div>
-                <div class="skeleton skeleton-line-short"></div>
-            </div>`).join('');
+        const cards = Array.from({ length: 6 }, () => this.renderSkeletonCard()).join('');
 
         return `
             <section class="initial-content-section" aria-label="Carregando sugestoes">
@@ -508,15 +561,16 @@
     };
 
     Search.renderContentCard = function (item, opts = {}) {
-        const isSerie = item.tipo === 'serie';
-        const href = `/info=${item.id_tmdb}?type=${encodeURIComponent(item.tipo || '')}`;
+        const rawType = String(item.tipo || item.type || item.media_type || '').toLowerCase();
+        const isSerie = ['serie', 'series', 'tv'].includes(rawType);
+        const href = this.buildViewHref(item);
         const poster = this.normalizeTmdbImage(item.poster || item.capa || '');
         const ano = item.ano || '';
         const genres = Array.isArray(item.generos) ? item.generos.slice(0, 2).join(', ') : '';
         const unavailable = opts.showAvailability && item.disponivel === false;
 
         return `
-            <a class="search-content-card slick-item" href="${this.esc(href)}" aria-label="${this.esc(item.titulo)}" data-component="ContentCard">
+            <a class="search-content-card slick-item" href="${this.esc(href)}" aria-label="Assistir ${this.esc(item.titulo)}" data-component="ContentCard">
                 <div class="slick-card${unavailable ? ' is-unavailable' : ''}" tabindex="-1" role="button" aria-haspopup="true" aria-expanded="false">
                     <div class="slick-thumb">
                         ${poster ? `<img

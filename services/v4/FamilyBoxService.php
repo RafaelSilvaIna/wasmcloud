@@ -85,13 +85,16 @@ class FamilyBoxService
         $subscription = $this->model->activeSubscription($ownerUserId);
         $limit = max(0, (int) ($subscription['family_member_limit'] ?? 0));
         $members = array_map([$this, 'normalizeMember'], $this->model->activeMembers($ownerUserId));
+        $pendingInvites = array_map([$this, 'normalizePendingInvite'], $this->model->pendingInvitesByOwner($ownerUserId));
 
         return [
             'success' => true,
             'enabled' => (bool) $subscription && $limit > 0,
             'limit' => $limit,
             'used' => count($members),
+            'available' => max(0, $limit - count($members)),
             'members' => $members,
+            'pending_invites' => $pendingInvites,
         ];
     }
 
@@ -130,7 +133,7 @@ class FamilyBoxService
         }
 
         if ($this->model->pendingInvite($ownerUserId, (int) $target['id'])) {
-            return ['success' => false, 'message' => 'Ja existe um convite pendente para este e-mail.'];
+            return ['success' => false, 'message' => 'Ja existe um convite pendente para este usuario. Aguarde a resposta antes de enviar outro.'];
         }
 
         $owner = $this->model->userById($ownerUserId);
@@ -141,6 +144,15 @@ class FamilyBoxService
             'success' => true,
             'message' => 'Solicitacao enviada para a Box do usuario.',
             'invite_id' => $inviteId,
+            'pending_invite' => [
+                'id' => $inviteId,
+                'target_user_id' => (int) $target['id'],
+                'name' => (string) ($target['full_name'] ?? 'Usuario Pipocine'),
+                'email' => (string) ($target['email'] ?? $email),
+                'avatar' => (string) ($target['avatar_url'] ?? ''),
+                'created_at' => date('Y-m-d H:i:s'),
+                'status' => 'pending',
+            ],
         ];
     }
 
@@ -333,6 +345,19 @@ class FamilyBoxService
             'email' => (string) ($member['email'] ?? ''),
             'avatar' => (string) ($member['avatar_url'] ?? ''),
             'accepted_at' => (string) ($member['accepted_at'] ?? ''),
+        ];
+    }
+
+    private function normalizePendingInvite(array $invite): array
+    {
+        return [
+            'id' => (int) $invite['id'],
+            'target_user_id' => (int) $invite['target_user_id'],
+            'name' => (string) ($invite['full_name'] ?? 'Usuario Pipocine'),
+            'email' => (string) ($invite['email'] ?? ''),
+            'avatar' => (string) ($invite['avatar_url'] ?? ''),
+            'created_at' => (string) ($invite['created_at'] ?? ''),
+            'status' => (string) ($invite['action_status'] ?? 'pending'),
         ];
     }
 }

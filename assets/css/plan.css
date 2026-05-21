@@ -968,6 +968,62 @@ body.plan-body {
     margin: 0;
 }
 
+.me-renewal-panel {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: 18px;
+    margin: 0 0 18px;
+    border: 1px solid rgba(229, 9, 20, .22);
+    border-radius: 14px;
+    background:
+        linear-gradient(135deg, rgba(229, 9, 20, .12), rgba(255, 255, 255, .025)),
+        #0f1116;
+    padding: 22px;
+}
+
+.me-renewal-copy h2 {
+    margin: 6px 0 8px;
+    color: #fff;
+    font-size: 1.28rem;
+    font-weight: 650;
+    line-height: 1.2;
+}
+
+.me-renewal-copy p {
+    max-width: 590px;
+    margin: 0;
+    color: var(--plan-muted);
+    font-size: .95rem;
+    line-height: 1.55;
+}
+
+.me-renewal-summary {
+    min-width: 142px;
+    border-left: 1px solid rgba(255, 255, 255, .1);
+    padding-left: 18px;
+}
+
+.me-renewal-summary span,
+.me-renewal-summary strong {
+    display: block;
+    white-space: nowrap;
+    text-align: right;
+}
+
+.me-renewal-summary span {
+    color: #fff;
+    font-size: 1.08rem;
+    font-weight: 720;
+}
+
+.me-renewal-summary strong {
+    margin-top: 4px;
+    color: var(--plan-muted);
+    font-size: .84rem;
+    font-weight: 700;
+}
+
 .me-section-label {
     display: flex;
     align-items: center;
@@ -1036,6 +1092,91 @@ body.plan-body {
     margin: 0;
     color: var(--plan-muted);
     line-height: 1.55;
+}
+
+.me-family-tabs {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin: 24px 0 18px;
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 999px;
+    padding: 4px;
+    background: rgba(255, 255, 255, .035);
+}
+
+.me-family-tab {
+    min-height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    border-radius: 999px;
+    padding: 0 14px;
+    color: var(--plan-muted);
+    background: transparent;
+    font-size: .88rem;
+    font-weight: 760;
+    cursor: pointer;
+}
+
+.me-family-tab span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 22px;
+    margin-left: 7px;
+    border-radius: 999px;
+    color: #fff;
+    background: rgba(255, 255, 255, .1);
+    font-size: .78rem;
+}
+
+.me-family-tab.active {
+    color: #fff;
+    background: rgba(229, 9, 20, .9);
+}
+
+.me-family-tab.active span {
+    background: rgba(255, 255, 255, .18);
+}
+
+.me-family-tab-panel {
+    display: none;
+}
+
+.me-family-tab-panel.active {
+    display: block;
+}
+
+.me-family-overview {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.me-family-stat {
+    min-height: 94px;
+    display: grid;
+    align-content: space-between;
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, .025);
+    padding: 16px;
+}
+
+.me-family-stat span {
+    color: var(--plan-muted);
+    font-size: .82rem;
+    font-weight: 720;
+}
+
+.me-family-stat strong {
+    color: #fff;
+    font-size: 1.45rem;
+    font-weight: 680;
 }
 
 .me-family-meter {
@@ -1137,6 +1278,18 @@ body.plan-body {
     background: rgba(229, 9, 20, .16);
 }
 
+.me-family-pending {
+    margin-left: auto;
+    border: 1px solid rgba(245, 158, 11, .28);
+    border-radius: 999px;
+    padding: 7px 10px;
+    color: #fde68a;
+    background: rgba(245, 158, 11, .1);
+    font-size: .78rem;
+    font-weight: 820;
+    white-space: nowrap;
+}
+
 .family-invite-form {
     display: grid;
     gap: 18px;
@@ -1205,8 +1358,42 @@ body.plan-body {
     }
 
     .me-family-head,
-    .me-family-meter {
+    .me-family-meter,
+    .me-renewal-panel {
         display: grid;
+    }
+
+    .me-family-tabs {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr;
+        border-radius: 14px;
+    }
+
+    .me-family-tab {
+        justify-content: center;
+        width: 100%;
+    }
+
+    .me-family-overview {
+        grid-template-columns: 1fr;
+    }
+
+    .me-family-pending {
+        width: max-content;
+        margin-left: 56px;
+    }
+
+    .me-renewal-summary {
+        width: 100%;
+        border-left: 0;
+        border-top: 1px solid rgba(255, 255, 255, .1);
+        padding: 14px 0 0;
+    }
+
+    .me-renewal-summary span,
+    .me-renewal-summary strong {
+        text-align: left;
     }
 
     .me-family-head .plan-action.compact {
@@ -1416,6 +1603,95 @@ body.plan-body {
     width: min(420px, 100%);
 }
 
+.renewal-modal-card {
+    position: relative;
+    width: min(520px, 100%);
+    padding: 30px;
+}
+
+.modal-close-button {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 34px;
+    height: 34px;
+    display: inline-grid;
+    place-items: center;
+    border: 1px solid rgba(255, 255, 255, .1);
+    border-radius: 50%;
+    color: var(--plan-muted);
+    background: transparent;
+    cursor: pointer;
+}
+
+.modal-close-button:hover {
+    color: #fff;
+    border-color: rgba(229, 9, 20, .32);
+    background: rgba(229, 9, 20, .08);
+}
+
+.modal-close-button svg {
+    width: 16px;
+    height: 16px;
+}
+
+.modal-icon {
+    width: 42px;
+    height: 42px;
+    display: inline-grid;
+    place-items: center;
+    margin-bottom: 18px;
+    border: 1px solid rgba(229, 9, 20, .26);
+    border-radius: 50%;
+    color: #fff;
+    background: rgba(229, 9, 20, .12);
+}
+
+.modal-icon svg {
+    width: 19px;
+    height: 19px;
+}
+
+.renewal-details {
+    display: grid;
+    gap: 0;
+    margin: 22px 0 18px;
+    border-top: 1px solid rgba(255, 255, 255, .08);
+}
+
+.renewal-details div {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 13px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, .08);
+}
+
+.renewal-details span {
+    color: var(--plan-muted);
+    font-size: .9rem;
+}
+
+.renewal-details strong {
+    color: #fff;
+    font-size: .96rem;
+    font-weight: 700;
+    text-align: right;
+}
+
+.renewal-check {
+    margin: 0 0 20px;
+}
+
+.renewal-modal-error {
+    min-height: 20px;
+    margin: 14px 0 0;
+    color: #fecaca;
+    font-size: .9rem;
+    line-height: 1.4;
+}
+
 .plan-family-toast {
     position: fixed;
     right: 20px;
@@ -1429,6 +1705,12 @@ body.plan-body {
     box-shadow: 0 18px 50px rgba(0, 0, 0, .28);
     font-size: .9rem;
     font-weight: 700;
+}
+
+.plan-family-toast.error {
+    border-color: rgba(239, 68, 68, .28);
+    color: #fecaca;
+    background: rgba(24, 10, 12, .96);
 }
 
 .me-family-remove:hover,

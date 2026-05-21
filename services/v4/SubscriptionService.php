@@ -10,6 +10,8 @@ use Models\V4\SubscriptionModel;
 
 class SubscriptionService
 {
+    private const RENEWAL_WINDOW_DAYS = 14;
+
     private SubscriptionModel $subscriptions;
     private PlatformUserModel $users;
     private EvoPayClient $evopay;
@@ -91,6 +93,68 @@ class SubscriptionService
         return $this->checkoutResponse($payment, false);
     }
 
+    public function createRenewalCheckout(int $userId, array $input, string $baseUrl): array
+    {
+        $user = $this->users->findById($userId);
+        if (!$user) {
+            return ['success' => false, 'code' => 'USER_NOT_FOUND', 'message' => 'Usuario nao encontrado. Entre novamente.'];
+        }
+
+        $active = $this->subscriptions->activeSubscription($userId);
+        if (!$active || (($active['source'] ?? 'paid') !== 'paid') || (($active['plan_code'] ?? '') !== 'gold')) {
+            return ['success' => false, 'code' => 'RENEWAL_UNAVAILABLE', 'message' => 'Renovacao disponivel apenas para assinaturas Gold pagas e ativas.'];
+        }
+
+        $daysLeft = $this->daysUntil((string) ($active['expires_at'] ?? ''));
+        if ($daysLeft === null || $daysLeft > self::RENEWAL_WINDOW_DAYS) {
+            return [
+                'success' => false,
+                'code' => 'RENEWAL_TOO_EARLY',
+                'message' => 'A renovacao por Pix fica disponivel nos ultimos ' . self::RENEWAL_WINDOW_DAYS . ' dias do plano.'
+            ];
+        }
+
+        if (empty($input['accepted_terms'])) {
+            return ['success' => false, 'code' => 'TERMS_REQUIRED', 'message' => 'Confirme a renovacao para gerar o Pix.'];
+        }
+
+        $plan = $this->subscriptions->plan('gold');
+        if (!$plan) {
+            return ['success' => false, 'code' => 'INVALID_PLAN', 'message' => 'Plano indisponivel para renovacao.'];
+        }
+
+        $pending = $this->subscriptions->pendingPayment($userId, 'gold');
+        if ($pending && !empty($pending['qr_code'])) {
+            return $this->checkoutResponse($pending, true);
+        }
+
+        $expiresAt = date('Y-m-d H:i:s', time() + 3600);
+        $paymentId = $this->subscriptions->createPayment($userId, 'gold', (float) $plan['price'], $expiresAt, [
+            'name' => trim((string) ($input['name'] ?? $user['full_name'] ?? '')),
+            'email' => trim((string) ($input['email'] ?? $user['email'] ?? '')),
+            'phone' => trim((string) ($input['phone'] ?? $user['phone'] ?? '')),
+            'accepted_terms' => true,
+            'purpose' => 'renewal',
+            'renew_subscription_id' => (int) $active['id'],
+            'current_expires_at' => (string) $active['expires_at'],
+        ]);
+
+        $callbackUrl = rtrim($baseUrl, '/') . '/webhooks/evopay.php';
+        $pix = $this->evopay->createPix((float) $plan['price'], $callbackUrl);
+
+        $this->subscriptions->attachPix(
+            $paymentId,
+            (string) $pix['id'],
+            (string) ($pix['qrCodeText'] ?? ''),
+            (string) ($pix['qrCodeUrl'] ?? ''),
+            $pix
+        );
+        $this->subscriptions->event($userId, $paymentId, null, 'renewal_payment_created', $pix);
+
+        $payment = $this->subscriptions->paymentByIdForUser($paymentId, $userId);
+        return $this->checkoutResponse($payment, false);
+    }
+
     public function paymentStatus(int $userId, int $paymentId, string $sessionHash): array
     {
         $payment = $this->subscriptions->paymentByIdForUser($paymentId, $userId);
@@ -156,11 +220,6 @@ class SubscriptionService
             return ['success' => false, 'message' => 'Token expirado, ja utilizado ou nao pertence a esta sessao.'];
         }
 
-        $activeSubscription = $this->subscriptions->activeSubscription($userId);
-        if ($activeSubscription && (($activeSubscription['source'] ?? 'paid') === 'paid') && (($activeSubscription['plan_code'] ?? '') !== 'casual')) {
-            return ['success' => true, 'already_active' => true, 'redirect' => '/plan/me'];
-        }
-
         $payment = $this->subscriptions->paymentByIdForUser((int) $token['payment_id'], $userId);
         if (!$payment || $payment['status'] !== 'paid') {
             return ['success' => false, 'message' => 'Pagamento ainda nao confirmado.'];
@@ -171,16 +230,34 @@ class SubscriptionService
             return ['success' => false, 'message' => 'Plano nao encontrado.'];
         }
 
-        $subscriptionId = $this->subscriptions->activateSubscription(
-            $userId,
-            (string) $payment['plan_code'],
-            (float) $payment['amount'],
-            (int) $payment['id'],
-            (int) $plan['duration_days']
-        );
+        $payload = json_decode((string) ($payment['checkout_payload'] ?? '{}'), true) ?: [];
+        $isRenewal = (($payload['purpose'] ?? '') === 'renewal');
+        $activeSubscription = $this->subscriptions->activeSubscription($userId);
+
+        if ($activeSubscription && (($activeSubscription['source'] ?? 'paid') === 'paid') && (($activeSubscription['plan_code'] ?? '') !== 'casual') && !$isRenewal) {
+            return ['success' => true, 'already_active' => true, 'redirect' => '/plan/me'];
+        }
+
+        if ($isRenewal) {
+            $subscriptionId = $this->subscriptions->renewActiveSubscription(
+                $userId,
+                (string) $payment['plan_code'],
+                (float) $payment['amount'],
+                (int) $payment['id'],
+                (int) $plan['duration_days']
+            );
+        } else {
+            $subscriptionId = $this->subscriptions->activateSubscription(
+                $userId,
+                (string) $payment['plan_code'],
+                (float) $payment['amount'],
+                (int) $payment['id'],
+                (int) $plan['duration_days']
+            );
+        }
 
         $this->subscriptions->consumeActivationToken((int) $token['id']);
-        $this->subscriptions->event($userId, (int) $payment['id'], $subscriptionId, 'subscription_activated');
+        $this->subscriptions->event($userId, (int) $payment['id'], $subscriptionId, $isRenewal ? 'subscription_renewed' : 'subscription_activated');
 
         return ['success' => true, 'redirect' => '/plan/me'];
     }
@@ -233,6 +310,16 @@ class SubscriptionService
             'qr_code_image' => $payment['qr_code_image'],
             'expires_at' => $payment['expires_at'],
         ];
+    }
+
+    private function daysUntil(string $date): ?int
+    {
+        $timestamp = strtotime($date);
+        if (!$timestamp) {
+            return null;
+        }
+
+        return max(0, (int) ceil(($timestamp - time()) / 86400));
     }
 
     private function issueActivationToken(int $userId, int $paymentId, string $sessionHash): string

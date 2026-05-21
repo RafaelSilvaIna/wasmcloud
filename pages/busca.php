@@ -1008,7 +1008,9 @@ const Search = {
     renderResults(items) {
         const cards = items.map(item => {
             const isSerie  = item.tipo === 'serie';
-            const href     = `/info=${item.id_tmdb}`;
+            const href     = isSerie
+                ? `/view?id=${encodeURIComponent(item.id_tmdb)}&type=serie&s=1&e=1`
+                : `/view?id=${encodeURIComponent(item.id_tmdb)}&type=movie`;
             const badge    = isSerie ? 'serie' : 'filme';
             const label    = isSerie ? 'Serie' : 'Filme';
             const nota     = parseFloat(item.nota || 0);

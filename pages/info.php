@@ -987,6 +987,7 @@ if ($tmdbId <= 0) {
         /* ── Referências DOM ──────────────────────────────────���──────── */
         const $ = id => document.getElementById(id);
 
+        const infoHero      = $('infoHero');
         const heroBackdrop  = $('heroBackdrop');
         const heroPosterWrap= $('heroPosterWrap');
         const heroPosterImg = $('heroPosterImg');
@@ -1075,12 +1076,52 @@ if ($tmdbId <= 0) {
 
         /* ── Exibe estado de erro ────────────────────────────────────── */
         function showError() {
-            $('infoHero').style.display = 'none';
+            infoHero.style.display = 'none';
             infoError.classList.add('is-visible');
+        }
+
+        function setupHeroMotion() {
+            const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            if (reduceMotion || !infoHero) return;
+
+            let ticking = false;
+            const updateScroll = () => {
+                const rect = infoHero.getBoundingClientRect();
+                const height = Math.max(rect.height, 1);
+                const progress = Math.min(1, Math.max(0, -rect.top / height));
+                document.body.style.setProperty('--info-scroll', progress.toFixed(3));
+                ticking = false;
+            };
+
+            const requestScrollUpdate = () => {
+                if (ticking) return;
+                ticking = true;
+                requestAnimationFrame(updateScroll);
+            };
+
+            updateScroll();
+            window.addEventListener('scroll', requestScrollUpdate, { passive: true });
+            window.addEventListener('resize', requestScrollUpdate, { passive: true });
+
+            if (window.matchMedia('(pointer: fine)').matches) {
+                infoHero.addEventListener('pointermove', (event) => {
+                    const rect = infoHero.getBoundingClientRect();
+                    const x = ((event.clientX - rect.left) / rect.width - .5) * 2;
+                    const y = ((event.clientY - rect.top) / rect.height - .5) * 2;
+                    document.body.style.setProperty('--info-tilt-x', x.toFixed(3));
+                    document.body.style.setProperty('--info-tilt-y', y.toFixed(3));
+                }, { passive: true });
+
+                infoHero.addEventListener('pointerleave', () => {
+                    document.body.style.setProperty('--info-tilt-x', '0');
+                    document.body.style.setProperty('--info-tilt-y', '0');
+                }, { passive: true });
+            }
         }
 
         /* ── Renderização principal ──────────────────────────────────── */
         function render(d) {
+            document.body.classList.remove('info-ready');
             // Atualiza <title>
             document.title = `${d.titulo} — PipoCine`;
 
@@ -1114,11 +1155,22 @@ if ($tmdbId <= 0) {
 
             // ── Hero: Logo ou Título
             heroTitle.innerHTML = '';
+            heroLogo.style.display = 'none';
+            heroLogo.removeAttribute('src');
+            document.body.classList.remove('info-has-logo');
             const logoUrl = tmdbImage(d.logo, 'w500');
             if (logoUrl) {
-                heroLogo.src = logoUrl;
                 heroLogo.alt = d.titulo;
-                heroLogo.style.display = 'block';
+                heroLogo.onload = () => {
+                    document.body.classList.add('info-has-logo');
+                    heroLogo.style.display = 'block';
+                };
+                heroLogo.onerror = () => {
+                    heroLogo.style.display = 'none';
+                    document.body.classList.remove('info-has-logo');
+                    heroTitle.textContent = d.titulo;
+                };
+                heroLogo.src = logoUrl;
             } else {
                 heroTitle.textContent = d.titulo;
             }
@@ -1280,6 +1332,7 @@ if ($tmdbId <= 0) {
 
             // ── Mostra o corpo
             infoBody.style.display = 'block';
+            requestAnimationFrame(() => document.body.classList.add('info-ready'));
         }
 
         /* ── Sidebar de Metadados ────────────────────────────────────── */
@@ -1339,6 +1392,7 @@ if ($tmdbId <= 0) {
         /* ── Inicia ──────────────────────────────────────────────────── */
         document.addEventListener('DOMContentLoaded', () => {
             if (typeof lucide !== 'undefined') lucide.createIcons();
+            setupHeroMotion();
             fetchInfo();
         });
 
