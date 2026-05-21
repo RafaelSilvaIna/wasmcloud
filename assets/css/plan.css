@@ -1759,3 +1759,164 @@ body.plan-body {
         width: min(100% - 28px, 640px);
     }
 }
+
+.me-family-panel {
+    padding: 26px 28px;
+}
+
+.me-family-tabs {
+    width: 100%;
+    display: flex;
+    gap: 18px;
+    margin: 24px 0 8px;
+    border: 0;
+    border-bottom: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 0;
+    padding: 0;
+    background: transparent;
+}
+
+.me-family-tab {
+    position: relative;
+    min-height: 42px;
+    width: auto;
+    border-radius: 0;
+    padding: 0 0 12px;
+    color: var(--plan-muted);
+    background: transparent;
+    font-size: .9rem;
+    font-weight: 680;
+}
+
+.me-family-tab::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -1px;
+    height: 2px;
+    border-radius: 999px;
+    background: transparent;
+}
+
+.me-family-tab span {
+    min-width: 20px;
+    height: 20px;
+    margin-left: 6px;
+    color: var(--plan-muted);
+    background: rgba(255, 255, 255, .07);
+    font-size: .74rem;
+}
+
+.me-family-tab.active {
+    color: #fff;
+    background: transparent;
+}
+
+.me-family-tab.active::after {
+    background: var(--plan-gold);
+}
+
+.me-family-tab.active span {
+    color: #fff;
+    background: rgba(229, 9, 20, .18);
+}
+
+.me-family-overview {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+    margin: 16px 0 12px;
+    border-top: 0;
+}
+
+.me-family-stat {
+    min-height: 0;
+    display: grid;
+    align-content: start;
+    gap: 16px;
+    border: 1px solid rgba(255, 255, 255, .07);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, .018);
+    padding: 16px;
+}
+
+.me-family-stat span {
+    font-size: .9rem;
+    font-weight: 650;
+}
+
+.me-family-stat strong {
+    font-size: 1.05rem;
+    font-weight: 720;
+    line-height: 1;
+}
+
+.me-family-meter {
+    margin: 8px 0 0;
+    border-color: rgba(255, 255, 255, .07);
+    padding: 13px 0 0;
+}
+
+@media (max-width: 900px) {
+    .me-family-panel {
+        padding: 22px 20px;
+    }
+
+    .me-family-head .plan-action.compact {
+        width: auto;
+        min-width: 0;
+        min-height: 42px;
+        justify-self: start;
+        padding: 0 18px;
+    }
+
+    .me-family-tabs {
+        display: flex;
+        grid-template-columns: none;
+        gap: 16px;
+        overflow-x: auto;
+        scrollbar-width: none;
+    }
+
+    .me-family-tabs::-webkit-scrollbar {
+        display: none;
+    }
+
+    .me-family-tab {
+        flex: 0 0 auto;
+        width: auto;
+    }
+
+    .me-family-overview {
+        grid-template-columns: 1fr;
+        gap: 0;
+        border-top: 1px solid rgba(255, 255, 255, .07);
+        margin: 14px 0 6px;
+    }
+
+    .me-family-stat {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border: 0;
+        border-bottom: 1px solid rgba(255, 255, 255, .07);
+        border-radius: 0;
+        background: transparent;
+        padding: 14px 0;
+    }
+
+    .me-family-stat span {
+        min-width: 0;
+    }
+
+    .me-family-stat strong {
+        flex: 0 0 auto;
+        padding-left: 16px;
+    }
+
+    .me-family-meter {
+        display: flex;
+        align-items: center;
+    }
+}
