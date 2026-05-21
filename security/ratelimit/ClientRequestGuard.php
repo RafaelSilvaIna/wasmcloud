@@ -19,6 +19,10 @@ final class ClientRequestGuard
         }
 
         $ip = self::resolveClientIp();
+        if (self::hasTemporaryBypass($ip)) {
+            return;
+        }
+
         $clientKey = self::clientKey($ip);
         $group = self::routeGroup($path);
         $limits = self::limitsFor($group, $_SERVER['REQUEST_METHOD'] ?? 'GET');
@@ -53,6 +57,40 @@ final class ClientRequestGuard
         }
 
         return filter_var($remote, FILTER_VALIDATE_IP) ? $remote : '127.0.0.1';
+    }
+
+    public static function issueTemporaryBypass(string $ip, int $ttl = 90): void
+    {
+        if (headers_sent()) {
+            return;
+        }
+
+        $expires = time() + $ttl;
+        $value = $expires . ':' . hash_hmac('sha256', $ip . '|' . $expires, self::secret());
+        setcookie('_sec_continue_ok', $value, [
+            'expires' => $expires,
+            'path' => '/',
+            'httponly' => true,
+            'samesite' => 'Lax',
+            'secure' => (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off'),
+        ]);
+    }
+
+    public static function hasTemporaryBypass(string $ip): bool
+    {
+        $cookie = (string) ($_COOKIE['_sec_continue_ok'] ?? '');
+        if ($cookie === '' || !str_contains($cookie, ':')) {
+            return false;
+        }
+
+        [$expires, $mac] = explode(':', $cookie, 2);
+        $expiresInt = (int) $expires;
+        if ($expiresInt < time() || $mac === '') {
+            return false;
+        }
+
+        $expected = hash_hmac('sha256', $ip . '|' . $expiresInt, self::secret());
+        return hash_equals($expected, $mac);
     }
 
     private static function checkConcurrency(string $clientKey, int $limit, int $retryAfter): void
@@ -237,5 +275,21 @@ final class ClientRequestGuard
         }
 
         return false;
+    }
+
+    private static function secret(): string
+    {
+        if (class_exists('\\Security\\Config\\SecurityConfig')
+            && method_exists('\\Security\\Config\\SecurityConfig', 'secret')
+        ) {
+            return \Security\Config\SecurityConfig::secret();
+        }
+
+        $env = getenv('PIPOCINE_SECURITY_SECRET');
+        if (is_string($env) && strlen($env) >= 32) {
+            return $env;
+        }
+
+        return hash('sha256', __DIR__ . '|pipocine-request-guard');
     }
 }

@@ -6,24 +6,23 @@ $requestUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $requestMethod = $_SERVER['REQUEST_METHOD'];
 
 if ($requestUri === '/security/continue' && $requestMethod === 'POST') {
+    require_once __DIR__ . '/../security/config/SecurityConfig.php';
+    require_once __DIR__ . '/../security/ratelimit/ClientRequestGuard.php';
     require_once __DIR__ . '/../security/storage/DbSecurityStore.php';
+    require_once __DIR__ . '/../security/logger/SecurityLogger.php';
+    require_once __DIR__ . '/../security/mitigation/BanManager.php';
+    require_once __DIR__ . '/../security/mitigation/QuarantineManager.php';
 
     $token = (string) ($_POST['token'] ?? '');
     $target = (string) ($_POST['target'] ?? '/home');
+    $targetPath = parse_url($target, PHP_URL_PATH) ?: '/home';
+    if (!str_starts_with($targetPath, '/') || str_starts_with($targetPath, '/security/')) {
+        $targetPath = '/home';
+    }
+
     $sessionToken = (string) ($_SESSION['_sec_resume_token'] ?? '');
     $sessionIp = (string) ($_SESSION['_sec_resume_ip'] ?? '');
-    $resolvedIp = '';
-    foreach (['HTTP_CF_CONNECTING_IP', 'HTTP_X_REAL_IP', 'HTTP_X_FORWARDED_FOR', 'REMOTE_ADDR'] as $key) {
-        $candidate = $_SERVER[$key] ?? '';
-        if ($candidate === '') {
-            continue;
-        }
-        $candidate = trim(explode(',', $candidate)[0]);
-        if (filter_var($candidate, FILTER_VALIDATE_IP)) {
-            $resolvedIp = $candidate;
-            break;
-        }
-    }
+    $resolvedIp = \Security\RateLimit\ClientRequestGuard::resolveClientIp();
 
     if ($token !== ''
         && $sessionToken !== ''
@@ -38,10 +37,19 @@ if ($requestUri === '/security/continue' && $requestMethod === 'POST') {
         $store->clearRateLimitWindows($sessionIp);
         $store->resetIpReputation($sessionIp);
 
+        $logger = new \Security\Logger\SecurityLogger($store);
+        (new \Security\Mitigation\BanManager($store, $logger))->invalidateCache($sessionIp);
+        (new \Security\Mitigation\QuarantineManager($store, $logger))->invalidateCache($sessionIp);
+        if (function_exists('apcu_delete')) {
+            apcu_delete('sec_rep_' . md5($sessionIp));
+        }
+
+        \Security\RateLimit\ClientRequestGuard::issueTemporaryBypass($sessionIp);
+
         $_SESSION['req_cnt'] = 0;
         $_SESSION['req_time'] = time();
         unset($_SESSION['_sec_resume_token'], $_SESSION['_sec_resume_ip'], $_SESSION['_sec_resume_target']);
-        header('Location: ' . (str_starts_with($target, '/') ? $target : '/home'));
+        header('Location: ' . $targetPath);
         exit;
     }
 

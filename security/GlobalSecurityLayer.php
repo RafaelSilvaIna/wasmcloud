@@ -111,6 +111,10 @@ final class GlobalSecurityLayer
         $routeGroup = $this->resolveRouteGroup();
         $path       = $_SERVER['REQUEST_URI']      ?? '/';
 
+        if (ClientRequestGuard::hasTemporaryBypass($ip)) {
+            return;
+        }
+
         // ----------------------------------------------------------------
         // [1] Whitelist — bypass total se autorizado
         // ----------------------------------------------------------------

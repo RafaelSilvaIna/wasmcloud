@@ -50,6 +50,10 @@ final class SecurityBlockResponder
         }
 
         $target = parse_url($path, PHP_URL_PATH) ?: '/home';
+        if (str_starts_with($target, '/security/')) {
+            return '/home';
+        }
+
         return str_starts_with($target, '/') ? $target : '/home';
     }
 
