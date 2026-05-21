@@ -247,6 +247,11 @@ if ($pdoPipocine) {
 
 applyGlobalSecurityLayer($pdoPipocine);
 
+if (!shouldSkipGlobalSecurity()) {
+    require_once __DIR__ . '/../hooks/SecurityChallengeHook.php';
+    \SecurityChallengeHook::injectClientBridge();
+}
+
 // AUTH
 if (!isset($_SESSION['user_id'])) {
     if ($pdoPipocine) {

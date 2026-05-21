@@ -202,28 +202,15 @@ final class ClientRequestGuard
 
     private static function reject(int $code, string $message, int $retryAfter): never
     {
-        http_response_code($code);
-        header('Retry-After: ' . $retryAfter);
-        header('Cache-Control: no-store, private');
-
         $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
-        if (str_starts_with($path, '/api/') || str_starts_with($path, '/cdn/')) {
-            header('Content-Type: application/json; charset=utf-8');
-            echo json_encode([
-                'success' => false,
-                'error' => $message,
-                'code' => $code,
-                'retry_after' => $retryAfter,
-            ]);
-            exit;
-        }
-
-        header('Content-Type: text/html; charset=utf-8');
-        echo '<!doctype html><meta charset="utf-8"><title>Aguarde</title>'
-           . '<body style="font-family:system-ui;background:#111;color:#fff;display:grid;place-items:center;min-height:100vh">'
-           . '<main style="max-width:460px;text-align:center"><h1>Calma, quase la.</h1>'
-           . '<p>' . htmlspecialchars($message, ENT_QUOTES, 'UTF-8') . '</p></main></body>';
-        exit;
+        require_once dirname(__DIR__) . '/mitigation/SecurityBlockResponder.php';
+        \Security\Mitigation\SecurityBlockResponder::block(
+            self::resolveClientIp(),
+            $path,
+            $code,
+            $message,
+            $retryAfter
+        );
     }
 
     private static function isBypassedPath(string $path): bool

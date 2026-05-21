@@ -99,13 +99,13 @@ final class BanManager
             $retry = max(0, strtotime($ban['expires_at']) - time());
         }
 
-        http_response_code($code);
-        header('Content-Type: application/json; charset=utf-8');
-        if ($retry !== null) {
-            header("Retry-After: {$retry}");
-        }
-        echo json_encode(['error' => $message, 'code' => $code]);
-        return true; // deve encerrar
+        SecurityBlockResponder::block(
+            (string) ($ban['ip_address'] ?? ''),
+            $_SERVER['REQUEST_URI'] ?? '/',
+            $code,
+            $message,
+            $retry ?? 5
+        );
     }
 
     public function invalidateCache(string $ip): void

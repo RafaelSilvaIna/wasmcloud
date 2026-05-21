@@ -21,6 +21,7 @@ use Security\Mitigation\BanManager;
 use Security\Mitigation\QuarantineManager;
 use Security\Mitigation\AdaptiveSlowdown;
 use Security\Mitigation\ChallengeManager;
+use Security\Mitigation\SecurityBlockResponder;
 use Security\Mitigation\ProgressivePenaltySystem;
 
 /**
@@ -279,47 +280,7 @@ final class GlobalSecurityLayer
 
     private function blockSuspiciousActivity(string $ip, string $path, int $code = 429): never
     {
-        $resumeTarget = $path;
-        if ($this->isApiLikePath($path)) {
-            $refererPath = parse_url($_SERVER['HTTP_REFERER'] ?? '', PHP_URL_PATH);
-            $resumeTarget = is_string($refererPath) && str_starts_with($refererPath, '/')
-                ? $refererPath
-                : '/home';
-        }
-
-        if (!$this->isApiLikePath($path) && session_status() === PHP_SESSION_ACTIVE) {
-            $hasActiveChallenge = !empty($_SESSION['_sec_resume_token'])
-                && !empty($_SESSION['_sec_resume_ip'])
-                && hash_equals((string) $_SESSION['_sec_resume_ip'], $ip);
-
-            if (!$hasActiveChallenge) {
-                $_SESSION['_sec_resume_token'] = bin2hex(random_bytes(24));
-                $_SESSION['_sec_resume_ip'] = $ip;
-            }
-
-            $_SESSION['_sec_resume_target'] = $resumeTarget;
-        }
-
-        if ($this->isApiLikePath($path)) {
-            http_response_code($code);
-            header('Content-Type: application/json; charset=utf-8');
-            header('Retry-After: 5');
-            echo json_encode([
-                'error' => 'Atividade suspeita detectada.',
-                'code' => $code,
-                'retry_after' => 5,
-            ]);
-            exit;
-        }
-
-        if (session_status() === PHP_SESSION_ACTIVE) {
-            \SuspiciousActivityModal::render($_SESSION['_sec_resume_token'], $resumeTarget, $code);
-            exit;
-        }
-
-        http_response_code($code);
-        header('Content-Type: text/plain; charset=utf-8');
-        exit('Atividade suspeita detectada.');
+        SecurityBlockResponder::block($ip, $path, $code);
     }
 
     private function resolveRouteGroup(): string
@@ -339,7 +300,7 @@ final class GlobalSecurityLayer
 
     private function isApiLikePath(string $path): bool
     {
-        return str_starts_with($path, '/api/') || str_starts_with($path, '/cdn/');
+        return SecurityBlockResponder::isApiLikePath($path);
     }
 
     private function isNewRouteInCurrentWindow(string $ip, string $routeGroup, string $path): bool

@@ -6,6 +6,12 @@ final class SecurityChallengeHook
 {
     public static function injectClientBridge(): void
     {
+        static $started = false;
+        if ($started) {
+            return;
+        }
+        $started = true;
+
         $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?? '/';
         if (str_starts_with($path, '/api/') || str_starts_with($path, '/cdn/')) {
             return;

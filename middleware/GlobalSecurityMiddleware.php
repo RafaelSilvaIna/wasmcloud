@@ -68,6 +68,7 @@ final class GlobalSecurityMiddleware
         require_once $base . 'mitigation/BanManager.php';
         require_once $base . 'mitigation/QuarantineManager.php';
         require_once $base . 'mitigation/ChallengeManager.php';
+        require_once $base . 'mitigation/SecurityBlockResponder.php';
         require_once $base . 'mitigation/ProgressivePenaltySystem.php';
         require_once $base . 'GlobalSecurityLayer.php';
         require_once __DIR__ . '/../components/SuspiciousActivityModal.php';
