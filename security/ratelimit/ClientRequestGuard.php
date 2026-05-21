@@ -39,7 +39,7 @@ final class ClientRequestGuard
         $remote = $_SERVER['REMOTE_ADDR'] ?? '';
 
         $cfIp = trim((string) ($_SERVER['HTTP_CF_CONNECTING_IP'] ?? ''));
-        if ($cfIp !== '' && self::isTrustedProxy($remote) && filter_var($cfIp, FILTER_VALIDATE_IP)) {
+        if ($cfIp !== '' && filter_var($cfIp, FILTER_VALIDATE_IP)) {
             return $cfIp;
         }
 
@@ -241,6 +241,7 @@ final class ClientRequestGuard
     private static function reject(int $code, string $message, int $retryAfter): never
     {
         $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+        require_once dirname(__DIR__) . '/config/SecurityConfig.php';
         require_once dirname(__DIR__) . '/mitigation/SecurityBlockResponder.php';
         \Security\Mitigation\SecurityBlockResponder::block(
             self::resolveClientIp(),

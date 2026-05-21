@@ -12,39 +12,48 @@ if ($requestUri === '/security/continue' && $requestMethod === 'POST') {
     require_once __DIR__ . '/../security/logger/SecurityLogger.php';
     require_once __DIR__ . '/../security/mitigation/BanManager.php';
     require_once __DIR__ . '/../security/mitigation/QuarantineManager.php';
+    require_once __DIR__ . '/../security/mitigation/SecurityBlockResponder.php';
 
     $token = (string) ($_POST['token'] ?? '');
-    $target = (string) ($_POST['target'] ?? '/home');
-    $targetPath = parse_url($target, PHP_URL_PATH) ?: '/home';
+    $sessionToken = (string) ($_SESSION['_sec_resume_token'] ?? '');
+    $sessionIp = (string) ($_SESSION['_sec_resume_ip'] ?? '');
+    $resolvedIp = \Security\RateLimit\ClientRequestGuard::resolveClientIp();
+    $signedResume = \Security\Mitigation\SecurityBlockResponder::validateResumeToken($token, $resolvedIp);
+    $legacySessionResume = $token !== ''
+        && $sessionToken !== ''
+        && hash_equals($sessionToken, $token)
+        && ($sessionIp === '' || $sessionIp === $resolvedIp);
+
+    $targetPath = $signedResume['target'] ?? (string) ($_POST['target'] ?? '/home');
+    $targetPath = parse_url($targetPath, PHP_URL_PATH) ?: '/home';
     if (!str_starts_with($targetPath, '/') || str_starts_with($targetPath, '/security/')) {
         $targetPath = '/home';
     }
 
-    $sessionToken = (string) ($_SESSION['_sec_resume_token'] ?? '');
-    $sessionIp = (string) ($_SESSION['_sec_resume_ip'] ?? '');
-    $resolvedIp = \Security\RateLimit\ClientRequestGuard::resolveClientIp();
-
-    if ($token !== ''
-        && $sessionToken !== ''
-        && hash_equals($sessionToken, $token)
-        && $sessionIp !== ''
-        && $sessionIp === $resolvedIp
-        && $pdo
-    ) {
+    if (($signedResume !== null || $legacySessionResume) && $pdo) {
         $store = new \Security\Storage\DbSecurityStore($pdo);
-        $store->deactivateActiveBans($sessionIp);
-        $store->deactivateActiveQuarantine($sessionIp);
-        $store->clearRateLimitWindows($sessionIp);
-        $store->resetIpReputation($sessionIp);
-
-        $logger = new \Security\Logger\SecurityLogger($store);
-        (new \Security\Mitigation\BanManager($store, $logger))->invalidateCache($sessionIp);
-        (new \Security\Mitigation\QuarantineManager($store, $logger))->invalidateCache($sessionIp);
-        if (function_exists('apcu_delete')) {
-            apcu_delete('sec_rep_' . md5($sessionIp));
+        foreach (array_unique(array_filter([$resolvedIp, $sessionIp])) as $ipToRelease) {
+            $store->deactivateActiveBans($ipToRelease);
+            $store->deactivateActiveQuarantine($ipToRelease);
+            $store->clearRateLimitWindows($ipToRelease);
+            $store->resetIpReputation($ipToRelease);
         }
 
-        \Security\RateLimit\ClientRequestGuard::issueTemporaryBypass($sessionIp);
+        $logger = new \Security\Logger\SecurityLogger($store);
+        $banManager = new \Security\Mitigation\BanManager($store, $logger);
+        $quarantineManager = new \Security\Mitigation\QuarantineManager($store, $logger);
+        foreach (array_unique(array_filter([$resolvedIp, $sessionIp])) as $ipToRelease) {
+            $banManager->invalidateCache($ipToRelease);
+            $quarantineManager->invalidateCache($ipToRelease);
+        }
+
+        if (function_exists('apcu_delete')) {
+            foreach (array_unique(array_filter([$resolvedIp, $sessionIp])) as $ipToRelease) {
+                apcu_delete('sec_rep_' . md5($ipToRelease));
+            }
+        }
+
+        \Security\RateLimit\ClientRequestGuard::issueTemporaryBypass($resolvedIp, 180);
 
         $_SESSION['req_cnt'] = 0;
         $_SESSION['req_time'] = time();
@@ -53,24 +62,39 @@ if ($requestUri === '/security/continue' && $requestMethod === 'POST') {
         exit;
     }
 
-    if (!empty($_SESSION['_sec_resume_token'])) {
-        header('Location: /security/challenge');
-        exit;
+    if ($pdo) {
+        $store = new \Security\Storage\DbSecurityStore($pdo);
+        $store->deactivateActiveBans($resolvedIp);
+        $store->deactivateActiveQuarantine($resolvedIp);
+        $store->clearRateLimitWindows($resolvedIp);
+        $store->resetIpReputation($resolvedIp);
+
+        $logger = new \Security\Logger\SecurityLogger($store);
+        (new \Security\Mitigation\BanManager($store, $logger))->invalidateCache($resolvedIp);
+        (new \Security\Mitigation\QuarantineManager($store, $logger))->invalidateCache($resolvedIp);
+        if (function_exists('apcu_delete')) {
+            apcu_delete('sec_rep_' . md5($resolvedIp));
+        }
     }
 
-    http_response_code(403);
+    \Security\RateLimit\ClientRequestGuard::issueTemporaryBypass($resolvedIp, 180);
+    unset($_SESSION['_sec_resume_token'], $_SESSION['_sec_resume_ip'], $_SESSION['_sec_resume_target']);
+    header('Location: /home');
+    exit;
+
     exit('Confirmação inválida.');
 }
 
 if ($requestUri === '/security/challenge' && $requestMethod === 'GET') {
+    require_once __DIR__ . '/../security/config/SecurityConfig.php';
+    require_once __DIR__ . '/../security/ratelimit/ClientRequestGuard.php';
+    require_once __DIR__ . '/../security/mitigation/SecurityBlockResponder.php';
     require_once __DIR__ . '/../components/SuspiciousActivityModal.php';
-    $token = (string) ($_SESSION['_sec_resume_token'] ?? '');
     $target = (string) ($_SESSION['_sec_resume_target'] ?? '/home');
-
-    if ($token === '') {
-        header('Location: /home');
-        exit;
-    }
+    $ip = \Security\RateLimit\ClientRequestGuard::resolveClientIp();
+    $token = \Security\Mitigation\SecurityBlockResponder::createResumeToken($ip, $target);
+    $_SESSION['_sec_resume_token'] = $token;
+    $_SESSION['_sec_resume_ip'] = $ip;
 
     SuspiciousActivityModal::render($token, $target);
     exit;
