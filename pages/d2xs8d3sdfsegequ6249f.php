@@ -14,6 +14,7 @@ require_once __DIR__ . '/../components/admin/subscriptions/AdminSubscriptionsPan
 require_once __DIR__ . '/../components/admin/suporte/AdminSupportPanel.php';
 require_once __DIR__ . '/../components/admin/security/AdminSecurityPanel.php';
 require_once __DIR__ . '/../components/admin/routes/AdminRouteLocksPanel.php';
+require_once __DIR__ . '/../components/admin/status/AdminStatusIncidentsPanel.php';
 require_once __DIR__ . '/../components/admin/ads/AdminAdsReviewPanel.php';
 
 use Models\Admin\AdminModel;
@@ -279,6 +280,7 @@ $adminRoute = preg_replace('/[^a-z0-9_-]/i', '', (string) ($_GET['route'] ?? 'ov
                 <?php AdminSupportPanel::render(); ?>
                 <?php AdminSecurityPanel::render(); ?>
                 <?php AdminRouteLocksPanel::render(); ?>
+                <?php AdminStatusIncidentsPanel::render(); ?>
                 <?php AdminAdsReviewPanel::render(); ?>
             </section>
         </main>
@@ -364,6 +366,9 @@ $adminRoute = preg_replace('/[^a-z0-9_-]/i', '', (string) ($_GET['route'] ?? 'ov
         }
         if (route === 'route-locks' && window.AdminRouteLocksPanel) {
             window.AdminRouteLocksPanel.init();
+        }
+        if (route === 'status-incidents' && window.AdminStatusIncidentsPanel) {
+            window.AdminStatusIncidentsPanel.init();
         }
         if (route === 'ads-review' && window.AdminAdsReviewPanel) {
             window.AdminAdsReviewPanel.init();

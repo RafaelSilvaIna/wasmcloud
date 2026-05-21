@@ -31,6 +31,7 @@ DirectoryIndex index.php index.html
     
     # Roteamento da API
     RewriteRule ^api/admin/(.*)$ routes/admin/index.php [QSA,L]
+    RewriteRule ^api/status/(.*)$ routes/status/index.php [QSA,L]
     RewriteRule ^api/ads/(.*)$ routes/ads/index.php [QSA,L]
     RewriteRule ^api/suporte/(.*)$ routes/suporte/index.php [QSA,L]
     RewriteRule ^api/v2/(.*)$ routes/v2/index.php [QSA,L]
@@ -44,6 +45,7 @@ DirectoryIndex index.php index.html
     RewriteCond %{REQUEST_URI} !^/routes/v3/index.php
     RewriteCond %{REQUEST_URI} !^/routes/v4/index.php
     RewriteCond %{REQUEST_URI} !^/routes/admin/index.php
+    RewriteCond %{REQUEST_URI} !^/routes/status/index.php
     RewriteCond %{REQUEST_URI} !^/routes/cdn/index.php
     RewriteCond %{REQUEST_URI} !^/routes/suporte/index.php
     RewriteRule ^(components/|controllers/|data/|database/|helpers/|hooks/|models/|routes/|services/|utils/|middleware/)(/.*)?$ - [F,L]
@@ -61,6 +63,7 @@ DirectoryIndex index.php index.html
     RewriteRule ^suporte/?$ pages/suporte/index.php [QSA,L]
     RewriteRule ^developer/?$ pages/developer/index.php [L]
     RewriteRule ^developer/([^/]+)/?$ pages/developer/index.php?action=$1 [QSA,L]
+    RewriteRule ^status/?$ pages/status.php [QSA,L]
     RewriteRule ^home/?$ pages/index.php [L]
     RewriteRule ^login(/.*)?$ pages/index.php [QSA,L]
     RewriteRule ^plan(/.*)?$ pages/index.php [QSA,L]

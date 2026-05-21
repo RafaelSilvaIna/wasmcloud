@@ -27,6 +27,11 @@ if ($requestUri === '/' || $requestUri === '/main') {
     exit;
 }
 
+if ($requestUri === '/status') {
+    require_once __DIR__ . '/status.php';
+    exit;
+}
+
 // ROTA: Home (Dashboard autenticado)
 if ($requestUri === '/home') {
     require_once __DIR__ . '/home.php';

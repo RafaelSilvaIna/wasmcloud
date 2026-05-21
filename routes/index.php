@@ -131,6 +131,11 @@ if (strpos($requestUri, '/api/') === 0) {
         exit;
     }
 
+    if (strpos($requestUri, '/api/status/') === 0) {
+        require_once __DIR__ . '/status/index.php';
+        exit;
+    }
+
     if (strpos($requestUri, '/api/v4/') === 0) {
         require_once __DIR__ . '/v4/index.php';
         exit;
