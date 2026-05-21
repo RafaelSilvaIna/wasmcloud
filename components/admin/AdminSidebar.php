@@ -161,6 +161,7 @@ final class AdminSidebar
                     <span class="admin-nav-label">Relacionamento e risco</span>
                     <a href="?route=suporte" data-admin-nav="suporte"><i data-lucide="headphones"></i><span>Suporte</span></a>
                     <a href="?route=security" data-admin-nav="security"><i data-lucide="shield-alert"></i><span>Segurança</span></a>
+                    <a href="?route=route-locks" data-admin-nav="route-locks"><i data-lucide="route"></i><span>Rotas</span></a>
                 </section>
             </nav>
         </aside>

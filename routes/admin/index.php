@@ -14,6 +14,7 @@ require_once $rootDir . '/models/admin/AdminUsageMetricsModel.php';
 require_once $rootDir . '/models/admin/AdminApiMetricsModel.php';
 require_once $rootDir . '/models/admin/AdminSubscriptionModel.php';
 require_once $rootDir . '/models/admin/AdminAdsReviewModel.php';
+require_once $rootDir . '/models/admin/AdminRouteLockModel.php';
 require_once $rootDir . '/models/ads/AdsCampaignModel.php';
 require_once $rootDir . '/services/admin/AdminAuthService.php';
 require_once $rootDir . '/services/admin/AdminUserModerationService.php';
@@ -21,24 +22,28 @@ require_once $rootDir . '/services/admin/AdminUsageMetricsService.php';
 require_once $rootDir . '/services/admin/AdminApiMetricsService.php';
 require_once $rootDir . '/services/admin/AdminSubscriptionService.php';
 require_once $rootDir . '/services/admin/AdminAdsReviewService.php';
+require_once $rootDir . '/services/admin/AdminRouteLockService.php';
 require_once $rootDir . '/controllers/admin/AdminController.php';
 require_once $rootDir . '/controllers/admin/AdminUsageMetricsController.php';
 require_once $rootDir . '/controllers/admin/AdminApiMetricsController.php';
 require_once $rootDir . '/controllers/admin/AdminSubscriptionController.php';
 require_once $rootDir . '/controllers/admin/SecurityAdminController.php';
 require_once $rootDir . '/controllers/admin/AdminAdsReviewController.php';
+require_once $rootDir . '/controllers/admin/AdminRouteLockController.php';
 
 use Controllers\Admin\AdminController;
 use Controllers\Admin\AdminSubscriptionController;
 use Controllers\Admin\AdminUsageMetricsController;
 use Controllers\Admin\AdminApiMetricsController;
 use Controllers\Admin\AdminAdsReviewController;
+use Controllers\Admin\AdminRouteLockController;
 use Models\Admin\AdminModel;
 use Models\Admin\AdminSubscriptionModel;
 use Models\Admin\AdminUserModerationModel;
 use Models\Admin\AdminUsageMetricsModel;
 use Models\Admin\AdminApiMetricsModel;
 use Models\Admin\AdminAdsReviewModel;
+use Models\Admin\AdminRouteLockModel;
 use Models\Ads\AdsCampaignModel;
 use Services\Admin\AdminAuthService;
 use Services\Admin\AdminSubscriptionService;
@@ -46,6 +51,7 @@ use Services\Admin\AdminUserModerationService;
 use Services\Admin\AdminUsageMetricsService;
 use Services\Admin\AdminApiMetricsService;
 use Services\Admin\AdminAdsReviewService;
+use Services\Admin\AdminRouteLockService;
 
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
@@ -73,6 +79,15 @@ try {
             $pdo
         );
         $secController->handle($action, $method);
+        exit;
+    }
+
+    if (str_starts_with($action, 'route-locks/')) {
+        $routeLockController = new AdminRouteLockController(
+            $auth,
+            new AdminRouteLockService(new AdminRouteLockModel($pdo), $rootDir)
+        );
+        $routeLockController->handle($action, $method);
         exit;
     }
 

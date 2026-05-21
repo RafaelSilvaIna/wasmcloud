@@ -252,6 +252,12 @@ if (!shouldSkipGlobalSecurity()) {
     \SecurityChallengeHook::injectClientBridge();
 }
 
+if ($pdoPipocine) {
+    require_once __DIR__ . '/../models/admin/AdminRouteLockModel.php';
+    require_once __DIR__ . '/../hooks/RouteMaintenanceHook.php';
+    \Hooks\RouteMaintenanceHook::boot($pdoPipocine);
+}
+
 // AUTH
 if (!isset($_SESSION['user_id'])) {
     if ($pdoPipocine) {
