@@ -11,6 +11,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentProfiles = [];
     let selectedProfileForPin = null;
     let pressTimer;
+    let longPressOpened = false;
+    let lastTouchSelectAt = 0;
     let actionProfileData = null;
 
     const isMobile = () => window.innerWidth <= 768;
@@ -135,14 +137,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            const item = e.target.closest('.profile-item');
-            if (item && !isMobile()) handleProfileSelection(item);
+            const item = e.target.closest('.profile-item:not(.add-profile-btn)');
+            if (!item) return;
+
+            const menuIsOpen = actionMenu ? actionMenu.classList.contains('open') : false;
+            if (isMobile() && (menuIsOpen || Date.now() - lastTouchSelectAt < 700)) {
+                return;
+            }
+
+            handleProfileSelection(item);
         });
 
         grid.addEventListener('touchstart', (e) => {
             const item = e.target.closest('.profile-item:not(.add-profile-btn)');
             if (!item || !isMobile()) return;
+            longPressOpened = false;
             pressTimer = setTimeout(() => {
+                longPressOpened = true;
                 actionProfileData = {
                     id: item.dataset.id,
                     name: item.dataset.name,
@@ -158,12 +169,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const item = e.target.closest('.profile-item:not(.add-profile-btn)');
             const isMenuOpen = actionMenu ? actionMenu.classList.contains('open') : false;
 
-            if (item && isMobile() && !isMenuOpen) {
+            if (item && isMobile() && !isMenuOpen && !longPressOpened) {
+                lastTouchSelectAt = Date.now();
                 handleProfileSelection(item);
             }
         });
 
         grid.addEventListener('touchmove', () => clearTimeout(pressTimer));
+        grid.addEventListener('touchcancel', () => clearTimeout(pressTimer));
     }
 
     // ── Seleção de perfil ─────────────────────────────────────────────────

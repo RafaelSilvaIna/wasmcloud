@@ -12,7 +12,7 @@ final class AdminSecurityPanel
     public static function render(): void
     {
         ?>
-        <section data-admin-route="security" hidden>
+        <section data-admin-route="security" class="admin-route-panel" hidden>
         <style>
             /* ── Layout ─────────────────────────────────────────────── */
             .sec-header {

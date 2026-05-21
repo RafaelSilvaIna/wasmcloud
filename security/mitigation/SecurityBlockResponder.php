@@ -24,14 +24,19 @@ final class SecurityBlockResponder
             header('Content-Type: application/json; charset=utf-8');
             header('Cache-Control: no-store, private');
             header('Retry-After: ' . $retryAfter);
-            echo json_encode([
+            $payload = [
                 'success' => false,
                 'error' => $message,
                 'code' => $code,
                 'retry_after' => $retryAfter,
-                'security_challenge' => true,
-                'challenge_url' => '/security/challenge',
-            ]);
+            ];
+
+            if (self::shouldEscalateApiChallenge($path)) {
+                $payload['security_challenge'] = true;
+                $payload['challenge_url'] = '/security/challenge';
+            }
+
+            echo json_encode($payload);
             exit;
         }
 
@@ -187,6 +192,19 @@ final class SecurityBlockResponder
         }
 
         return $path;
+    }
+
+    private static function shouldEscalateApiChallenge(string $path): bool
+    {
+        $method = strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET'));
+        if (in_array($method, ['GET', 'HEAD', 'OPTIONS'], true)) {
+            return false;
+        }
+
+        return str_starts_with($path, '/api/auth/')
+            || str_starts_with($path, '/api/v4/auth/')
+            || str_starts_with($path, '/api/v4/qr-login/')
+            || str_starts_with($path, '/api/admin/');
     }
 
     private static function base64UrlEncode(string $value): string

@@ -31,7 +31,7 @@ final class BurstDetectionAlgorithm
         $threshold = (float) ($routeProfile['burst_threshold_rps'] ?? SecurityConfig::BURST_RPS_GLOBAL);
         $path      = $_SERVER['REQUEST_URI'] ?? '/';
 
-        $rps = $this->computeRps($ip);
+        $rps = $this->computeRps($ip, $routeGroup);
 
         if ($rps > $threshold) {
             $this->store->logBurst(
@@ -54,11 +54,11 @@ final class BurstDetectionAlgorithm
     /**
      * Calcula a taxa de requisições por segundo usando uma janela em sessão.
      */
-    private function computeRps(string $ip): float
+    private function computeRps(string $ip, string $routeGroup): float
     {
-        $now    = microtime(true);
-        $path   = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
-        $key    = 'sec_burst_' . hash('sha256', $ip . ':' . $path);
+        $now       = microtime(true);
+        $signature = $this->requestSignature();
+        $key       = 'sec_burst_' . hash('sha256', $ip . ':' . $routeGroup . ':' . $signature);
         $window = $this->loadWindow($key);
         $window[] = $now;
 
@@ -76,6 +76,22 @@ final class BurstDetectionAlgorithm
         }
 
         return count($window) / $elapsed;
+    }
+
+    private function requestSignature(): string
+    {
+        $method = strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET'));
+        $uri = (string) ($_SERVER['REQUEST_URI'] ?? '/');
+        $path = parse_url($uri, PHP_URL_PATH) ?: '/';
+        $query = parse_url($uri, PHP_URL_QUERY) ?: '';
+
+        if ($query !== '') {
+            parse_str($query, $params);
+            ksort($params);
+            $query = http_build_query($params);
+        }
+
+        return $method . ':' . $path . ($query !== '' ? '?' . $query : '');
     }
 
     private function loadWindow(string $key): array

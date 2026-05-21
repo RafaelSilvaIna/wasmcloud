@@ -30,7 +30,7 @@ final class ClientRequestGuard
         self::checkConcurrency($clientKey, $limits['concurrency'], $limits['retry']);
         self::checkWindow('burst', $clientKey . ':' . $group, $limits['window'], $limits['burst'], $limits['retry']);
 
-        $requestKey = $clientKey . ':' . ($_SERVER['REQUEST_METHOD'] ?? 'GET') . ':' . $path;
+        $requestKey = $clientKey . ':' . self::requestSignature();
         self::checkWindow('duplicate', $requestKey, 5, $limits['duplicate'], $limits['retry']);
     }
 
@@ -203,9 +203,10 @@ final class ClientRequestGuard
         return match ($group) {
             'auth' => ['window' => 10, 'burst' => 12, 'duplicate' => $mutating ? 4 : 8, 'concurrency' => 3, 'retry' => 5],
             'admin' => ['window' => 10, 'burst' => 18, 'duplicate' => $mutating ? 5 : 10, 'concurrency' => 4, 'retry' => 5],
-            'stream', 'cdn' => ['window' => 10, 'burst' => 45, 'duplicate' => 18, 'concurrency' => 8, 'retry' => 3],
-            'search' => ['window' => 10, 'burst' => 25, 'duplicate' => 10, 'concurrency' => 5, 'retry' => 3],
-            'api' => ['window' => 10, 'burst' => 40, 'duplicate' => $mutating ? 8 : 16, 'concurrency' => 6, 'retry' => 3],
+            'stream', 'cdn' => ['window' => 10, 'burst' => 60, 'duplicate' => 28, 'concurrency' => 8, 'retry' => 3],
+            'search' => ['window' => 10, 'burst' => 35, 'duplicate' => 18, 'concurrency' => 5, 'retry' => 3],
+            'catalog' => ['window' => 10, 'burst' => 140, 'duplicate' => 55, 'concurrency' => 28, 'retry' => 2],
+            'api' => ['window' => 10, 'burst' => 90, 'duplicate' => $mutating ? 12 : 40, 'concurrency' => 10, 'retry' => 3],
             default => ['window' => 10, 'burst' => 50, 'duplicate' => $mutating ? 10 : 20, 'concurrency' => 8, 'retry' => 2],
         };
     }
@@ -225,9 +226,29 @@ final class ClientRequestGuard
             str_starts_with($path, '/api/v2/episode-url') => 'stream',
             str_starts_with($path, '/busca'),
             str_starts_with($path, '/api/v2/busca') => 'search',
+            str_starts_with($path, '/api/v2/conteudo'),
+            str_starts_with($path, '/api/v2/trending'),
+            str_starts_with($path, '/api/v2/plataforma'),
+            str_starts_with($path, '/api/v2/info') => 'catalog',
             str_starts_with($path, '/api/') => 'api',
             default => 'global',
         };
+    }
+
+    private static function requestSignature(): string
+    {
+        $method = strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET'));
+        $uri = (string) ($_SERVER['REQUEST_URI'] ?? '/');
+        $path = parse_url($uri, PHP_URL_PATH) ?: '/';
+        $query = parse_url($uri, PHP_URL_QUERY) ?: '';
+
+        if ($query !== '') {
+            parse_str($query, $params);
+            ksort($params);
+            $query = http_build_query($params);
+        }
+
+        return $method . ':' . $path . ($query !== '' ? '?' . $query : '');
     }
 
     private static function clientKey(string $ip): string

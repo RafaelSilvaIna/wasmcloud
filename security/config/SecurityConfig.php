@@ -181,6 +181,7 @@ final class SecurityConfig
         'auth'     => ['/api/auth/', '/api/v4/auth/', '/api/v4/qr-login/', '/auth/', '/login'],
         'stream'   => ['/player', '/api/v2/stream', '/api/v2/exhibition', '/api/v2/episode-url', '/cdn/video/', '/cdn/audio/'],
         'search'   => ['/busca', '/api/v2/busca'],
+        'catalog'  => ['/api/v2/conteudo', '/api/v2/trending', '/api/v2/plataforma', '/api/v2/info'],
         'api_v4'   => ['/api/v4/'],
         'api_v3'   => ['/api/v3/'],
         'api_v2'   => ['/api/v2/'],

@@ -39,7 +39,7 @@ final class ContextualRateLimiter
         string $routeGroup,
         array  $routeProfile
     ): array {
-        $limit = $this->resolveLimit($threatScore, $routeProfile);
+        $limit = $this->resolveLimit($threatScore, $routeGroup, $routeProfile);
         $key   = hash('sha256', $ip . ':' . $routeGroup . ':' . floor(time() / self::WINDOW_SECONDS));
 
         // Tenta APCu primeiro (in-memory, sub-ms)
@@ -65,15 +65,32 @@ final class ContextualRateLimiter
     /**
      * Resolve o limite de requisições com base no score de ameaça e no perfil da rota.
      */
-    private function resolveLimit(int $score, array $routeProfile): int
+    private function resolveLimit(int $score, string $routeGroup, array $routeProfile): int
     {
+        [$clean, $suspicious, $hostile] = $this->fallbackLimits($routeGroup);
+
         if ($score >= SecurityConfig::SCORE_BLOCK) {
-            return (int) ($routeProfile['rate_limit_hostile']    ?? SecurityConfig::GLOBAL_RATE_HOSTILE);
+            return max($hostile, (int) ($routeProfile['rate_limit_hostile'] ?? $hostile));
         }
         if ($score >= SecurityConfig::SCORE_RATE_LIMIT) {
-            return (int) ($routeProfile['rate_limit_suspicious'] ?? SecurityConfig::GLOBAL_RATE_SUSPICIOUS);
+            return max($suspicious, (int) ($routeProfile['rate_limit_suspicious'] ?? $suspicious));
         }
-        return (int) ($routeProfile['rate_limit_clean']          ?? SecurityConfig::GLOBAL_RATE_CLEAN);
+        return max($clean, (int) ($routeProfile['rate_limit_clean'] ?? $clean));
+    }
+
+    private function fallbackLimits(string $routeGroup): array
+    {
+        return match ($routeGroup) {
+            'catalog' => [900, 240, 80],
+            'api_v2'  => [420, 140, 45],
+            'api_v3'  => [300, 100, 35],
+            'api_v4'  => [240, 80, 25],
+            default   => [
+                SecurityConfig::GLOBAL_RATE_CLEAN,
+                SecurityConfig::GLOBAL_RATE_SUSPICIOUS,
+                SecurityConfig::GLOBAL_RATE_HOSTILE,
+            ],
+        };
     }
 
     private function checkApcu(string $key, int $limit): array
