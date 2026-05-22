@@ -11,6 +11,15 @@ final class AdminStatusModel
     {
     }
 
+    public function currentTimestamp(): string
+    {
+        try {
+            return (string) $this->db->query("SELECT NOW()")->fetchColumn();
+        } catch (\Throwable) {
+            return date('Y-m-d H:i:s');
+        }
+    }
+
     public function ensureSchema(): void
     {
         $this->db->exec("
@@ -228,12 +237,16 @@ final class AdminStatusModel
 
         $id = (int) $this->db->lastInsertId();
         $this->syncIncidentComponents($id, $componentIds, $incident['impact']);
+        $initialMessage = trim((string) ($incident['initial_public_message'] ?? ''));
+        if ($initialMessage === '') {
+            $initialMessage = 'Estamos investigando este incidente e publicaremos novas informacoes assim que houver atualizacoes.';
+        }
         $this->addUpdate([
             'incident_id' => $id,
             'update_type' => $this->defaultUpdateType($incident['status']),
             'status' => $incident['status'],
             'impact' => $incident['impact'],
-            'public_message' => $incident['public_description'] ?: 'We are investigating this incident.',
+            'public_message' => $initialMessage,
             'internal_note' => 'Incident created.',
             'is_public' => $incident['visibility'] === 'public',
             'created_by_admin_id' => $adminId,
@@ -461,6 +474,7 @@ final class AdminStatusModel
                     SUM(CASE WHEN status_code = 401 THEN 1 ELSE 0 END) AS unauthorized,
                     SUM(CASE WHEN status_code = 429 THEN 1 ELSE 0 END) AS rate_limited,
                     AVG(duration_ms) AS avg_latency_ms,
+                    AVG(CASE WHEN is_api = 1 THEN duration_ms END) AS avg_api_latency_ms,
                     MAX(duration_ms) AS max_latency_ms,
                     SUM(request_bytes + response_bytes) AS total_bytes,
                     SUM(CASE WHEN is_api = 1 THEN request_bytes + response_bytes ELSE 0 END) AS api_bytes,
@@ -502,6 +516,30 @@ final class AdminStatusModel
             ");
             $stmt->execute([max(1, $minutes)]);
             return $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+        } catch (\Throwable) {
+            return [];
+        }
+    }
+
+    public function observabilityApiRealtimeSeries(int $minutes = 60): array
+    {
+        try {
+            $stmt = $this->db->prepare("
+                SELECT
+                    DATE_FORMAT(created_at, '%Y-%m-%d %H:%i:00') AS bucket,
+                    COUNT(*) AS api_requests,
+                    SUM(CASE WHEN status_code >= 400 THEN 1 ELSE 0 END) AS error_requests,
+                    AVG(duration_ms) AS avg_latency_ms,
+                    MAX(duration_ms) AS max_latency_ms,
+                    SUM(request_bytes + response_bytes) AS api_bytes
+                FROM pipocine_request_metrics
+                WHERE is_api = 1
+                  AND created_at >= DATE_SUB(NOW(), INTERVAL ? MINUTE)
+                GROUP BY bucket
+                ORDER BY bucket ASC
+            ");
+            $stmt->execute([max(5, min(180, $minutes))]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (\Throwable) {
             return [];
         }

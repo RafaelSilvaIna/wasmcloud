@@ -8,6 +8,7 @@ use Models\Admin\AdminStatusModel;
 final class AdminStatusService
 {
     private const PUBLIC_HEALTH_FLOOR = 93.0;
+    private ?string $currentTimestamp = null;
 
     private const IMPACT_LABELS = [
         'operational' => 'Operational',
@@ -210,21 +211,24 @@ final class AdminStatusService
     public function publicOverview(int $days = 30): array
     {
         $days = max(7, min(90, $days));
+        $now = $this->now();
+        $nowTs = strtotime($now) ?: time();
         $components = $this->model->listComponents(true);
         $active = $this->decorateIncidents($this->model->activePublicIncidents());
-        $from = date('Y-m-d 00:00:00', strtotime('-' . ($days - 1) . ' days'));
-        $to = date('Y-m-d 23:59:59');
-        $bars = $this->componentBars($components, $this->model->incidentRangeForBars($from, $to), $days);
+        $from = date('Y-m-d 00:00:00', strtotime('-' . ($days - 1) . ' days', $nowTs));
+        $to = date('Y-m-d 23:59:59', $nowTs);
+        $bars = $this->componentBars($components, $this->model->incidentRangeForBars($from, $to), $days, $now);
         $health = $this->healthSeries($days, $active);
         $history = $this->history(90);
 
         return [
             'success' => true,
-            'generated_at' => date('c'),
+            'generated_at' => $this->isoTimestamp($now),
             'overall' => $this->overallStatus($active),
             'active_incidents' => $active,
             'components' => $this->componentTree($components, $bars),
             'health' => $health,
+            'api_response' => $this->apiResponseSeries(60),
             'realtime' => $this->model->observabilityRealtime(5),
             'history' => $history,
         ];
@@ -264,11 +268,12 @@ final class AdminStatusService
         return $grouped;
     }
 
-    private function componentBars(array $components, array $incidents, int $days): array
+    private function componentBars(array $components, array $incidents, int $days, string $now): array
     {
+        $nowTs = strtotime($now) ?: time();
         $dates = [];
         for ($i = $days - 1; $i >= 0; $i--) {
-            $dates[] = date('Y-m-d', strtotime("-{$i} days"));
+            $dates[] = date('Y-m-d', strtotime("-{$i} days", $nowTs));
         }
 
         $children = [];
@@ -298,7 +303,7 @@ final class AdminStatusService
         foreach ($incidents as $incident) {
             $cid = (int) $incident['component_id'];
             $startDay = substr((string) $incident['started_at'], 0, 10);
-            $endDay = substr((string) ($incident['resolved_at'] ?: $incident['scheduled_end_at'] ?: date('Y-m-d H:i:s')), 0, 10);
+            $endDay = substr((string) ($incident['resolved_at'] ?: $incident['scheduled_end_at'] ?: $now), 0, 10);
             $impact = (string) ($incident['component_impact'] ?: $incident['impact']);
             $rank = self::IMPACT_RANK[$impact] ?? 1;
             foreach ($dates as $date) {
@@ -310,7 +315,7 @@ final class AdminStatusService
                     $bars[$cid][$date]['label'] = self::IMPACT_LABELS[$impact] ?? $incident['category'];
                     $bars[$cid][$date]['rank'] = $rank;
                 }
-                $bars[$cid][$date]['duration_minutes'] += $this->overlapMinutesForDay($incident, $date);
+                $bars[$cid][$date]['duration_minutes'] += $this->overlapMinutesForDay($incident, $date, $now);
                 $bars[$cid][$date]['incidents'][] = [
                     'id' => (int) $incident['id'],
                     'title' => $incident['title'],
@@ -396,6 +401,7 @@ final class AdminStatusService
                 'score' => $score,
                 'uptime_pct' => $score,
                 'avg_latency_ms' => round((float) ($row['avg_latency_ms'] ?? 0), 1),
+                'avg_api_latency_ms' => round((float) ($row['avg_api_latency_ms'] ?? 0), 1),
                 'max_latency_ms' => (int) ($row['max_latency_ms'] ?? 0),
                 'error_rate_pct' => $this->percent((float) ($row['error_requests'] ?? 0), (float) ($row['total_requests'] ?? 0)),
                 'success_rate_pct' => $this->percent((float) ($row['success_requests'] ?? 0), (float) ($row['total_requests'] ?? 0)),
@@ -423,9 +429,40 @@ final class AdminStatusService
                 default => 90,
             });
         }
+        $recentApiTraffic = array_values(array_filter($series, static fn (array $row): bool => (int) ($row['api_requests'] ?? 0) > 0));
+        $currentApiResponse = $recentApiTraffic
+            ? (float) end($recentApiTraffic)['avg_api_latency_ms']
+            : 0.0;
 
         return [
             'current_score' => round($currentScore, 2),
+            'current_api_response_ms' => round($currentApiResponse, 1),
+            'series' => $series,
+        ];
+    }
+
+    private function apiResponseSeries(int $minutes): array
+    {
+        $rows = $this->model->observabilityApiRealtimeSeries($minutes);
+        $series = array_map(static function (array $row): array {
+            $requests = (int) ($row['api_requests'] ?? 0);
+            $errors = (int) ($row['error_requests'] ?? 0);
+            return [
+                'time' => (string) ($row['bucket'] ?? ''),
+                'avg_latency_ms' => round((float) ($row['avg_latency_ms'] ?? 0), 1),
+                'max_latency_ms' => (int) ($row['max_latency_ms'] ?? 0),
+                'api_requests' => $requests,
+                'error_rate_pct' => $requests > 0 ? round(($errors / $requests) * 100, 2) : 0.0,
+                'api_bytes' => (int) ($row['api_bytes'] ?? 0),
+            ];
+        }, $rows);
+
+        $recent = array_values(array_filter($series, static fn (array $row): bool => (int) $row['api_requests'] > 0));
+        $current = $recent ? (float) end($recent)['avg_latency_ms'] : 0.0;
+
+        return [
+            'window_minutes' => max(5, min(180, $minutes)),
+            'current_ms' => round($current, 1),
             'series' => $series,
         ];
     }
@@ -534,6 +571,7 @@ final class AdminStatusService
             'status' => $status,
             'visibility' => ((string) ($payload['visibility'] ?? 'public')) === 'private' ? 'private' : 'public',
             'public_description' => trim((string) ($payload['public_description'] ?? '')),
+            'initial_public_message' => trim((string) ($payload['initial_public_message'] ?? '')),
             'internal_description' => trim((string) ($payload['internal_description'] ?? '')),
             'systems_affected' => trim((string) ($payload['systems_affected'] ?? '')),
             'started_at' => $startedAt,
@@ -633,8 +671,9 @@ final class AdminStatusService
 
     private function durationSeconds(string $start, ?string $end): int
     {
-        $startTs = strtotime($start) ?: time();
-        $endTs = $end ? (strtotime($end) ?: time()) : time();
+        $nowTs = strtotime($this->now()) ?: time();
+        $startTs = strtotime($start) ?: $nowTs;
+        $endTs = $end ? (strtotime($end) ?: $nowTs) : $nowTs;
         return max(0, $endTs - $startTs);
     }
 
@@ -649,11 +688,12 @@ final class AdminStatusService
         return $hours . 'h ' . $mins . 'min';
     }
 
-    private function overlapMinutesForDay(array $incident, string $day): int
+    private function overlapMinutesForDay(array $incident, string $day, string $now): int
     {
         $start = max(strtotime((string) $incident['started_at']) ?: 0, strtotime($day . ' 00:00:00') ?: 0);
-        $endSource = $incident['resolved_at'] ?: $incident['scheduled_end_at'] ?: date('Y-m-d H:i:s');
-        $end = min(strtotime((string) $endSource) ?: time(), strtotime($day . ' 23:59:59') ?: time());
+        $nowTs = strtotime($now) ?: time();
+        $endSource = $incident['resolved_at'] ?: $incident['scheduled_end_at'] ?: $now;
+        $end = min(strtotime((string) $endSource) ?: $nowTs, strtotime($day . ' 23:59:59') ?: $nowTs);
         return max(0, (int) floor(($end - $start) / 60));
     }
 
@@ -677,7 +717,7 @@ final class AdminStatusService
     private function dateOrNow(mixed $value): string
     {
         $date = $this->dateOrNull($value);
-        return $date ?: date('Y-m-d H:i:s');
+        return $date ?: $this->now();
     }
 
     private function dateOrNull(mixed $value): ?string
@@ -688,6 +728,20 @@ final class AdminStatusService
         }
         $ts = strtotime($value);
         return $ts ? date('Y-m-d H:i:s', $ts) : null;
+    }
+
+    private function now(): string
+    {
+        if ($this->currentTimestamp === null) {
+            $this->currentTimestamp = $this->model->currentTimestamp();
+        }
+        return $this->currentTimestamp;
+    }
+
+    private function isoTimestamp(string $value): string
+    {
+        $ts = strtotime($value);
+        return $ts ? date('c', $ts) : date('c');
     }
 
     private function slug(string $value): string

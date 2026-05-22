@@ -148,6 +148,17 @@ if ($pdo) {
         .active-list,
         .history-list,
         .component-list { display: grid; gap: 0; padding: 0; }
+        .severity-operational { --severity: #0a84ff; --severity-soft: #eff6ff; }
+        .severity-degraded_performance,
+        .severity-api_degradation { --severity: #f59e0b; --severity-soft: #fffbeb; }
+        .severity-partial_outage,
+        .severity-network_incident,
+        .severity-third_party_provider_issue { --severity: #f97316; --severity-soft: #fff7ed; }
+        .severity-major_outage,
+        .severity-database_incident { --severity: #ef4444; --severity-soft: #fef2f2; }
+        .severity-security_incident { --severity: #b91c1c; --severity-soft: #fef2f2; }
+        .severity-maintenance { --severity: #8b5cf6; --severity-soft: #f5f3ff; }
+        .severity-resolved { --severity: #64748b; --severity-soft: #f8fafc; }
         .incident {
             border: 0;
             border-bottom: 1px solid var(--line);
@@ -155,11 +166,37 @@ if ($pdo) {
             background: transparent;
             padding: 20px;
         }
+        .active-incident {
+            border-left: 4px solid var(--severity);
+            background:
+                linear-gradient(90deg, color-mix(in srgb, var(--severity) 13%, white), transparent 42%),
+                var(--surface);
+            padding: 24px 24px 22px;
+        }
+        .active-list .active-incident {
+            border-bottom: 1px solid color-mix(in srgb, var(--severity) 22%, var(--line));
+        }
+        .active-list .active-incident + .active-incident {
+            border-top: 10px solid var(--bg);
+        }
         .incident:last-child { border-bottom: 0; }
+        .incident-top {
+            display: block;
+        }
+        .incident-kicker {
+            display: block;
+            margin-bottom: 7px;
+            color: var(--severity);
+            font-size: .72rem;
+            font-weight: 760;
+            letter-spacing: .04em;
+            text-transform: uppercase;
+        }
         .incident h3 {
             margin: 0;
             font-size: 1rem;
             font-weight: 740;
+            color: color-mix(in srgb, var(--severity) 24%, var(--text));
         }
         .incident p { margin: 10px 0 0; color: var(--muted); line-height: 1.55; }
         .meta {
@@ -180,6 +217,11 @@ if ($pdo) {
             font-size: .74rem;
             font-weight: 680;
         }
+        .chip.severity-chip {
+            border-color: color-mix(in srgb, var(--severity) 42%, var(--line));
+            color: var(--severity);
+            background: color-mix(in srgb, var(--severity) 10%, white);
+        }
         .timeline {
             display: grid;
             gap: 14px;
@@ -187,7 +229,10 @@ if ($pdo) {
             padding-left: 16px;
             border-left: 1px solid var(--line);
         }
-        .timeline-item { position: relative; }
+        .timeline-item {
+            position: relative;
+            color: var(--severity);
+        }
         .timeline-item::before {
             content: "";
             position: absolute;
@@ -200,6 +245,7 @@ if ($pdo) {
         }
         .timeline-item strong { display:block; font-size:.88rem; }
         .timeline-item time { color: var(--muted); font-size:.78rem; }
+        .timeline-item p { color: var(--muted); }
         .component {
             display: grid;
             gap: 14px;
@@ -224,7 +270,7 @@ if ($pdo) {
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            color: var(--ok);
+            color: var(--severity, var(--ok));
             font-size: .86rem;
             font-weight: 740;
         }
@@ -319,6 +365,7 @@ if ($pdo) {
                 aspect-ratio: 860 / 168;
                 min-height: 118px;
             }
+            .active-incident { padding: 20px; }
             .system-badge { align-items: flex-start; }
             .system-badge h1 { font-size: 2.35rem; }
             .topbar { align-items: flex-start; flex-direction: column; margin-bottom: 38px; }
@@ -371,11 +418,11 @@ if ($pdo) {
 
         <section class="section status-section health-card">
             <div class="graph-head">
-                <h2>Saude operacional</h2>
+                <h2>Tempo de resposta da API geral</h2>
                 <small id="health-score"></small>
             </div>
             <div class="chart-wrap">
-                <svg class="chart" id="health-chart" role="img" aria-label="System Health Score"></svg>
+                <svg class="chart" id="health-chart" role="img" aria-label="Tempo medio de resposta da API"></svg>
             </div>
         </section>
     </main>
@@ -392,19 +439,30 @@ if ($pdo) {
             return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(String(value).replace(' ', 'T')));
         };
         const fmtDay = (value) => new Intl.DateTimeFormat('pt-BR', { dateStyle: 'long' }).format(new Date(value + 'T12:00:00'));
-        const fmtDuration = (seconds, resolved) => {
-            const minutes = Math.max(0, Math.floor(Number(seconds || 0) / 60));
-            const h = Math.floor(minutes / 60);
-            const m = minutes % 60;
-            const label = h > 0 ? `${h}h ${m}min` : `${m}min`;
-            return resolved ? `Resolvido apos ${label}` : `${label} em andamento`;
-        };
         const bytes = (value) => {
             const n = Number(value || 0);
             if (n >= 1073741824) return (n / 1073741824).toFixed(1) + ' GB';
             if (n >= 1048576) return (n / 1048576).toFixed(1) + ' MB';
             if (n >= 1024) return (n / 1024).toFixed(1) + ' KB';
             return n + ' B';
+        };
+        const severityClass = (value) => {
+            let key = String(value || 'operational').toLowerCase().replaceAll(' ', '_').replaceAll('-', '_');
+            if (key === 'under_maintenance') key = 'maintenance';
+            const known = new Set([
+                'operational',
+                'degraded_performance',
+                'api_degradation',
+                'partial_outage',
+                'network_incident',
+                'third_party_provider_issue',
+                'major_outage',
+                'database_incident',
+                'security_incident',
+                'maintenance',
+                'resolved'
+            ]);
+            return 'severity-' + (known.has(key) ? key : 'operational');
         };
 
         function renderOverall() {
@@ -432,26 +490,40 @@ if ($pdo) {
                 return;
             }
             section.hidden = false;
-            root.innerHTML = incidents.map(incident => incidentHtml(incident, true)).join('');
+            root.innerHTML = incidents.map(incident => incidentHtml(incident, true, true)).join('');
         }
 
-        function incidentHtml(incident, showTimeline) {
+        function incidentHtml(incident, showTimeline, activeCard = false) {
+            const severity = severityClass(incident.impact || incident.category);
             const components = (incident.component_names || []).map(name => `<span class="chip">${esc(name)}</span>`).join('');
-            const updates = (incident.updates || []).map(update => `
+            const updateLabel = (update) => {
+                const type = String(update.update_type || '').trim();
+                const status = String(update.status || '').trim();
+                return type.toLowerCase() === status.toLowerCase() || !status ? type : `${type} - ${status}`;
+            };
+            const description = String(incident.public_description || '').trim();
+            const updates = (incident.updates || []).filter(update => {
+                const message = String(update.public_message || '').trim();
+                return !(message && description && message === description && activeCard);
+            }).map(update => `
                 <div class="timeline-item">
-                    <strong>${esc(update.update_type)} · ${esc(update.status)}</strong>
+                    <strong>${esc(updateLabel(update))}</strong>
                     <time>${fmtDate(update.created_at)}</time>
                     <p>${esc(update.public_message || '')}</p>
                 </div>
             `).join('');
             return `
-                <article class="incident" id="incident-${Number(incident.id)}">
-                    <h3>${esc(incident.title)}</h3>
+                <article class="incident ${activeCard ? 'active-incident' : ''} ${severity}" id="incident-${Number(incident.id)}">
+                    <div class="incident-top">
+                        <div>
+                            ${activeCard ? '<span class="incident-kicker">Incidente em andamento</span>' : ''}
+                            <h3>${esc(incident.title)}</h3>
+                        </div>
+                    </div>
                     <p>${esc(incident.public_description || '')}</p>
                     <div class="meta">
-                        <span class="chip">${esc(incident.category || incident.impact_label)}</span>
-                        <span class="chip">${esc(incident.status)}</span>
-                        <span class="chip" data-duration-start="${esc(incident.started_at)}" data-duration-end="${esc(incident.resolved_at || '')}">${esc(incident.duration_label || '')}</span>
+                        <span class="chip severity-chip">${esc(incident.category || incident.impact_label)}</span>
+                        ${!activeCard ? `<span class="chip">${esc(incident.status)}</span>` : ''}
                         ${components}
                     </div>
                     ${showTimeline ? `<div class="timeline">${updates || '<div class="muted">Sem atualizacoes publicas.</div>'}</div>` : ''}
@@ -471,9 +543,9 @@ if ($pdo) {
 
         function componentHtml(component) {
             const children = (component.children || []).map(componentHtml).join('');
-            const status = (component.current_status || 'operational').replaceAll('_', ' ');
+            const rawStatus = component.current_status || 'operational';
+            const status = rawStatus.replaceAll('_', ' ');
             const bars = component.bars || [];
-            const impacted = bars.filter(bar => bar.status && bar.status !== 'operational').length;
             const uptime = bars.length
                 ? (bars.reduce((total, bar) => total + Number(bar.uptime_pct || 100), 0) / bars.length).toFixed(2)
                 : '100.00';
@@ -481,11 +553,10 @@ if ($pdo) {
                 <div class="component">
                     <div class="component-title">
                         <strong>${esc(component.name)}</strong>
-                        <span class="component-status">${esc(status)}</span>
+                        <span class="component-status ${severityClass(rawStatus)}">${esc(status)}</span>
                     </div>
                     <div class="component-metrics">
                         <span><strong>${uptime}%</strong> uptime em 30 dias</span>
-                        <span><strong>${impacted}</strong> dias com impacto</span>
                     </div>
                     ${children ? `<div class="subcomponents">${children}</div>` : ''}
                 </div>
@@ -495,7 +566,8 @@ if ($pdo) {
         function renderHealth() {
             const health = data.health || {};
             const series = health.series || [];
-            document.getElementById('health-score').textContent = `${Number(health.current_score || 0).toFixed(1)}%`;
+            const currentMs = Number(health.current_api_response_ms ?? 0);
+            document.getElementById('health-score').textContent = `${currentMs.toFixed(1)} ms`;
             const svg = document.getElementById('health-chart');
             const width = 860;
             const height = 168;
@@ -503,9 +575,18 @@ if ($pdo) {
             const pad = { left: 12, right: 54, top: 12, bottom: 28 };
             const plotW = width - pad.left - pad.right;
             const plotH = height - pad.top - pad.bottom;
+            const values = series.map(row => Number(row.avg_api_latency_ms || 0));
+            const maxValue = Math.max(100, currentMs, ...values);
+            const scaleMax = (() => {
+                const base = Math.pow(10, Math.floor(Math.log10(maxValue)));
+                const scaled = maxValue / base;
+                const nice = scaled <= 1 ? 1 : scaled <= 2 ? 2 : scaled <= 5 ? 5 : 10;
+                return nice * base;
+            })();
+            const formatMs = (value) => Number(value || 0).toLocaleString('pt-BR', { maximumFractionDigits: value < 10 ? 1 : 0 });
             const points = series.map((row, index) => {
                 const x = series.length <= 1 ? pad.left : pad.left + index * (plotW / (series.length - 1));
-                const y = pad.top + (100 - Number(row.score || 0)) / 100 * plotH;
+                const y = pad.top + (1 - Math.min(scaleMax, Number(row.avg_api_latency_ms || 0)) / scaleMax) * plotH;
                 return { x, y, row };
             });
             const pointString = points.map(p => `${p.x},${p.y}`).join(' ');
@@ -515,9 +596,9 @@ if ($pdo) {
                 const h = Math.max(2, err / 100 * 30);
                 return `<rect x="${p.x - 2}" y="${height - pad.bottom - h}" width="4" height="${h}" rx="2" fill="#d8dde6"><title>${esc(p.row.date)} · erro ${err.toFixed(2)}%</title></rect>`;
             }).join('');
-            const grid = [0, 50, 75, 100].map(v => {
-                const y = pad.top + (100 - v) / 100 * plotH;
-                return `<line x1="${pad.left}" y1="${y}" x2="${width - pad.right}" y2="${y}" stroke="#e9edf3"/><text x="${width - pad.right + 8}" y="${y + 4}" fill="#64748b" font-size="13">${v}</text>`;
+            const grid = [0, scaleMax * .5, scaleMax * .75, scaleMax].map(v => {
+                const y = pad.top + (1 - v / scaleMax) * plotH;
+                return `<line x1="${pad.left}" y1="${y}" x2="${width - pad.right}" y2="${y}" stroke="#e9edf3"/><text x="${width - pad.right + 8}" y="${y + 4}" fill="#64748b" font-size="13">${formatMs(v)}</text>`;
             }).join('');
             const labels = points.filter((_, index) => index === 0 || index === points.length - 1 || index === Math.floor(points.length / 2)).map(p => {
                 const label = new Date(p.row.date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
@@ -570,22 +651,12 @@ if ($pdo) {
             root.innerHTML = html || '<div class="empty">No incidents reported</div>';
         }
 
-        function tickDurations() {
-            document.querySelectorAll('[data-duration-start]').forEach(node => {
-                const end = node.dataset.durationEnd;
-                const start = new Date(node.dataset.durationStart.replace(' ', 'T')).getTime();
-                const final = end ? new Date(end.replace(' ', 'T')).getTime() : Date.now();
-                node.textContent = fmtDuration(Math.floor((final - start) / 1000), Boolean(end));
-            });
-        }
-
         function renderAll() {
             renderOverall();
             renderActive();
             renderComponents();
             renderHealth();
             renderHistory();
-            tickDurations();
         }
 
         async function refresh() {
@@ -600,7 +671,6 @@ if ($pdo) {
         }
 
         renderAll();
-        setInterval(tickDurations, 30000);
         setInterval(refresh, 60000);
     })();
     </script>
