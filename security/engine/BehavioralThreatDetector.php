@@ -33,11 +33,15 @@ final class BehavioralThreatDetector
 
         $ua          = $_SERVER['HTTP_USER_AGENT'] ?? '';
         $path        = $_SERVER['REQUEST_URI']     ?? '/';
+        $isAuthenticated = $this->isAuthenticatedRequest();
 
         // ----------------------------------------------------------------
         // 1. User-Agent inválido ou ausente
         // ----------------------------------------------------------------
-        if ($this->isInvalidUserAgent($ua)) {
+        if (!$isAuthenticated
+            && $this->isSensitiveRoute($routeGroup)
+            && $this->isInvalidUserAgent($ua)
+        ) {
             $detected[] = [
                 'event'   => 'invalid_user_agent',
                 'context' => ['behavior_flag' => 'invalid_user_agent', 'details' => ['ua' => substr($ua, 0, 120)]],
@@ -47,7 +51,11 @@ final class BehavioralThreatDetector
         // ----------------------------------------------------------------
         // 2. User-Agent de bot conhecido
         // ----------------------------------------------------------------
-        if (!empty($ua) && $this->isKnownBotUA($ua)) {
+        if (!$isAuthenticated
+            && !empty($ua)
+            && $this->isKnownBotUA($ua)
+            && ($this->isSensitiveRoute($routeGroup) || $this->hasHighRequestVolume($reputation))
+        ) {
             $this->store->flagIpAsBot($ip, 'bot');
             $detected[] = [
                 'event'   => 'bot_pattern_detected',
@@ -59,7 +67,7 @@ final class BehavioralThreatDetector
         // 3. Auth flooding
         // ----------------------------------------------------------------
         if ($routeGroup === 'auth') {
-            $authCount = (int) ($reputation['req_count_1hour'] ?? 0);
+            $authCount = (int) ($reputation['sensitive_route_hits'] ?? 0);
             if ($authCount > SecurityConfig::AUTH_FLOOD_THRESHOLD) {
                 $detected[] = [
                     'event'   => 'auth_flooding',
@@ -91,7 +99,7 @@ final class BehavioralThreatDetector
         // 5. Velocidade de requisição suspeita (constante intervals)
         //    Detectado por contadores em sessão
         // ----------------------------------------------------------------
-        if ($this->detectConstantIntervals()) {
+        if (!$isAuthenticated && $this->detectConstantIntervals()) {
             $detected[] = [
                 'event'   => 'bot_pattern_detected',
                 'context' => [
@@ -105,8 +113,8 @@ final class BehavioralThreatDetector
         // 6. Route flooding em rotas críticas
         // ----------------------------------------------------------------
         $sensitiveHits = (int) ($reputation['sensitive_route_hits'] ?? 0);
-        if (in_array($routeGroup, ['auth', 'admin', 'recovery', 'api_v4'], true)
-            && $sensitiveHits > 50
+        if (in_array($routeGroup, SecurityConfig::CRITICAL_ROUTE_GROUPS, true)
+            && $sensitiveHits > (SecurityConfig::AUTH_FLOOD_THRESHOLD * 2)
         ) {
             $detected[] = [
                 'event'   => 'route_flooding',
@@ -121,7 +129,10 @@ final class BehavioralThreatDetector
         // ----------------------------------------------------------------
         // 7. Abuso de streaming
         // ----------------------------------------------------------------
-        if ($routeGroup === 'stream' && (int) ($reputation['req_count_1hour'] ?? 0) > 200) {
+        if (!$isAuthenticated
+            && $routeGroup === 'stream'
+            && (int) ($reputation['req_count_1hour'] ?? 0) > 600
+        ) {
             $detected[] = [
                 'event'   => 'stream_abuse',
                 'context' => [
@@ -134,7 +145,10 @@ final class BehavioralThreatDetector
         // ----------------------------------------------------------------
         // 8. Abuso de busca
         // ----------------------------------------------------------------
-        if ($routeGroup === 'search' && (int) ($reputation['req_count_1hour'] ?? 0) > 120) {
+        if (!$isAuthenticated
+            && $routeGroup === 'search'
+            && (int) ($reputation['req_count_1hour'] ?? 0) > 300
+        ) {
             $detected[] = [
                 'event'   => 'search_abuse',
                 'context' => [
@@ -163,6 +177,22 @@ final class BehavioralThreatDetector
             }
         }
         return false;
+    }
+
+    private function isAuthenticatedRequest(): bool
+    {
+        return session_status() === PHP_SESSION_ACTIVE && !empty($_SESSION['user_id']);
+    }
+
+    private function isSensitiveRoute(string $routeGroup): bool
+    {
+        return in_array($routeGroup, SecurityConfig::CRITICAL_ROUTE_GROUPS, true);
+    }
+
+    private function hasHighRequestVolume(array $reputation): bool
+    {
+        return (int) ($reputation['req_count_1hour'] ?? 0) > 300
+            || (int) ($reputation['req_count_1min'] ?? 0) > 120;
     }
 
     /**
@@ -196,7 +226,7 @@ final class BehavioralThreatDetector
         }
 
         $mean = array_sum($intervals) / count($intervals);
-        if ($mean < 0.05) {
+        if ($mean < 0.03) {
             // Menos de 50ms entre requisições = definitivamente bot
             return true;
         }
@@ -209,6 +239,6 @@ final class BehavioralThreatDetector
 
         // Coeficiente de variação muito baixo = intervalos constantes
         $cv = $mean > 0 ? $stddev / $mean : 1.0;
-        return $cv < 0.05 && $mean < 1.0;
+        return $cv < 0.03 && $mean < 0.35;
     }
 }

@@ -110,6 +110,7 @@ final class GlobalSecurityLayer
         $asn        = $_SERVER['HTTP_X_ASN']      ?? '';
         $routeGroup = $this->resolveRouteGroup();
         $path       = $_SERVER['REQUEST_URI']      ?? '/';
+        $method     = $_SERVER['REQUEST_METHOD']   ?? 'GET';
 
         if (ClientRequestGuard::hasTemporaryBypass($ip)) {
             return;
@@ -136,7 +137,7 @@ final class GlobalSecurityLayer
         if ($activeBan) {
             if (($activeBan['ban_type'] ?? '') === 'shadow') {
                 $this->banManager->enforceBan($activeBan);
-            } else {
+            } elseif ($this->shouldEnforceExistingBan($activeBan, $routeGroup, $method)) {
                 $this->store->logThreatEvent(
                     $ip, 'hard_ban_applied', 'critical', 'blocked',
                     $threatScore, 0,
@@ -150,7 +151,7 @@ final class GlobalSecurityLayer
         // [4] Quarentena — aplica delay se em quarentena
         // ----------------------------------------------------------------
         $activeQuarantine = $this->quarantine->getActiveQuarantine($ip);
-        if ($activeQuarantine) {
+        if ($activeQuarantine && $this->shouldApplyQuarantineDelay($routeGroup, $method)) {
             $this->quarantine->applyDelay($activeQuarantine);
         }
 
@@ -167,10 +168,15 @@ final class GlobalSecurityLayer
                 'counters'=> ['req_count_1min' => 1],
                 'details' => ['count' => $reqCount, 'limit' => $limit],
             ]);
+            $threatScore = $newScore;
 
-            $this->penalties->evaluate($ip, $newScore, 'rate_limit_exceeded', $routeProfile);
+            if ($this->shouldEscalatePenalty($routeGroup, $method, $newScore, 'rate_limit_exceeded')) {
+                $this->penalties->evaluate($ip, $newScore, 'rate_limit_exceeded', $routeProfile);
+            }
 
-            $this->blockSuspiciousActivity($ip, $path);
+            if ($this->shouldBlockRateLimit($reqCount, $limit, $newScore, $routeGroup, $method)) {
+                $this->blockSuspiciousActivity($ip, $path);
+            }
         }
 
         // ----------------------------------------------------------------
@@ -182,9 +188,13 @@ final class GlobalSecurityLayer
                 'path'    => $path,
                 'details' => ['rps' => round($rps, 2), 'threshold' => $burstThreshold],
             ]);
-            $this->penalties->evaluate($ip, $newScore, 'burst_detected', $routeProfile);
+            $threatScore = $newScore;
 
-            if ($newScore >= SecurityConfig::SCORE_BLOCK) {
+            if ($this->shouldEscalatePenalty($routeGroup, $method, $newScore, 'burst_detected')) {
+                $this->penalties->evaluate($ip, $newScore, 'burst_detected', $routeProfile);
+            }
+
+            if ($this->shouldBlockBurst($rps, $burstThreshold, $newScore, $routeGroup, $method)) {
                 $this->blockSuspiciousActivity($ip, $path);
             }
         }
@@ -193,20 +203,24 @@ final class GlobalSecurityLayer
         // [7] Análise comportamental
         // ----------------------------------------------------------------
         // Incrementa contadores de rota na reputação
-        $this->store->incrementIpScore($ip, 0, '', [
-            'req_count_1min'   => 1,
-            'req_count_1hour'  => 1,
-            'req_count_24hour' => 1,
-            ...($this->isNewRouteInCurrentWindow($ip, $routeGroup, $path)
-                ? ['unique_routes_1hour' => 1] : []),
-            ...(in_array($routeGroup, ['auth', 'admin', 'recovery', 'api_v4'], true)
-                ? ['sensitive_route_hits' => 1] : []),
-        ]);
-        $this->repCache->invalidate($ip);
-        $reputation  = $this->repCache->get($ip) ?? [];
-        $threatScore = (int) ($reputation['threat_score'] ?? 0);
+        if ($this->shouldPersistTrafficCounters($ip, $routeGroup, $path, $rateLimitExceeded, $isBurst, $threatScore)) {
+            $this->store->incrementIpScore($ip, 0, '', [
+                'req_count_1min'   => 1,
+                'req_count_1hour'  => 1,
+                'req_count_24hour' => 1,
+                ...($this->isNewRouteInCurrentWindow($ip, $routeGroup, $path)
+                    ? ['unique_routes_1hour' => 1] : []),
+                ...($this->isCriticalRoute($routeGroup)
+                    ? ['sensitive_route_hits' => 1] : []),
+            ]);
+            $this->repCache->invalidate($ip);
+            $reputation  = $this->repCache->get($ip) ?? [];
+            $threatScore = (int) ($reputation['threat_score'] ?? 0);
+        }
 
-        $detectedEvents = $this->behavioral->analyze($ip, $reputation, $routeGroup);
+        $detectedEvents = $this->shouldAnalyzeBehavior($routeGroup, $method, $threatScore, $rateLimitExceeded, $isBurst)
+            ? $this->behavioral->analyze($ip, $reputation, $routeGroup)
+            : [];
 
         // ----------------------------------------------------------------
         // [8] Score engine — registra todos os eventos detectados
@@ -219,7 +233,14 @@ final class GlobalSecurityLayer
         // ----------------------------------------------------------------
         // [9] Progressive penalty
         // ----------------------------------------------------------------
-        if (!empty($detectedEvents) || $threatScore >= SecurityConfig::SCORE_RATE_LIMIT) {
+        if ((!empty($detectedEvents) || $threatScore >= SecurityConfig::SCORE_RATE_LIMIT)
+            && $this->shouldEscalatePenalty(
+                $routeGroup,
+                $method,
+                $threatScore,
+                !empty($detectedEvents) ? $detectedEvents[0]['event'] : 'anomaly_detected'
+            )
+        ) {
             $triggerEvent = !empty($detectedEvents) ? $detectedEvents[0]['event'] : 'anomaly_detected';
             $action = $this->penalties->evaluate($ip, $threatScore, $triggerEvent, $routeProfile);
 
@@ -229,7 +250,7 @@ final class GlobalSecurityLayer
                 if ($freshBan) {
                     if (($freshBan['ban_type'] ?? '') === 'shadow') {
                         $this->banManager->enforceBan($freshBan);
-                    } else {
+                    } elseif ($this->shouldEnforceExistingBan($freshBan, $routeGroup, $method)) {
                         $this->blockSuspiciousActivity($ip, $path, ($freshBan['ban_type'] ?? '') === 'hard' ? 403 : 429);
                     }
                 }
@@ -237,7 +258,7 @@ final class GlobalSecurityLayer
 
             if ($action === 'quarantine') {
                 $freshQ = $this->quarantine->getActiveQuarantine($ip);
-                if ($freshQ) {
+                if ($freshQ && $this->shouldApplyQuarantineDelay($routeGroup, $method)) {
                     $this->quarantine->applyDelay($freshQ);
                 }
             }
@@ -252,6 +273,7 @@ final class GlobalSecurityLayer
         // [11] Challenge (rotas críticas + tráfego suspeito)
         // ----------------------------------------------------------------
         if (!$this->isApiLikePath($path)
+            && $this->isCriticalRoute($routeGroup)
             && $threatScore >= SecurityConfig::SCORE_RATE_LIMIT
             && $this->challenge->requiresChallenge($ip, $routeProfile)
         ) {
@@ -305,6 +327,152 @@ final class GlobalSecurityLayer
     private function isApiLikePath(string $path): bool
     {
         return SecurityBlockResponder::isApiLikePath($path);
+    }
+
+    private function isMutatingRequest(string $method): bool
+    {
+        return !in_array(strtoupper($method), ['GET', 'HEAD', 'OPTIONS'], true);
+    }
+
+    private function isCriticalRoute(string $routeGroup): bool
+    {
+        return in_array($routeGroup, SecurityConfig::CRITICAL_ROUTE_GROUPS, true);
+    }
+
+    private function isHighTrafficRoute(string $routeGroup): bool
+    {
+        return in_array($routeGroup, SecurityConfig::HIGH_TRAFFIC_ROUTE_GROUPS, true);
+    }
+
+    private function shouldEnforceExistingBan(array $ban, string $routeGroup, string $method): bool
+    {
+        $type = (string) ($ban['ban_type'] ?? 'soft');
+        if ($type === 'hard') {
+            return true;
+        }
+
+        return $this->isCriticalRoute($routeGroup) || $this->isMutatingRequest($method);
+    }
+
+    private function shouldApplyQuarantineDelay(string $routeGroup, string $method): bool
+    {
+        return $this->isCriticalRoute($routeGroup) || $this->isMutatingRequest($method);
+    }
+
+    private function shouldBlockRateLimit(
+        int $reqCount,
+        int $limit,
+        int $score,
+        string $routeGroup,
+        string $method
+    ): bool {
+        if ($limit > 0 && $reqCount >= (int) ceil($limit * SecurityConfig::RATE_LIMIT_HARD_BLOCK_MULTIPLIER)) {
+            return true;
+        }
+
+        return $this->isCriticalRoute($routeGroup)
+            && $this->isMutatingRequest($method)
+            && $score >= SecurityConfig::SCORE_BLOCK;
+    }
+
+    private function shouldBlockBurst(
+        float $rps,
+        float $threshold,
+        int $score,
+        string $routeGroup,
+        string $method
+    ): bool {
+        if ($threshold > 0.0 && $rps >= ($threshold * SecurityConfig::BURST_HARD_BLOCK_MULTIPLIER)) {
+            return true;
+        }
+
+        return $this->isCriticalRoute($routeGroup)
+            && $this->isMutatingRequest($method)
+            && $score >= SecurityConfig::SCORE_BLOCK;
+    }
+
+    private function shouldPersistTrafficCounters(
+        string $ip,
+        string $routeGroup,
+        string $path,
+        bool $rateLimitExceeded,
+        bool $isBurst,
+        int $score
+    ): bool {
+        if ($rateLimitExceeded
+            || $isBurst
+            || $score >= SecurityConfig::SCORE_RATE_LIMIT
+            || $this->isCriticalRoute($routeGroup)
+            || $this->isMutatingRequest((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET'))
+        ) {
+            return true;
+        }
+
+        if ($this->isHighTrafficRoute($routeGroup)) {
+            return $this->oncePerClientWindow(
+                'clean_counter',
+                $ip . ':' . $routeGroup . ':' . parse_url($path, PHP_URL_PATH),
+                SecurityConfig::CLEAN_COUNTER_PERSIST_INTERVAL_SECONDS
+            );
+        }
+
+        return false;
+    }
+
+    private function shouldAnalyzeBehavior(
+        string $routeGroup,
+        string $method,
+        int $score,
+        bool $rateLimitExceeded,
+        bool $isBurst
+    ): bool {
+        return $rateLimitExceeded
+            || $isBurst
+            || $score >= SecurityConfig::SCORE_RATE_LIMIT
+            || ($this->isCriticalRoute($routeGroup) && $this->isMutatingRequest($method));
+    }
+
+    private function shouldEscalatePenalty(
+        string $routeGroup,
+        string $method,
+        int $score,
+        string $eventType
+    ): bool {
+        if ($this->isCriticalRoute($routeGroup) || $this->isMutatingRequest($method)) {
+            return true;
+        }
+
+        if (in_array($eventType, ['scanner_detected', 'replay_attack', 'distributed_pattern_detected'], true)) {
+            return true;
+        }
+
+        return $score >= SecurityConfig::SCORE_QUARANTINE;
+    }
+
+    private function oncePerClientWindow(string $prefix, string $keyMaterial, int $ttl): bool
+    {
+        $key = 'sec_' . $prefix . '_' . hash('sha256', $keyMaterial);
+
+        if (function_exists('apcu_add')) {
+            return apcu_add($key, 1, $ttl);
+        }
+
+        if (session_status() !== PHP_SESSION_ACTIVE) {
+            return false;
+        }
+
+        $now = time();
+        $_SESSION['_sec_once'] ??= [];
+        if ((int) ($_SESSION['_sec_once'][$key] ?? 0) > $now) {
+            return false;
+        }
+
+        $_SESSION['_sec_once'][$key] = $now + $ttl;
+        if (count($_SESSION['_sec_once']) > 64) {
+            $_SESSION['_sec_once'] = array_slice($_SESSION['_sec_once'], -64, null, true);
+        }
+
+        return true;
     }
 
     private function isNewRouteInCurrentWindow(string $ip, string $routeGroup, string $path): bool

@@ -21,6 +21,7 @@ final class ContextualRateLimiter
 {
     /** Janela padrão: 60 segundos */
     private const WINDOW_SECONDS = 60;
+    private const STORE_DIR = 'pipocine_contextual_rate';
 
     public function __construct(private readonly DbSecurityStore $store) {}
 
@@ -47,17 +48,7 @@ final class ContextualRateLimiter
             return $this->checkApcu($key, $limit);
         }
 
-        // Fallback: sliding window no banco
-        [$count, $exceeded, $limit] = $this->store->slidingWindowIncrement(
-            $key,
-            'ip',
-            $routeGroup,
-            $ip,
-            self::WINDOW_SECONDS,
-            $limit
-        );
-
-        return [$exceeded, $count, $limit];
+        return $this->checkFileCounter($key, $limit);
     }
 
     // -------------------------------------------------------------------------
@@ -81,10 +72,15 @@ final class ContextualRateLimiter
     private function fallbackLimits(string $routeGroup): array
     {
         return match ($routeGroup) {
-            'catalog' => [900, 240, 80],
-            'api_v2'  => [420, 140, 45],
-            'api_v3'  => [300, 100, 35],
-            'api_v4'  => [240, 80, 25],
+            'auth'    => [180, 80, 30],
+            'admin'   => [240, 100, 40],
+            'stream'  => [1_200, 480, 160],
+            'cdn'     => [1_800, 720, 240],
+            'search'  => [600, 240, 80],
+            'catalog' => [1_800, 600, 180],
+            'api_v2'  => [900, 300, 100],
+            'api_v3'  => [720, 240, 80],
+            'api_v4'  => [600, 200, 70],
             default   => [
                 SecurityConfig::GLOBAL_RATE_CLEAN,
                 SecurityConfig::GLOBAL_RATE_SUSPICIOUS,
@@ -104,5 +100,42 @@ final class ContextualRateLimiter
         }
 
         return [$newCount > $limit, $newCount, $limit];
+    }
+
+    private function checkFileCounter(string $key, int $limit): array
+    {
+        $dir = sys_get_temp_dir() . DIRECTORY_SEPARATOR . self::STORE_DIR;
+        if (!is_dir($dir)) {
+            @mkdir($dir, 0775, true);
+        }
+
+        $file = $dir . DIRECTORY_SEPARATOR . hash('sha256', $key) . '.json';
+        $fh = @fopen($file, 'c+');
+        if (!$fh) {
+            return [false, 0, $limit];
+        }
+
+        try {
+            flock($fh, LOCK_EX);
+            $raw = stream_get_contents($fh);
+            $data = $raw !== '' ? json_decode($raw, true) : null;
+            if (!is_array($data) || (int) ($data['expires'] ?? 0) < time()) {
+                $data = ['count' => 0, 'expires' => time() + self::WINDOW_SECONDS];
+            }
+
+            $data['count'] = (int) $data['count'] + 1;
+            $data['expires'] = time() + self::WINDOW_SECONDS;
+
+            ftruncate($fh, 0);
+            rewind($fh);
+            fwrite($fh, json_encode($data));
+            fflush($fh);
+
+            $count = (int) $data['count'];
+            return [$count > $limit, $count, $limit];
+        } finally {
+            flock($fh, LOCK_UN);
+            fclose($fh);
+        }
     }
 }

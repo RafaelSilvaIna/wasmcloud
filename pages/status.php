@@ -281,17 +281,6 @@ if ($pdo) {
             border-radius: 50%;
             background: currentColor;
         }
-        .component-metrics {
-            display: flex;
-            gap: 18px;
-            flex-wrap: wrap;
-            color: var(--quiet);
-            font-size: .76rem;
-        }
-        .component-metrics span strong {
-            color: var(--text);
-            font-weight: 680;
-        }
         .subcomponents {
             display: grid;
             gap: 0;
@@ -330,8 +319,9 @@ if ($pdo) {
         }
         .history-date {
             color: var(--text);
-            font-weight: 760;
-            margin: 20px 20px 8px;
+            font-size: 1rem;
+            font-weight: 700;
+            margin: 18px 20px 6px;
         }
         .history-filters {
             display: none;
@@ -340,10 +330,45 @@ if ($pdo) {
             border: 0;
             border-top: 1px solid var(--line);
             border-radius: 0;
-            padding: 16px 20px;
+            padding: 14px 20px;
             background: transparent;
         }
-        details.history-item summary { cursor: pointer; }
+        details.history-item summary {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            list-style: none;
+        }
+        details.history-item summary::-webkit-details-marker { display: none; }
+        details.history-item summary::before {
+            content: "";
+            width: 6px;
+            height: 6px;
+            flex: 0 0 auto;
+            border-radius: 50%;
+            background: var(--severity, var(--quiet));
+        }
+        details.history-item summary::after {
+            content: "+";
+            margin-left: auto;
+            color: var(--muted);
+            font-size: 1rem;
+            font-weight: 500;
+        }
+        details.history-item[open] summary::after { content: "-"; }
+        details.history-item summary strong {
+            color: var(--text);
+            font-size: .95rem;
+            font-weight: 680;
+        }
+        details.history-item .incident {
+            border-bottom: 0;
+            padding: 12px 0 0;
+        }
+        details.history-item .incident-top {
+            display: none;
+        }
         .empty {
             padding: 44px 20px;
             color: var(--muted);
@@ -496,6 +521,10 @@ if ($pdo) {
         function incidentHtml(incident, showTimeline, activeCard = false) {
             const severity = severityClass(incident.impact || incident.category);
             const components = (incident.component_names || []).map(name => `<span class="chip">${esc(name)}</span>`).join('');
+            const badgeKey = (value) => String(value || '').toLowerCase().replaceAll('_', ' ').trim();
+            const statusLabel = String(incident.status || '').replaceAll('_', ' ');
+            const categoryLabel = String(incident.category || incident.impact_label || '').trim();
+            const showStatus = !activeCard && statusLabel && badgeKey(statusLabel) !== badgeKey(categoryLabel);
             const updateLabel = (update) => {
                 const type = String(update.update_type || '').trim();
                 const status = String(update.status || '').trim();
@@ -522,8 +551,8 @@ if ($pdo) {
                     </div>
                     <p>${esc(incident.public_description || '')}</p>
                     <div class="meta">
-                        <span class="chip severity-chip">${esc(incident.category || incident.impact_label)}</span>
-                        ${!activeCard ? `<span class="chip">${esc(incident.status)}</span>` : ''}
+                        <span class="chip severity-chip">${esc(categoryLabel)}</span>
+                        ${showStatus ? `<span class="chip severity-chip ${severityClass(statusLabel)}">${esc(statusLabel)}</span>` : ''}
                         ${components}
                     </div>
                     ${showTimeline ? `<div class="timeline">${updates || '<div class="muted">Sem atualizacoes publicas.</div>'}</div>` : ''}
@@ -545,18 +574,11 @@ if ($pdo) {
             const children = (component.children || []).map(componentHtml).join('');
             const rawStatus = component.current_status || 'operational';
             const status = rawStatus.replaceAll('_', ' ');
-            const bars = component.bars || [];
-            const uptime = bars.length
-                ? (bars.reduce((total, bar) => total + Number(bar.uptime_pct || 100), 0) / bars.length).toFixed(2)
-                : '100.00';
             return `
                 <div class="component">
                     <div class="component-title">
                         <strong>${esc(component.name)}</strong>
                         <span class="component-status ${severityClass(rawStatus)}">${esc(status)}</span>
-                    </div>
-                    <div class="component-metrics">
-                        <span><strong>${uptime}%</strong> uptime em 30 dias</span>
                     </div>
                     ${children ? `<div class="subcomponents">${children}</div>` : ''}
                 </div>
@@ -635,14 +657,9 @@ if ($pdo) {
                 return `
                 <div class="history-date">${fmtDay(day)}</div>
                 ${incidents.map(incident => `
-                    <details class="history-item">
+                    <details class="history-item ${severityClass(incident.impact || incident.category || incident.status)}">
                         <summary>
                             <strong>${esc(incident.title)}</strong>
-                            <div class="meta">
-                                <span class="chip">${esc(incident.category)}</span>
-                                <span class="chip">${esc(incident.status)}</span>
-                                <span class="chip">${esc(incident.duration_label)}</span>
-                            </div>
                         </summary>
                         ${incidentHtml(incident, true)}
                     </details>

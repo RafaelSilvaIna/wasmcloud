@@ -226,7 +226,7 @@ final class AdminStatusService
             'generated_at' => $this->isoTimestamp($now),
             'overall' => $this->overallStatus($active),
             'active_incidents' => $active,
-            'components' => $this->componentTree($components, $bars),
+            'components' => $this->componentTree($components, $bars, $active),
             'health' => $health,
             'api_response' => $this->apiResponseSeries(60),
             'realtime' => $this->model->observabilityRealtime(5),
@@ -359,14 +359,16 @@ final class AdminStatusService
         return $bars;
     }
 
-    private function componentTree(array $components, array $bars): array
+    private function componentTree(array $components, array $bars, array $active): array
     {
+        $activeStatuses = $this->activeComponentStatuses($active);
         $byId = [];
         foreach ($components as $component) {
+            $id = (int) $component['id'];
             $component['children'] = [];
-            $component['bars'] = $bars[(int) $component['id']] ?? [];
-            $component['current_status'] = $this->latestBarStatus($component['bars']);
-            $byId[(int) $component['id']] = $component;
+            $component['bars'] = $bars[$id] ?? [];
+            $component['current_status'] = $activeStatuses[$id] ?? 'operational';
+            $byId[$id] = $component;
         }
 
         $tree = [];
@@ -380,7 +382,49 @@ final class AdminStatusService
         }
         unset($component);
 
+        foreach ($tree as &$component) {
+            $this->applyChildCurrentStatus($component);
+        }
+        unset($component);
+
         return $tree;
+    }
+
+    private function activeComponentStatuses(array $active): array
+    {
+        $statuses = [];
+        foreach ($active as $incident) {
+            foreach (($incident['components'] ?? []) as $component) {
+                $id = (int) ($component['id'] ?? 0);
+                if ($id <= 0) {
+                    continue;
+                }
+                $impact = (string) ($component['incident_impact'] ?? $incident['impact'] ?? 'degraded_performance');
+                $currentRank = self::IMPACT_RANK[$statuses[$id] ?? 'operational'] ?? 0;
+                $rank = self::IMPACT_RANK[$impact] ?? 1;
+                if ($rank >= $currentRank) {
+                    $statuses[$id] = $impact;
+                }
+            }
+        }
+        return $statuses;
+    }
+
+    private function applyChildCurrentStatus(array &$component): string
+    {
+        $status = (string) ($component['current_status'] ?? 'operational');
+        $rank = self::IMPACT_RANK[$status] ?? 0;
+        foreach ($component['children'] as &$child) {
+            $childStatus = $this->applyChildCurrentStatus($child);
+            $childRank = self::IMPACT_RANK[$childStatus] ?? 0;
+            if ($childRank >= $rank) {
+                $status = $childStatus;
+                $rank = $childRank;
+            }
+        }
+        unset($child);
+        $component['current_status'] = $status;
+        return $status;
     }
 
     private function healthSeries(int $days, array $active): array
@@ -695,15 +739,6 @@ final class AdminStatusService
         $endSource = $incident['resolved_at'] ?: $incident['scheduled_end_at'] ?: $now;
         $end = min(strtotime((string) $endSource) ?: $nowTs, strtotime($day . ' 23:59:59') ?: $nowTs);
         return max(0, (int) floor(($end - $start) / 60));
-    }
-
-    private function latestBarStatus(array $bars): string
-    {
-        if (!$bars) {
-            return 'operational';
-        }
-        $last = end($bars);
-        return (string) ($last['status'] ?? 'operational');
     }
 
     private function percent(float $part, float $total): float

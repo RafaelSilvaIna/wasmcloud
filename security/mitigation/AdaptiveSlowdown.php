@@ -39,6 +39,10 @@ final class AdaptiveSlowdown
      */
     public function resolveDelay(int $threatScore, array $routeProfile = []): int
     {
+        if ($this->isReadOnlyRequest() && $threatScore < SecurityConfig::SCORE_BLOCK) {
+            return 0;
+        }
+
         // Delay específico da rota para IPs suspeitos
         $routeDelayMs = (int) ($routeProfile['delay_on_suspicious'] ?? 0);
 
@@ -57,5 +61,14 @@ final class AdaptiveSlowdown
         }
 
         return 0;
+    }
+
+    private function isReadOnlyRequest(): bool
+    {
+        return in_array(
+            strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET')),
+            ['GET', 'HEAD', 'OPTIONS'],
+            true
+        );
     }
 }

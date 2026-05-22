@@ -23,15 +23,22 @@ final class ClientRequestGuard
             return;
         }
 
+        $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
         $clientKey = self::clientKey($ip);
         $group = self::routeGroup($path);
-        $limits = self::limitsFor($group, $_SERVER['REQUEST_METHOD'] ?? 'GET');
+        $mutating = self::isMutatingMethod($method);
+        $limits = self::limitsFor($group, $method);
 
-        self::checkConcurrency($clientKey, $limits['concurrency'], $limits['retry']);
+        if (self::shouldCheckConcurrency($group, $mutating)) {
+            self::checkConcurrency($clientKey, $limits['concurrency'], $limits['retry']);
+        }
+
         self::checkWindow('burst', $clientKey . ':' . $group, $limits['window'], $limits['burst'], $limits['retry']);
 
-        $requestKey = $clientKey . ':' . self::requestSignature();
-        self::checkWindow('duplicate', $requestKey, 5, $limits['duplicate'], $limits['retry']);
+        if ($mutating) {
+            $requestKey = $clientKey . ':' . self::requestSignature();
+            self::checkWindow('duplicate', $requestKey, 5, $limits['duplicate'], $limits['retry']);
+        }
     }
 
     public static function resolveClientIp(): string
@@ -201,14 +208,24 @@ final class ClientRequestGuard
         $mutating = !in_array(strtoupper($method), ['GET', 'HEAD', 'OPTIONS'], true);
 
         return match ($group) {
-            'auth' => ['window' => 10, 'burst' => 12, 'duplicate' => $mutating ? 4 : 8, 'concurrency' => 3, 'retry' => 5],
-            'admin' => ['window' => 10, 'burst' => 18, 'duplicate' => $mutating ? 5 : 10, 'concurrency' => 4, 'retry' => 5],
-            'stream', 'cdn' => ['window' => 10, 'burst' => 60, 'duplicate' => 28, 'concurrency' => 8, 'retry' => 3],
-            'search' => ['window' => 10, 'burst' => 35, 'duplicate' => 18, 'concurrency' => 5, 'retry' => 3],
-            'catalog' => ['window' => 10, 'burst' => 140, 'duplicate' => 55, 'concurrency' => 28, 'retry' => 2],
-            'api' => ['window' => 10, 'burst' => 90, 'duplicate' => $mutating ? 12 : 40, 'concurrency' => 10, 'retry' => 3],
-            default => ['window' => 10, 'burst' => 50, 'duplicate' => $mutating ? 10 : 20, 'concurrency' => 8, 'retry' => 2],
+            'auth' => ['window' => 10, 'burst' => 60, 'duplicate' => $mutating ? 12 : 60, 'concurrency' => 8, 'retry' => 3],
+            'admin' => ['window' => 10, 'burst' => 90, 'duplicate' => $mutating ? 18 : 90, 'concurrency' => 10, 'retry' => 3],
+            'stream', 'cdn' => ['window' => 10, 'burst' => 220, 'duplicate' => 90, 'concurrency' => 40, 'retry' => 2],
+            'search' => ['window' => 10, 'burst' => 120, 'duplicate' => 40, 'concurrency' => 20, 'retry' => 2],
+            'catalog' => ['window' => 10, 'burst' => 420, 'duplicate' => 140, 'concurrency' => 60, 'retry' => 1],
+            'api' => ['window' => 10, 'burst' => 240, 'duplicate' => $mutating ? 35 : 120, 'concurrency' => 30, 'retry' => 2],
+            default => ['window' => 10, 'burst' => 180, 'duplicate' => $mutating ? 24 : 90, 'concurrency' => 25, 'retry' => 1],
         };
+    }
+
+    private static function isMutatingMethod(string $method): bool
+    {
+        return !in_array(strtoupper($method), ['GET', 'HEAD', 'OPTIONS'], true);
+    }
+
+    private static function shouldCheckConcurrency(string $group, bool $mutating): bool
+    {
+        return $mutating || in_array($group, ['auth', 'admin'], true);
     }
 
     private static function routeGroup(string $path): string
@@ -276,7 +293,11 @@ final class ClientRequestGuard
     private static function isBypassedPath(string $path): bool
     {
         return in_array($path, ['/security/continue', '/security/challenge'], true)
-            || str_starts_with($path, '/webhooks/');
+            || str_starts_with($path, '/webhooks/')
+            || str_starts_with($path, '/assets/')
+            || str_starts_with($path, '/favicon')
+            || str_starts_with($path, '/robots.txt')
+            || preg_match('/\.(?:css|js|mjs|map|png|jpe?g|gif|webp|svg|ico|woff2?|ttf|otf)$/i', $path) === 1;
     }
 
     private static function isTrustedProxy(string $ip): bool

@@ -59,8 +59,8 @@ final class QuarantineManager
             $reason ?: "Score de quarentena: {$threatScore}",
             SecurityConfig::QUARANTINE_SECONDS,
             $threatScore,
-            2000,  // delay 2s
-            5      // max 5 req/min
+            intdiv(SecurityConfig::DELAY_QUARANTINE_US, 1000),
+            60
         );
 
         $this->invalidateCache($ip);
@@ -68,7 +68,9 @@ final class QuarantineManager
 
         $this->store->recordPenalty(
             $ip, 'quarantine', 'critical', 'auto_quarantine',
-            $threatScore, SecurityConfig::QUARANTINE_SECONDS, 2000
+            $threatScore,
+            SecurityConfig::QUARANTINE_SECONDS,
+            intdiv(SecurityConfig::DELAY_QUARANTINE_US, 1000)
         );
     }
 
@@ -78,11 +80,11 @@ final class QuarantineManager
      */
     public function applyDelay(array $quarantine): int
     {
-        $delayMs = (int) ($quarantine['response_delay_ms'] ?? 2000);
+        $delayMs = (int) ($quarantine['response_delay_ms'] ?? intdiv(SecurityConfig::DELAY_QUARANTINE_US, 1000));
         $delayUs = $delayMs * 1000;
 
         // Limita o delay máximo a 5 segundos
-        $delayUs = min($delayUs, 5_000_000);
+        $delayUs = min($delayUs, SecurityConfig::DELAY_QUARANTINE_US);
 
         if ($delayUs > 0) {
             usleep($delayUs);
