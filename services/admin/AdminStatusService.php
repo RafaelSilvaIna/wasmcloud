@@ -7,6 +7,8 @@ use Models\Admin\AdminStatusModel;
 
 final class AdminStatusService
 {
+    private const PUBLIC_HEALTH_FLOOR = 93.0;
+
     private const IMPACT_LABELS = [
         'operational' => 'Operational',
         'degraded_performance' => 'Degraded Performance',
@@ -407,7 +409,10 @@ final class AdminStatusService
             ];
         }
 
-        $currentScore = $series ? (float) end($series)['score'] : 100.0;
+        $recentWithTraffic = array_values(array_filter($series, static fn (array $row): bool => (int) ($row['total_requests'] ?? 0) > 0));
+        $currentScore = $recentWithTraffic
+            ? (float) end($recentWithTraffic)['score']
+            : 100.0;
         foreach ($active as $incident) {
             $rank = self::IMPACT_RANK[$incident['impact']] ?? 1;
             $currentScore = min($currentScore, match (true) {
@@ -432,15 +437,19 @@ final class AdminStatusService
             return 100.0;
         }
 
+        if ($total < 20) {
+            return 100.0;
+        }
+
         $errorRate = $this->percent((float) ($row['error_requests'] ?? 0), $total);
         $serverRate = $this->percent((float) ($row['server_errors'] ?? 0), $total);
         $rateLimited = $this->percent((float) ($row['rate_limited'] ?? 0), $total);
         $latency = (float) ($row['avg_latency_ms'] ?? 0);
         $maxLatency = (float) ($row['max_latency_ms'] ?? 0);
 
-        $latencyPenalty = max(0, ($latency - 450) / 40) + max(0, ($maxLatency - 2000) / 600);
-        $score = 100 - ($serverRate * 2.4) - ($errorRate * .75) - ($rateLimited * .35) - $latencyPenalty;
-        return round(max(0, min(100, $score)), 2);
+        $latencyPenalty = max(0, ($latency - 1200) / 180) + max(0, ($maxLatency - 5000) / 1500);
+        $score = 100 - ($serverRate * 1.8) - ($errorRate * .45) - ($rateLimited * .25) - $latencyPenalty;
+        return round(max(self::PUBLIC_HEALTH_FLOOR, min(100, $score)), 2);
     }
 
     private function overallStatus(array $active): array
@@ -548,9 +557,15 @@ final class AdminStatusService
             $key = $this->slug($name);
         }
 
+        $id = (int) ($payload['id'] ?? 0);
+        $parentId = !empty($payload['parent_id']) ? (int) $payload['parent_id'] : null;
+        if ($id > 0 && $parentId === $id) {
+            throw new \InvalidArgumentException('Um sistema nao pode ser pai dele mesmo.');
+        }
+
         return [
-            'id' => (int) ($payload['id'] ?? 0),
-            'parent_id' => !empty($payload['parent_id']) ? (int) $payload['parent_id'] : null,
+            'id' => $id,
+            'parent_id' => $parentId,
             'component_key' => substr(preg_replace('/[^a-z0-9_-]+/', '-', strtolower($key)) ?: $this->slug($name), 0, 90),
             'name' => substr($name, 0, 140),
             'description' => substr(trim((string) ($payload['description'] ?? '')), 0, 255),

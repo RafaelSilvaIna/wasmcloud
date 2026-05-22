@@ -72,22 +72,9 @@ if ($pdo) {
         .brand {
             display: flex;
             align-items: center;
-            gap: 10px;
             font-weight: 760;
             font-size: .98rem;
             letter-spacing: 0;
-        }
-        .brand-mark {
-            display: grid;
-            place-items: center;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            border: 1px solid var(--line);
-            background: var(--surface);
-            color: var(--text);
-            font-weight: 820;
-            font-size: .8rem;
         }
         .updated {
             color: var(--muted);
@@ -135,12 +122,7 @@ if ($pdo) {
         .tone-warn { color: var(--warn); }
         .tone-danger { color: var(--danger); }
         .tone-maintenance { color: var(--maintenance); }
-        .grid {
-            display: grid;
-            grid-template-columns: minmax(0, 1.25fr) minmax(320px, .75fr);
-            gap: 18px;
-            align-items: start;
-        }
+        .status-section { margin-top: 18px; }
         .section {
             border: 1px solid var(--line);
             border-radius: 0;
@@ -219,94 +201,94 @@ if ($pdo) {
         .timeline-item strong { display:block; font-size:.88rem; }
         .timeline-item time { color: var(--muted); font-size:.78rem; }
         .component {
+            display: grid;
+            gap: 14px;
             border: 0;
             border-bottom: 1px solid var(--line);
             border-radius: 0;
             background: transparent;
-            padding: 18px 20px;
+            padding: 20px;
         }
         .component:last-child { border-bottom: 0; }
-        .component summary {
-            cursor: pointer;
-            list-style: none;
-        }
-        .component summary::-webkit-details-marker { display: none; }
         .component-title {
             display: flex;
             justify-content: space-between;
             align-items: center;
             gap: 12px;
-            margin-bottom: 12px;
         }
-        .bars {
-            display: grid;
-            grid-template-columns: repeat(30, minmax(4px, 1fr));
-            gap: 2px;
+        .component-title strong {
+            font-size: 1rem;
+            font-weight: 740;
         }
-        .bar {
-            height: 22px;
-            border-radius: 2px;
-            background: color-mix(in srgb, var(--ok) 72%, white);
+        .component-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--ok);
+            font-size: .86rem;
+            font-weight: 740;
         }
-        .bar.degraded_performance,
-        .bar.api_degradation { background: var(--degraded); }
-        .bar.partial_outage,
-        .bar.network_incident,
-        .bar.third_party_provider_issue { background: var(--warn); }
-        .bar.major_outage,
-        .bar.database_incident,
-        .bar.security_incident { background: var(--danger); }
-        .bar.maintenance { background: var(--maintenance); }
+        .component-status::before {
+            content: "";
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+        .component-metrics {
+            display: flex;
+            gap: 18px;
+            flex-wrap: wrap;
+            color: var(--quiet);
+            font-size: .76rem;
+        }
+        .component-metrics span strong {
+            color: var(--text);
+            font-weight: 680;
+        }
         .subcomponents {
             display: grid;
-            gap: 10px;
-            margin-top: 16px;
-            padding-left: 16px;
+            gap: 0;
+            margin-top: 2px;
+            padding-left: 20px;
             border-left: 1px solid var(--line);
         }
-        .chart-wrap { padding: 20px; }
+        .health-card { overflow: hidden; }
+        .graph-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 28px 32px 8px;
+        }
+        .graph-head h2 {
+            margin: 0;
+            color: var(--text);
+            font-size: 1.28rem;
+            font-weight: 520;
+            letter-spacing: 0;
+        }
+        .graph-head small {
+            color: var(--muted);
+            font-size: 1.28rem;
+            font-weight: 500;
+        }
+        .chart-wrap { padding: 0 32px 20px; }
         .chart {
+            display: block;
             width: 100%;
-            height: 230px;
+            height: 168px;
             border: 0;
-            border-bottom: 1px solid var(--line);
             border-radius: 0;
             background: transparent;
         }
-        .chart-stats {
-            display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 0;
-            margin-top: 16px;
-        }
-        .stat {
-            border-right: 1px solid var(--line);
-            border-radius: 0;
-            padding: 0 14px;
-            background: transparent;
-        }
-        .stat:first-child { padding-left: 0; }
-        .stat:last-child { border-right: 0; padding-right: 0; }
-        .stat strong { display:block; font-size: 1.15rem; font-weight: 760; }
-        .stat span { color: var(--muted); font-size:.78rem; }
         .history-date {
             color: var(--text);
             font-weight: 760;
             margin: 20px 20px 8px;
         }
         .history-filters {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            padding: 16px 20px 2px;
-        }
-        .history-filters select {
-            min-height: 34px;
-            border: 1px solid var(--line);
-            border-radius: 999px;
-            background: var(--surface);
-            color: var(--text);
-            padding: 0 10px;
+            display: none;
         }
         details.history-item {
             border: 0;
@@ -322,8 +304,21 @@ if ($pdo) {
             text-align: center;
         }
         @media (max-width: 900px) {
-            .grid,
-            .chart-stats { grid-template-columns: 1fr; }
+            .graph-head {
+                padding: 20px 20px 4px;
+            }
+            .graph-head h2,
+            .graph-head small {
+                font-size: 1rem;
+            }
+            .chart-wrap {
+                padding: 0 20px 18px;
+            }
+            .chart {
+                height: auto;
+                aspect-ratio: 860 / 168;
+                min-height: 118px;
+            }
             .system-badge { align-items: flex-start; }
             .system-badge h1 { font-size: 2.35rem; }
             .topbar { align-items: flex-start; flex-direction: column; margin-bottom: 38px; }
@@ -333,7 +328,7 @@ if ($pdo) {
 <body>
     <main class="status-shell">
         <header class="topbar">
-            <div class="brand"><span class="brand-mark">PC</span><span>PipoCine Status</span></div>
+            <div class="brand">PipoCine Status</div>
             <div class="updated" id="updated-at">Atualizando...</div>
         </header>
 
@@ -347,28 +342,15 @@ if ($pdo) {
             </div>
         </section>
 
-        <section class="grid">
-            <div class="section">
-                <div class="section-head">
-                    <h2>Incidente ativo</h2>
-                    <small id="active-count"></small>
-                </div>
-                <div class="active-list" id="active-incidents"></div>
+        <section class="section status-section" id="active-section" hidden>
+            <div class="section-head">
+                <h2>Incidente ativo</h2>
+                <small id="active-count"></small>
             </div>
-
-            <aside class="section">
-                <div class="section-head">
-                    <h2>Saude operacional</h2>
-                    <small id="health-score"></small>
-                </div>
-                <div class="chart-wrap">
-                    <svg class="chart" id="health-chart" role="img" aria-label="System Health Score"></svg>
-                    <div class="chart-stats" id="health-stats"></div>
-                </div>
-            </aside>
+            <div class="active-list" id="active-incidents"></div>
         </section>
 
-        <section class="section" style="margin-top:18px">
+        <section class="section status-section">
             <div class="section-head">
                 <h2>Componentes</h2>
                 <small>Ultimos 30 dias</small>
@@ -376,46 +358,25 @@ if ($pdo) {
             <div class="component-list" id="component-list"></div>
         </section>
 
-        <section class="section" style="margin-top:18px">
+        <section class="section status-section">
             <div class="section-head">
                 <h2>Past Incidents</h2>
                 <small>Historico publico</small>
             </div>
             <form class="history-filters" id="history-filters">
-                <select name="component"><option value="">Componente</option></select>
-                <select name="impact">
-                    <option value="">Severidade</option>
-                    <option value="degraded_performance">Degraded Performance</option>
-                    <option value="partial_outage">Partial Outage</option>
-                    <option value="major_outage">Major Outage</option>
-                    <option value="maintenance">Maintenance</option>
-                    <option value="security_incident">Security Incident</option>
-                    <option value="api_degradation">API Degradation</option>
-                    <option value="database_incident">Database Incident</option>
-                </select>
-                <select name="status">
-                    <option value="">Status</option>
-                    <option value="resolved">Resolved</option>
-                    <option value="archived">Archived</option>
-                </select>
-                <select name="type">
-                    <option value="">Tipo</option>
-                    <option value="incident">Incident</option>
-                    <option value="maintenance">Maintenance</option>
-                    <option value="security">Security</option>
-                    <option value="api">API</option>
-                    <option value="database">Database</option>
-                    <option value="third_party">Third-party</option>
-                </select>
-                <select name="period">
-                    <option value="21">21 dias</option>
-                    <option value="7">7 dias</option>
-                    <option value="30">30 dias</option>
-                    <option value="60">60 dias</option>
-                    <option value="90">90 dias</option>
-                </select>
+                <input type="hidden" name="period" value="90">
             </form>
             <div class="history-list" id="history-list"></div>
+        </section>
+
+        <section class="section status-section health-card">
+            <div class="graph-head">
+                <h2>Saude operacional</h2>
+                <small id="health-score"></small>
+            </div>
+            <div class="chart-wrap">
+                <svg class="chart" id="health-chart" role="img" aria-label="System Health Score"></svg>
+            </div>
         </section>
     </main>
 
@@ -461,13 +422,16 @@ if ($pdo) {
         }
 
         function renderActive() {
+            const section = document.getElementById('active-section');
             const root = document.getElementById('active-incidents');
             const incidents = data.active_incidents || [];
             document.getElementById('active-count').textContent = incidents.length ? `${incidents.length} em andamento` : '';
             if (!incidents.length) {
-                root.innerHTML = '<div class="empty">No incidents reported</div>';
+                section.hidden = true;
+                root.innerHTML = '';
                 return;
             }
+            section.hidden = false;
             root.innerHTML = incidents.map(incident => incidentHtml(incident, true)).join('');
         }
 
@@ -506,22 +470,25 @@ if ($pdo) {
         }
 
         function componentHtml(component) {
-            const bars = (component.bars || []).map(bar => {
-                const title = `${bar.date} · ${bar.label} · uptime ${bar.uptime_pct}% · impacto ${bar.duration_minutes}min`;
-                return `<span class="bar ${esc(bar.status)}" title="${esc(title)}"></span>`;
-            }).join('');
             const children = (component.children || []).map(componentHtml).join('');
+            const status = (component.current_status || 'operational').replaceAll('_', ' ');
+            const bars = component.bars || [];
+            const impacted = bars.filter(bar => bar.status && bar.status !== 'operational').length;
+            const uptime = bars.length
+                ? (bars.reduce((total, bar) => total + Number(bar.uptime_pct || 100), 0) / bars.length).toFixed(2)
+                : '100.00';
             return `
-                <details class="component" ${children ? 'open' : ''}>
-                    <summary>
-                        <div class="component-title">
-                            <strong>${esc(component.name)}</strong>
-                            <span class="chip">${esc((component.current_status || 'operational').replaceAll('_', ' '))}</span>
-                        </div>
-                        <div class="bars">${bars}</div>
-                    </summary>
+                <div class="component">
+                    <div class="component-title">
+                        <strong>${esc(component.name)}</strong>
+                        <span class="component-status">${esc(status)}</span>
+                    </div>
+                    <div class="component-metrics">
+                        <span><strong>${uptime}%</strong> uptime em 30 dias</span>
+                        <span><strong>${impacted}</strong> dias com impacto</span>
+                    </div>
                     ${children ? `<div class="subcomponents">${children}</div>` : ''}
-                </details>
+                </div>
             `;
         }
 
@@ -530,27 +497,37 @@ if ($pdo) {
             const series = health.series || [];
             document.getElementById('health-score').textContent = `${Number(health.current_score || 0).toFixed(1)}%`;
             const svg = document.getElementById('health-chart');
-            const width = 760;
-            const height = 260;
+            const width = 860;
+            const height = 168;
             svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+            const pad = { left: 12, right: 54, top: 12, bottom: 28 };
+            const plotW = width - pad.left - pad.right;
+            const plotH = height - pad.top - pad.bottom;
             const points = series.map((row, index) => {
-                const x = series.length <= 1 ? 24 : 24 + index * ((width - 48) / (series.length - 1));
-                const y = height - 28 - (Number(row.score || 0) / 100) * (height - 56);
-                return `${x},${y}`;
-            }).join(' ');
-            const grid = [25, 50, 75, 100].map(v => {
-                const y = height - 28 - (v / 100) * (height - 56);
-                return `<line x1="24" y1="${y}" x2="${width - 24}" y2="${y}" stroke="#e5e7eb"/><text x="26" y="${y - 5}" fill="#9ca3af" font-size="11">${v}%</text>`;
+                const x = series.length <= 1 ? pad.left : pad.left + index * (plotW / (series.length - 1));
+                const y = pad.top + (100 - Number(row.score || 0)) / 100 * plotH;
+                return { x, y, row };
+            });
+            const pointString = points.map(p => `${p.x},${p.y}`).join(' ');
+            const bars = points.map(p => {
+                const err = Math.min(100, Number(p.row.error_rate_pct || 0));
+                if (err <= 0) return '';
+                const h = Math.max(2, err / 100 * 30);
+                return `<rect x="${p.x - 2}" y="${height - pad.bottom - h}" width="4" height="${h}" rx="2" fill="#d8dde6"><title>${esc(p.row.date)} · erro ${err.toFixed(2)}%</title></rect>`;
+            }).join('');
+            const grid = [0, 50, 75, 100].map(v => {
+                const y = pad.top + (100 - v) / 100 * plotH;
+                return `<line x1="${pad.left}" y1="${y}" x2="${width - pad.right}" y2="${y}" stroke="#e9edf3"/><text x="${width - pad.right + 8}" y="${y + 4}" fill="#64748b" font-size="13">${v}</text>`;
+            }).join('');
+            const labels = points.filter((_, index) => index === 0 || index === points.length - 1 || index === Math.floor(points.length / 2)).map(p => {
+                const label = new Date(p.row.date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+                return `<text x="${p.x}" y="${height - 10}" text-anchor="middle" fill="#64748b" font-size="13">${esc(label)}</text>`;
             }).join('');
             svg.innerHTML = `
                 ${grid}
-                <polyline points="${points}" fill="none" stroke="#2563eb" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-            `;
-            const last = series[series.length - 1] || {};
-            document.getElementById('health-stats').innerHTML = `
-                <div class="stat"><strong>${Number(last.avg_latency_ms || 0).toFixed(0)} ms</strong><span>Latencia media</span></div>
-                <div class="stat"><strong>${Number(last.error_rate_pct || 0).toFixed(2)}%</strong><span>Taxa de erro</span></div>
-                <div class="stat"><strong>${bytes(last.total_bytes || 0)}</strong><span>Banda total</span></div>
+                ${bars}
+                <polyline points="${pointString}" fill="none" stroke="#5267ff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+                ${labels}
             `;
         }
 
@@ -559,7 +536,7 @@ if ($pdo) {
             const history = data.history || {};
             const filters = Object.fromEntries(new FormData(document.getElementById('history-filters')).entries());
             const cutoff = new Date();
-            cutoff.setDate(cutoff.getDate() - Number(filters.period || 21));
+            cutoff.setDate(cutoff.getDate() - Number(filters.period || 90));
             const days = Object.keys(history).filter(day => new Date(day + 'T23:59:59') >= cutoff);
             if (!days.length) {
                 root.innerHTML = '<div class="empty">No incidents reported</div>';
@@ -593,17 +570,6 @@ if ($pdo) {
             root.innerHTML = html || '<div class="empty">No incidents reported</div>';
         }
 
-        function renderHistoryFilters() {
-            const select = document.querySelector('#history-filters select[name="component"]');
-            const current = select.value;
-            const names = new Set();
-            Object.values(data.history || {}).flat().forEach(incident => {
-                (incident.component_names || []).forEach(name => names.add(name));
-            });
-            select.innerHTML = '<option value="">Componente</option>' + Array.from(names).sort().map(name => `<option value="${esc(name)}">${esc(name)}</option>`).join('');
-            select.value = current;
-        }
-
         function tickDurations() {
             document.querySelectorAll('[data-duration-start]').forEach(node => {
                 const end = node.dataset.durationEnd;
@@ -618,7 +584,6 @@ if ($pdo) {
             renderActive();
             renderComponents();
             renderHealth();
-            renderHistoryFilters();
             renderHistory();
             tickDurations();
         }
@@ -635,7 +600,6 @@ if ($pdo) {
         }
 
         renderAll();
-        document.getElementById('history-filters').addEventListener('change', renderHistory);
         setInterval(tickDurations, 30000);
         setInterval(refresh, 60000);
     })();

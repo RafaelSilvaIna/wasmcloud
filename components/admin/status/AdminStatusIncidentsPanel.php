@@ -45,6 +45,12 @@ final class AdminStatusIncidentsPanel
                     gap: 16px;
                     align-items: start;
                 }
+                .asi-systems-grid {
+                    display: grid;
+                    grid-template-columns: minmax(0, 1fr) minmax(340px, .55fr);
+                    gap: 16px;
+                    align-items: start;
+                }
                 .asi-panel {
                     border: 1px solid rgba(148,163,184,.16);
                     border-radius: 10px;
@@ -130,6 +136,33 @@ final class AdminStatusIncidentsPanel
                 .asi-event strong { color:#fff; }
                 .asi-event small { display:block; margin-top:4px; color:#64748b; }
                 .asi-empty { padding:24px; color:#94a3b8; text-align:center; }
+                .asi-systems-list { display:grid; gap:0; }
+                .asi-system-row {
+                    display:grid;
+                    grid-template-columns: minmax(0, 1fr) auto;
+                    gap:12px;
+                    align-items:center;
+                    padding:14px;
+                    border-bottom:1px solid rgba(148,163,184,.1);
+                }
+                .asi-system-row:last-child { border-bottom:0; }
+                .asi-system-row.child { margin-left:26px; border-left:1px solid rgba(148,163,184,.14); }
+                .asi-system-name { color:#fff; font-weight:800; }
+                .asi-system-meta { display:block; margin-top:5px; color:#64748b; font-size:.78rem; }
+                .asi-system-dot {
+                    display:inline-flex;
+                    width:9px;
+                    height:9px;
+                    margin-right:8px;
+                    border-radius:50%;
+                    background:#38bdf8;
+                }
+                .asi-system-dot.private { background:#64748b; }
+                .asi-component-form {
+                    display:grid;
+                    gap:12px;
+                    padding:14px;
+                }
                 .asi-modal[hidden] { display:none; }
                 .asi-modal {
                     position:fixed;
@@ -167,6 +200,7 @@ final class AdminStatusIncidentsPanel
                 .asi-dialog-actions { display:flex; justify-content:flex-end; flex-wrap:wrap; gap:10px; margin-top:4px; }
                 @media (max-width: 1180px) {
                     .asi-layout,
+                    .asi-systems-grid,
                     .asi-filters,
                     .asi-form-grid,
                     .asi-checks { grid-template-columns:1fr; }
@@ -256,6 +290,61 @@ final class AdminStatusIncidentsPanel
                         </div>
                     </aside>
                 </div>
+
+                <section class="asi-systems-grid">
+                    <article class="asi-panel">
+                        <div class="asi-panel-head">
+                            <strong>Sistemas e subsistemas</strong>
+                            <button class="asi-btn ghost" type="button" id="asi-new-system"><i data-lucide="plus"></i>Novo sistema</button>
+                        </div>
+                        <div class="asi-systems-list" id="asi-systems-list">
+                            <div class="asi-empty">Carregando sistemas...</div>
+                        </div>
+                    </article>
+
+                    <aside class="asi-panel">
+                        <div class="asi-panel-head">
+                            <strong>Editar sistema</strong>
+                            <span class="asi-badge">Componentes publicos</span>
+                        </div>
+                        <form class="asi-component-form" id="asi-component-form">
+                            <input type="hidden" name="id">
+                            <label>Nome
+                                <input class="asi-input" name="name" placeholder="Edge Network" required maxlength="140">
+                            </label>
+                            <label>Chave
+                                <input class="asi-input" name="component_key" placeholder="edge-network" maxlength="90">
+                            </label>
+                            <label>Sistema pai
+                                <select class="asi-select" name="parent_id" id="asi-component-parent"><option value="">Nenhum</option></select>
+                            </label>
+                            <label>Descricao
+                                <textarea class="asi-textarea" name="description" placeholder="Descricao curta para administracao e status publico."></textarea>
+                            </label>
+                            <div class="asi-form-grid">
+                                <label>Ordem
+                                    <input class="asi-input" type="number" name="sort_order" value="0">
+                                </label>
+                                <label>Publico
+                                    <select class="asi-select" name="is_public">
+                                        <option value="1">Sim</option>
+                                        <option value="0">Nao</option>
+                                    </select>
+                                </label>
+                                <label>Critico
+                                    <select class="asi-select" name="is_critical">
+                                        <option value="1">Sim</option>
+                                        <option value="0">Nao</option>
+                                    </select>
+                                </label>
+                            </div>
+                            <div class="asi-dialog-actions">
+                                <button class="asi-btn ghost" type="button" id="asi-component-clear">Limpar</button>
+                                <button class="asi-btn primary" type="submit"><i data-lucide="save"></i>Salvar sistema</button>
+                            </div>
+                        </form>
+                    </aside>
+                </section>
             </div>
 
             <div class="asi-modal" id="asi-incident-modal" hidden>
@@ -451,7 +540,9 @@ final class AdminStatusIncidentsPanel
                     state.components = components.components || [];
                     state.incidents = incidents.incidents || [];
                     renderFilters();
+                    renderComponentParentOptions();
                     renderComponentChecks();
+                    renderSystems();
                     renderTable();
                     if (state.selected) {
                         state.selected = state.incidents.find(i => Number(i.id) === Number(state.selected.id)) || state.selected;
@@ -466,6 +557,13 @@ final class AdminStatusIncidentsPanel
                     select.value = current;
                 }
 
+                function renderComponentParentOptions() {
+                    const select = document.getElementById('asi-component-parent');
+                    const current = select.value;
+                    select.innerHTML = '<option value="">Nenhum</option>' + state.components.map(c => `<option value="${Number(c.id)}">${esc(c.parent_name ? c.parent_name + ' / ' + c.name : c.name)}</option>`).join('');
+                    select.value = current;
+                }
+
                 function renderComponentChecks(selected = []) {
                     const selectedIds = selected.map(Number);
                     document.getElementById('asi-component-checks').innerHTML = state.components.map(c => `
@@ -474,6 +572,35 @@ final class AdminStatusIncidentsPanel
                             <span>${esc(c.parent_name ? c.parent_name + ' / ' + c.name : c.name)}</span>
                         </label>
                     `).join('');
+                }
+
+                function renderSystems() {
+                    const root = document.getElementById('asi-systems-list');
+                    const byParent = new Map();
+                    state.components.forEach(component => {
+                        const parent = Number(component.parent_id || 0);
+                        if (!byParent.has(parent)) byParent.set(parent, []);
+                        byParent.get(parent).push(component);
+                    });
+                    const rows = [];
+                    const draw = (component, child = false) => {
+                        rows.push(`
+                            <div class="asi-system-row ${child ? 'child' : ''}">
+                                <div>
+                                    <span class="asi-system-name"><i class="asi-system-dot ${Number(component.is_public) ? '' : 'private'}"></i>${esc(component.name)}</span>
+                                    <span class="asi-system-meta">${esc(component.component_key)} · ${Number(component.is_public) ? 'publico' : 'privado'} · ${Number(component.is_critical) ? 'critico' : 'normal'}</span>
+                                </div>
+                                <div class="asi-mini">
+                                    <button class="asi-btn ghost" type="button" data-system-action="edit" data-id="${Number(component.id)}"><i data-lucide="pencil"></i></button>
+                                    <button class="asi-btn danger" type="button" data-system-action="delete" data-id="${Number(component.id)}"><i data-lucide="trash-2"></i></button>
+                                </div>
+                            </div>
+                        `);
+                        (byParent.get(Number(component.id)) || []).forEach(item => draw(item, true));
+                    };
+                    (byParent.get(0) || []).forEach(item => draw(item, false));
+                    root.innerHTML = rows.join('') || '<div class="asi-empty">Nenhum sistema cadastrado.</div>';
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
                 }
 
                 function renderTable() {
@@ -570,6 +697,29 @@ final class AdminStatusIncidentsPanel
                     document.querySelectorAll('.asi-modal').forEach(modal => modal.hidden = true);
                 }
 
+                function resetComponentForm() {
+                    const form = document.getElementById('asi-component-form');
+                    form.reset();
+                    form.id.value = '';
+                    form.is_public.value = '1';
+                    form.is_critical.value = '1';
+                    form.sort_order.value = '0';
+                }
+
+                function fillComponentForm(id) {
+                    const component = state.components.find(item => Number(item.id) === Number(id));
+                    if (!component) return;
+                    const form = document.getElementById('asi-component-form');
+                    form.id.value = component.id || '';
+                    form.name.value = component.name || '';
+                    form.component_key.value = component.component_key || '';
+                    form.parent_id.value = component.parent_id || '';
+                    form.description.value = component.description || '';
+                    form.sort_order.value = component.sort_order || 0;
+                    form.is_public.value = Number(component.is_public) ? '1' : '0';
+                    form.is_critical.value = Number(component.is_critical) ? '1' : '0';
+                }
+
                 function openUpdateModal() {
                     if (!state.selected) return;
                     const form = document.getElementById('asi-update-form');
@@ -608,9 +758,30 @@ final class AdminStatusIncidentsPanel
 
                 function bind() {
                     document.getElementById('asi-new').addEventListener('click', () => openIncidentModal());
+                    document.getElementById('asi-new-system').addEventListener('click', resetComponentForm);
                     document.getElementById('asi-refresh').addEventListener('click', load);
                     document.getElementById('asi-publish').addEventListener('click', openUpdateModal);
                     document.getElementById('asi-filters').addEventListener('submit', event => { event.preventDefault(); load(); });
+                    document.getElementById('asi-systems-list').addEventListener('click', async event => {
+                        const button = event.target.closest('[data-system-action]');
+                        if (!button) return;
+                        const id = Number(button.dataset.id);
+                        if (button.dataset.systemAction === 'edit') {
+                            fillComponentForm(id);
+                            return;
+                        }
+                        if (!confirm('Excluir este sistema/subsistema?')) return;
+                        button.disabled = true;
+                        try {
+                            await req(`/components/${id}/delete`, { method:'POST', body: '{}' });
+                            await load();
+                            resetComponentForm();
+                        } catch (error) {
+                            alert(error.message);
+                        } finally {
+                            button.disabled = false;
+                        }
+                    });
                     document.getElementById('asi-body').addEventListener('click', async event => {
                         const button = event.target.closest('[data-asi-action]');
                         if (!button) return;
@@ -642,6 +813,25 @@ final class AdminStatusIncidentsPanel
                         try {
                             await req(id ? `/incidents/${id}/update` : '/incidents', { method:'POST', body: JSON.stringify(data) });
                             closeModals();
+                            await load();
+                        } catch (error) {
+                            alert(error.message);
+                        } finally {
+                            button.disabled = false;
+                        }
+                    });
+                    document.getElementById('asi-component-clear').addEventListener('click', resetComponentForm);
+                    document.getElementById('asi-component-form').addEventListener('submit', async function (event) {
+                        event.preventDefault();
+                        const data = Object.fromEntries(new FormData(this).entries());
+                        data.is_public = data.is_public === '1';
+                        data.is_critical = data.is_critical === '1';
+                        data.parent_id = data.parent_id || null;
+                        const button = this.querySelector('button[type="submit"]');
+                        button.disabled = true;
+                        try {
+                            await req('/components', { method:'POST', body: JSON.stringify(data) });
+                            resetComponentForm();
                             await load();
                         } catch (error) {
                             alert(error.message);
