@@ -52,7 +52,7 @@ use Controllers\V2\SearchController;
 // ResponseUtil é uma classe global — sem namespace, acessível diretamente
 
 ApiHook::init();
-ResponseCache::bootstrapForRequest();
+// Cache global com invalidacao por tags roda no bootstrap principal.
 
 try {
     $requestUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);

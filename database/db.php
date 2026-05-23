@@ -90,6 +90,15 @@ function applyApiPerformanceMiddleware(): void
     }
 }
 
+function applyApiAccessHook(): void
+{
+    $hook = __DIR__ . '/../hooks/ApiAccessHook.php';
+    if (is_file($hook)) {
+        require_once $hook;
+        \ApiAccessHook::boot();
+    }
+}
+
 // ======================
 // RATE LIMIT
 // ======================
@@ -233,6 +242,7 @@ if (defined('PIPOCINE_DB_CONFIG_ONLY') && PIPOCINE_DB_CONFIG_ONLY === true) {
 // ======================
 applyRateLimit();
 initSession();
+applyApiAccessHook();
 applyApiPerformanceMiddleware();
 
 // DB connections

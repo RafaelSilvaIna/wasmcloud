@@ -9,6 +9,7 @@ final class ApiPerformanceMiddleware
     private const TARGET_MS = 300;
     private const CACHE_ROOT = __DIR__ . '/../data/cache/api-performance';
     private const STALE_SECONDS = 120;
+    private const VERSION_FILE = self::CACHE_ROOT . '/versions.json';
 
     private static bool $booted = false;
     private static float $startedAt = 0.0;
@@ -33,6 +34,7 @@ final class ApiPerformanceMiddleware
         self::ensureCacheRoot();
 
         if ($method !== 'GET' && $method !== 'HEAD' && $method !== 'OPTIONS') {
+            self::bumpTagsForMutation($path);
             self::purgeCurrentScope();
         }
 
@@ -46,6 +48,35 @@ final class ApiPerformanceMiddleware
         ob_start(static function (string $body): string {
             return self::finalize($body);
         });
+    }
+
+    public static function invalidateTags(array $tags): void
+    {
+        $normalized = [];
+        foreach ($tags as $tag) {
+            $tag = preg_replace('/[^a-zA-Z0-9:_-]/', '', (string) $tag);
+            if ($tag !== '') {
+                $normalized[] = $tag;
+            }
+        }
+
+        $normalized = array_values(array_unique($normalized));
+        if (!$normalized) {
+            return;
+        }
+
+        $versions = self::readVersions();
+        $now = time();
+        foreach ($normalized as $tag) {
+            $versions[$tag] = $now;
+        }
+
+        self::writeVersions($versions);
+    }
+
+    public static function invalidateCatalog(): void
+    {
+        self::invalidateTags(['api', 'catalog', 'search']);
     }
 
     private static function finalize(string $body): string
@@ -73,6 +104,8 @@ final class ApiPerformanceMiddleware
         }
 
         $scope = self::scope();
+        $tags = self::tagsForPath($path);
+        $versions = self::versionSignature($tags);
         $query = $_GET;
         ksort($query);
 
@@ -82,6 +115,7 @@ final class ApiPerformanceMiddleware
             http_build_query($query),
             $scope,
             self::profileVariant(),
+            $versions,
         ]));
 
         $scopeDir = self::CACHE_ROOT . '/' . hash('sha256', $scope);
@@ -90,6 +124,8 @@ final class ApiPerformanceMiddleware
             'path' => $path,
             'ttl' => $ttl,
             'scope' => $scope,
+            'tags' => $tags,
+            'versions' => $versions,
             'scope_dir' => $scopeDir,
             'file' => $scopeDir . '/' . $key . '.json',
         ];
@@ -126,6 +162,7 @@ final class ApiPerformanceMiddleware
                 header('Content-Type: application/json; charset=utf-8');
                 header('Cache-Control: private, max-age=' . (int) $context['ttl'] . ', stale-while-revalidate=' . self::STALE_SECONDS);
                 header('Vary: Cookie, Authorization');
+                header('Cache-Tag: ' . implode(',', (array) ($context['tags'] ?? [])));
                 self::cacheHeader($status);
                 header('Server-Timing: app;dur=0;desc="origin-cache"');
                 header('X-Response-Time: 0ms');
@@ -166,6 +203,8 @@ final class ApiPerformanceMiddleware
             'expires_at' => $now + $ttl,
             'stale_until' => $now + $ttl + self::STALE_SECONDS,
             'origin_duration_ms' => $durationMs,
+            'tags' => $context['tags'] ?? [],
+            'versions' => $context['versions'] ?? '',
             'etag' => '"' . sha1($body) . '"',
         ];
 
@@ -175,9 +214,12 @@ final class ApiPerformanceMiddleware
         @rename($tmp, $file);
 
         if (!headers_sent()) {
+            header_remove('Pragma');
+            header_remove('Expires');
             header('ETag: ' . $entry['etag']);
             header('Cache-Control: private, max-age=' . $ttl . ', stale-while-revalidate=' . self::STALE_SECONDS, true);
             header('Vary: Cookie, Authorization', false);
+            header('Cache-Tag: ' . implode(',', (array) ($context['tags'] ?? [])), false);
             self::cacheHeader('MISS-STORE');
         }
     }
@@ -234,6 +276,145 @@ final class ApiPerformanceMiddleware
         }
 
         return false;
+    }
+
+    private static function tagsForPath(string $path): array
+    {
+        $tags = ['api'];
+
+        if (str_starts_with($path, '/api/v2/')) {
+            $tags[] = 'catalog';
+        }
+        if (str_starts_with($path, '/api/v2/busca')) {
+            $tags[] = 'search';
+        }
+        if (str_starts_with($path, '/api/v3/comments')) {
+            $tags[] = 'comments';
+            $contentId = (string) ($_GET['content_id'] ?? $_GET['id'] ?? '');
+            if ($contentId !== '') {
+                $tags[] = 'comments:' . preg_replace('/[^a-zA-Z0-9_-]/', '', $contentId);
+            }
+        }
+        if (str_starts_with($path, '/api/v3/library')
+            || str_starts_with($path, '/api/v3/watch-progress')
+            || str_starts_with($path, '/api/v3/watched-episodes')
+        ) {
+            $tags[] = 'user';
+            $tags[] = 'profile';
+        }
+        if (str_starts_with($path, '/api/profiles/')) {
+            $tags[] = 'profiles';
+            $tags[] = 'user';
+        }
+        if (str_starts_with($path, '/api/v4/subscription/')
+            || str_starts_with($path, '/api/v4/account/')
+            || str_starts_with($path, '/api/v4/box/')
+            || str_starts_with($path, '/api/v4/family/')
+        ) {
+            $tags[] = 'user';
+        }
+        if (str_starts_with($path, '/api/admin/')) {
+            $tags[] = 'admin';
+        }
+        if (str_starts_with($path, '/api/ads/')) {
+            $tags[] = 'ads';
+        }
+        if (str_starts_with($path, '/api/devices/')) {
+            $tags[] = 'devices';
+            $tags[] = 'user';
+        }
+
+        return array_values(array_unique($tags));
+    }
+
+    private static function bumpTagsForMutation(string $path): void
+    {
+        $tags = self::mutationTags($path);
+        if (!$tags) {
+            return;
+        }
+
+        self::invalidateTags($tags);
+
+        if (!headers_sent()) {
+            header('X-Cache-Invalidated: ' . implode(',', $tags), false);
+        }
+    }
+
+    private static function mutationTags(string $path): array
+    {
+        $tags = ['api'];
+
+        if (str_starts_with($path, '/api/admin/')) {
+            $tags = array_merge($tags, ['admin', 'catalog', 'search', 'user', 'profiles', 'ads', 'devices']);
+        } elseif (str_starts_with($path, '/api/v2/')) {
+            $tags = array_merge($tags, ['catalog', 'search']);
+        } elseif (str_starts_with($path, '/api/v3/comments')) {
+            $tags[] = 'comments';
+        } elseif (str_starts_with($path, '/api/v3/library')
+            || str_starts_with($path, '/api/v3/watch-progress')
+            || str_starts_with($path, '/api/v3/watched-episodes')
+        ) {
+            $tags = array_merge($tags, ['user', 'profile']);
+        } elseif (str_starts_with($path, '/api/profiles/')) {
+            $tags = array_merge($tags, ['profiles', 'user']);
+        } elseif (str_starts_with($path, '/api/v4/subscription/')
+            || str_starts_with($path, '/api/v4/account/')
+            || str_starts_with($path, '/api/v4/box/')
+            || str_starts_with($path, '/api/v4/family/')
+        ) {
+            $tags[] = 'user';
+        } elseif (str_starts_with($path, '/api/ads/')) {
+            $tags[] = 'ads';
+        } elseif (str_starts_with($path, '/api/devices/')) {
+            $tags = array_merge($tags, ['devices', 'user']);
+        }
+
+        return array_values(array_unique($tags));
+    }
+
+    private static function versionSignature(array $tags): string
+    {
+        $versions = self::readVersions();
+        $parts = [];
+        foreach ($tags as $tag) {
+            $parts[] = $tag . ':' . (int) ($versions[$tag] ?? 1);
+        }
+
+        return implode(',', $parts);
+    }
+
+    private static function readVersions(): array
+    {
+        if (!is_file(self::VERSION_FILE)) {
+            return [];
+        }
+
+        $raw = @file_get_contents(self::VERSION_FILE);
+        $versions = is_string($raw) && $raw !== '' ? json_decode($raw, true) : null;
+        return is_array($versions) ? $versions : [];
+    }
+
+    private static function writeVersions(array $versions): void
+    {
+        self::ensureCacheRoot();
+        $lock = self::VERSION_FILE . '.lock';
+        $handle = @fopen($lock, 'c');
+        if (!$handle) {
+            return;
+        }
+
+        try {
+            flock($handle, LOCK_EX);
+            $current = self::readVersions();
+            $merged = array_merge($current, $versions);
+            $tmp = self::VERSION_FILE . '.' . getmypid() . '.tmp';
+            @file_put_contents($tmp, json_encode($merged, JSON_UNESCAPED_SLASHES), LOCK_EX);
+            @rename($tmp, self::VERSION_FILE);
+        } finally {
+            flock($handle, LOCK_UN);
+            fclose($handle);
+        }
     }
 
     private static function purgeCurrentScope(): void

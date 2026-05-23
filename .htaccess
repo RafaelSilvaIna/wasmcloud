@@ -11,6 +11,14 @@ DirectoryIndex index.php index.html
     Header unset X-Powered-By
 </IfModule>
 
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE application/json text/plain text/html text/css text/javascript application/javascript application/x-javascript image/svg+xml
+</IfModule>
+
+<IfModule mod_brotli.c>
+    AddOutputFilterByType BROTLI_COMPRESS application/json text/plain text/html text/css text/javascript application/javascript image/svg+xml
+</IfModule>
+
 <IfModule mod_rewrite.c>
     RewriteEngine On
 
