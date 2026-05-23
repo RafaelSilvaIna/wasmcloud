@@ -81,6 +81,15 @@ function initSession(): void
     }
 }
 
+function applyApiPerformanceMiddleware(): void
+{
+    $middleware = __DIR__ . '/../middleware/ApiPerformanceMiddleware.php';
+    if (is_file($middleware)) {
+        require_once $middleware;
+        \Middleware\ApiPerformanceMiddleware::boot();
+    }
+}
+
 // ======================
 // RATE LIMIT
 // ======================
@@ -224,6 +233,7 @@ if (defined('PIPOCINE_DB_CONFIG_ONLY') && PIPOCINE_DB_CONFIG_ONLY === true) {
 // ======================
 applyRateLimit();
 initSession();
+applyApiPerformanceMiddleware();
 
 // DB connections
 $pdoCineveo = createPDO(DB_CINE['name'], DB_CINE['user'], DB_CINE['pass']);
