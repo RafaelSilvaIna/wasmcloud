@@ -209,10 +209,14 @@ final class ClientRequestGuard
 
         return match ($group) {
             'auth' => ['window' => 10, 'burst' => 60, 'duplicate' => $mutating ? 12 : 60, 'concurrency' => 8, 'retry' => 3],
-            'admin' => ['window' => 10, 'burst' => 90, 'duplicate' => $mutating ? 18 : 90, 'concurrency' => 10, 'retry' => 3],
+            'admin' => $mutating
+                ? ['window' => 10, 'burst' => 140, 'duplicate' => 18, 'concurrency' => 16, 'retry' => 2]
+                : ['window' => 10, 'burst' => 360, 'duplicate' => 360, 'concurrency' => 48, 'retry' => 1],
             'stream', 'cdn' => ['window' => 10, 'burst' => 220, 'duplicate' => 90, 'concurrency' => 40, 'retry' => 2],
             'search' => ['window' => 10, 'burst' => 120, 'duplicate' => 40, 'concurrency' => 20, 'retry' => 2],
             'catalog' => ['window' => 10, 'burst' => 420, 'duplicate' => 140, 'concurrency' => 60, 'retry' => 1],
+            'profiles' => ['window' => 10, 'burst' => 180, 'duplicate' => $mutating ? 18 : 90, 'concurrency' => 18, 'retry' => 2],
+            'support' => ['window' => 10, 'burst' => 220, 'duplicate' => $mutating ? 28 : 120, 'concurrency' => 28, 'retry' => 2],
             'api' => ['window' => 10, 'burst' => 240, 'duplicate' => $mutating ? 35 : 120, 'concurrency' => 30, 'retry' => 2],
             default => ['window' => 10, 'burst' => 180, 'duplicate' => $mutating ? 24 : 90, 'concurrency' => 25, 'retry' => 1],
         };
@@ -225,7 +229,7 @@ final class ClientRequestGuard
 
     private static function shouldCheckConcurrency(string $group, bool $mutating): bool
     {
-        return $mutating || in_array($group, ['auth', 'admin'], true);
+        return $mutating || $group === 'auth';
     }
 
     private static function routeGroup(string $path): string
@@ -236,7 +240,8 @@ final class ClientRequestGuard
             str_starts_with($path, '/api/v4/qr-login/'),
             str_starts_with($path, '/login') => 'auth',
             str_starts_with($path, '/api/admin/'),
-            str_starts_with($path, '/admin') => 'admin',
+            str_starts_with($path, '/admin'),
+            str_starts_with($path, '/d2xs8d3sdfsegequ6249f') => 'admin',
             str_starts_with($path, '/cdn/') => 'cdn',
             str_starts_with($path, '/player'),
             str_starts_with($path, '/api/v2/exhibition'),
@@ -247,6 +252,9 @@ final class ClientRequestGuard
             str_starts_with($path, '/api/v2/trending'),
             str_starts_with($path, '/api/v2/plataforma'),
             str_starts_with($path, '/api/v2/info') => 'catalog',
+            str_starts_with($path, '/api/profiles/') => 'profiles',
+            str_starts_with($path, '/api/suporte'),
+            str_starts_with($path, '/suporte') => 'support',
             str_starts_with($path, '/api/') => 'api',
             default => 'global',
         };

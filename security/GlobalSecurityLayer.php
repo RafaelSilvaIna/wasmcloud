@@ -351,7 +351,8 @@ final class GlobalSecurityLayer
             return true;
         }
 
-        return $this->isCriticalRoute($routeGroup) || $this->isMutatingRequest($method);
+        return $this->isCriticalRoute($routeGroup)
+            || ($this->isHighRiskMutationRoute($routeGroup) && $this->isMutatingRequest($method));
     }
 
     private function shouldApplyQuarantineDelay(string $routeGroup, string $method): bool
@@ -370,7 +371,7 @@ final class GlobalSecurityLayer
             return true;
         }
 
-        return $this->isCriticalRoute($routeGroup)
+        return ($this->isCriticalRoute($routeGroup) || $this->isHighRiskMutationRoute($routeGroup))
             && $this->isMutatingRequest($method)
             && $score >= SecurityConfig::SCORE_BLOCK;
     }
@@ -386,7 +387,7 @@ final class GlobalSecurityLayer
             return true;
         }
 
-        return $this->isCriticalRoute($routeGroup)
+        return ($this->isCriticalRoute($routeGroup) || $this->isHighRiskMutationRoute($routeGroup))
             && $this->isMutatingRequest($method)
             && $score >= SecurityConfig::SCORE_BLOCK;
     }
@@ -438,7 +439,9 @@ final class GlobalSecurityLayer
         int $score,
         string $eventType
     ): bool {
-        if ($this->isCriticalRoute($routeGroup) || $this->isMutatingRequest($method)) {
+        if ($this->isCriticalRoute($routeGroup)
+            || ($this->isHighRiskMutationRoute($routeGroup) && $this->isMutatingRequest($method))
+        ) {
             return true;
         }
 
@@ -447,6 +450,11 @@ final class GlobalSecurityLayer
         }
 
         return $score >= SecurityConfig::SCORE_QUARANTINE;
+    }
+
+    private function isHighRiskMutationRoute(string $routeGroup): bool
+    {
+        return in_array($routeGroup, ['admin', 'auth', 'recovery'], true);
     }
 
     private function oncePerClientWindow(string $prefix, string $keyMaterial, int $ttl): bool

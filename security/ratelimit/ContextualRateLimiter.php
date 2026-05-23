@@ -73,11 +73,13 @@ final class ContextualRateLimiter
     {
         return match ($routeGroup) {
             'auth'    => [180, 80, 30],
-            'admin'   => [240, 100, 40],
+            'admin'   => [1_200, 480, 160],
             'stream'  => [1_200, 480, 160],
             'cdn'     => [1_800, 720, 240],
             'search'  => [600, 240, 80],
             'catalog' => [1_800, 600, 180],
+            'profiles'=> [720, 240, 80],
+            'support' => [900, 300, 100],
             'api_v2'  => [900, 300, 100],
             'api_v3'  => [720, 240, 80],
             'api_v4'  => [600, 200, 70],

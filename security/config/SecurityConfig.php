@@ -152,8 +152,8 @@ final class SecurityConfig
     /** Máximo de tentativas de auth por minuto antes de classificar como auth flooding */
     public const AUTH_FLOOD_THRESHOLD = 60;
 
-    public const CRITICAL_ROUTE_GROUPS = ['auth', 'admin', 'recovery'];
-    public const HIGH_TRAFFIC_ROUTE_GROUPS = ['stream', 'cdn', 'catalog', 'search'];
+    public const CRITICAL_ROUTE_GROUPS = ['auth', 'recovery'];
+    public const HIGH_TRAFFIC_ROUTE_GROUPS = ['stream', 'cdn', 'catalog', 'search', 'admin'];
 
     // =========================================================================
     // CHALLENGE
@@ -189,7 +189,7 @@ final class SecurityConfig
         'api_v4'   => ['/api/v4/'],
         'api_v3'   => ['/api/v3/'],
         'api_v2'   => ['/api/v2/'],
-        'admin'    => ['/admin/', '/api/admin/'],
+        'admin'    => ['/admin/', '/api/admin/', '/d2xs8d3sdfsegequ6249f'],
         'support'  => ['/suporte', '/api/suporte'],
         'profiles' => ['/api/profiles/'],
         'recovery' => ['/recuperar'],
