@@ -46,8 +46,9 @@ final class CdnController
         } catch (\Throwable $ex) {
             error_log('[CDN proxy video] ' . $ex->getMessage());
             CdnHeaders::noStore();
-            http_response_code(502);
-            echo 'Falha ao entregar video.';
+            http_response_code(424);
+            header('Content-Type: text/plain; charset=utf-8');
+            echo 'Fonte de video indisponivel no proxy CDN.';
         }
     }
 

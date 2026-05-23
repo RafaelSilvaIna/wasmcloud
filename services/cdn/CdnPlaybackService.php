@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Services\Cdn;
 
+use Helpers\Cdn\CdnOriginProbe;
+
+require_once __DIR__ . '/../../helpers/cdn/CdnOriginProbe.php';
 require_once __DIR__ . '/CdnTokenService.php';
 
 final class CdnPlaybackService
@@ -27,6 +30,25 @@ final class CdnPlaybackService
 
         $mediaType = $this->detectMediaType($sourceUrl);
         $origin = $this->originFromUrl($sourceUrl);
+        $probe = CdnOriginProbe::check($sourceUrl, $mediaType);
+        if (empty($probe['ok'])) {
+            $probeReason = (string) ($probe['reason'] ?? 'unknown');
+            $blockedByOrigin = $probeReason === 'origin_http_403' || $probeReason === 'origin_http_401';
+
+            return [
+                'enabled' => false,
+                'mode' => 'source_passthrough',
+                'reason' => $blockedByOrigin
+                    ? 'CDN interna ignorada: origem bloqueia leitura server-side. Usando reproducao direta do navegador.'
+                    : 'CDN interna ignorada: origem indisponivel para leitura server-side.',
+                'direct_only' => $blockedByOrigin,
+                'probe' => [
+                    'reason' => $probeReason,
+                    'http_status' => (int) ($probe['http_status'] ?? 0),
+                    'cached' => !empty($probe['cached']),
+                ],
+            ];
+        }
 
         $claims = [
             'id' => $id,

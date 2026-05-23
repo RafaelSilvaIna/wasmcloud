@@ -273,11 +273,9 @@ try {
     ];
 }
 
-$publicVideoUrl = !empty($cdnInternal['enabled']) ? null : $videoUrl;
-
 echo json_encode(array_merge([
     'success'      => true,
-    'url'          => $publicVideoUrl,
+    'url'          => $videoUrl,
     'media_type'   => detectMediaType($videoUrl),
     'audio'        => $audioUsed,
     'next_episode' => $nextEpisode,

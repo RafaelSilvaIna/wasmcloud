@@ -62,7 +62,7 @@ final class CdnProxyStreamService
         $headersSent = false;
         $bodyBytes = 0;
 
-        $sendHeaders = function () use (&$headersSent, &$headers, &$status, $url): void {
+        $sendHeaders = function () use (&$headersSent, &$headers, &$status, $url, $method): void {
             if ($headersSent) {
                 return;
             }
@@ -70,8 +70,14 @@ final class CdnProxyStreamService
             $streamable = in_array($status, [200, 206], true);
             if (!$streamable && $status !== 416) {
                 CdnHeaders::noStore();
-                http_response_code(502);
+                http_response_code(424);
+                header('Content-Type: text/plain; charset=utf-8');
+                header('X-Pipocine-CDN: internal-origin-proxy');
+                header('X-Pipocine-CDN-Error: upstream_unavailable');
                 $headersSent = true;
+                if ($method !== 'HEAD') {
+                    echo 'Fonte de video indisponivel no proxy CDN.';
+                }
                 return;
             }
 
