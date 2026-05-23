@@ -22,7 +22,7 @@ class PlatformModel {
      * @return array
      */
     public function getLotForValidation(?string $tipo, int $limit, int $offset): array {
-        $sql    = "SELECT id, id_tmdb, titulo, poster, capa, nota, data_lancamento, tipo
+        $sql    = "SELECT id, id_tmdb, titulo, poster, capa, nota, data_lancamento, tipo, generos
                    FROM conteudo
                    WHERE id_tmdb IS NOT NULL
                      AND id_tmdb != ''

@@ -13,15 +13,17 @@ use TMDBHelper;
 class InfoService {
     private InfoModel   $model;
     private TMDBHelper  $tmdb;
+    private ?\RecommendationService $recommendations;
 
     private const IMG_BASE_ORIGINAL = 'https://image.tmdb.org/t/p/original';
     private const IMG_BASE_W500     = 'https://image.tmdb.org/t/p/w500';
     private const IMG_BASE_W780     = 'https://image.tmdb.org/t/p/w780';
     private const IMG_BASE_W300     = 'https://image.tmdb.org/t/p/w300';
 
-    public function __construct(InfoModel $model, TMDBHelper $tmdb) {
+    public function __construct(InfoModel $model, TMDBHelper $tmdb, ?\RecommendationService $recommendations = null) {
         $this->model = $model;
         $this->tmdb  = $tmdb;
+        $this->recommendations = $recommendations;
     }
 
     /**
@@ -150,7 +152,7 @@ class InfoService {
 
         // Se TMDB não retornou recomendados suficientes, complementa com o BD local
         if (count($recommendations) < 6) {
-            $localRelated = $this->model->getRelated($tmdbId, $tipo, $base['generos'] ?? '', 8);
+            $localRelated = $this->model->getRelated($tmdbId, $tipo, $base['generos'] ?? '', 18);
             foreach ($localRelated as $rel) {
                 $relatedPoster = $this->tmdbImageUrl($rel['poster'] ?? null, 'w300');
                 if (!$relatedPoster) continue;
@@ -161,6 +163,8 @@ class InfoService {
                     'poster'  => $relatedPoster,
                     'vote'    => round((float)($rel['nota'] ?? 0), 1),
                     'type'    => $rel['tipo'],
+                    'generos' => $rel['generos'] ?? '',
+                    'data_lancamento' => $rel['data_lancamento'] ?? null,
                 ];
             }
             // Remove duplicados por tmdb_id
@@ -170,6 +174,14 @@ class InfoService {
                 $seen[] = $r['tmdb_id'];
                 return true;
             }));
+        }
+
+        if ($this->recommendations && count($recommendations) > 1) {
+            $recommendations = $this->recommendations->rerankCandidates($recommendations, [
+                'route' => 'info',
+                'type' => $tipo,
+                'limit' => 12,
+            ]);
         }
 
         // 11. Temporadas (apenas para séries)

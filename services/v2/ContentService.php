@@ -2,18 +2,31 @@
 
 class ContentService {
     private $model;
+    private ?RecommendationService $recommendations;
 
     private const KIDS_ALLOWED_CERTIFICATIONS = ['L', '10', '12'];
     private const KIDS_ALLOWED_GENRES = ['animacao', 'familia', 'comedia', 'aventura', 'fantasia', 'musica'];
     private const KIDS_BLOCKED_GENRES = ['terror', 'suspense', 'crime', 'guerra', 'misterio', 'drama'];
 
-    public function __construct($model) {
+    public function __construct($model, ?RecommendationService $recommendations = null) {
         $this->model = $model;
+        $this->recommendations = $recommendations;
     }
 
     public function fetchCategory($category, $limit, bool $isKids = false) {
         $localData = $this->model->getByCategory($category, $limit, $isKids);
         if (empty($localData)) return [];
+
+        if ($this->recommendations) {
+            $localData = $this->recommendations->rerankCandidates($localData, [
+                'route' => 'conteudo',
+                'category' => (string) $category,
+                'limit' => (int) $limit,
+            ]);
+        }
+
+        $hydrateLimit = $isKids ? max((int)$limit * 4, (int)$limit) : max((int)$limit * 2, (int)$limit);
+        $localData = array_slice($localData, 0, min(count($localData), $hydrateLimit));
 
         $tmdbData = TMDBHelper::getRichData($localData);
         $result = [];

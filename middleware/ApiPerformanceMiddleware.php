@@ -285,6 +285,15 @@ final class ApiPerformanceMiddleware
         if (str_starts_with($path, '/api/v2/')) {
             $tags[] = 'catalog';
         }
+        if (str_starts_with($path, '/api/v2/conteudo')
+            || str_starts_with($path, '/api/v2/trending')
+            || str_starts_with($path, '/api/v2/info')
+            || str_starts_with($path, '/api/v2/plataforma')
+        ) {
+            $tags[] = 'recommendations';
+            $tags[] = 'user';
+            $tags[] = 'profile';
+        }
         if (str_starts_with($path, '/api/v2/busca')) {
             $tags[] = 'search';
         }
@@ -355,9 +364,9 @@ final class ApiPerformanceMiddleware
             || str_starts_with($path, '/api/v3/watch-progress')
             || str_starts_with($path, '/api/v3/watched-episodes')
         ) {
-            $tags = array_merge($tags, ['user', 'profile']);
+            $tags = array_merge($tags, ['user', 'profile', 'recommendations']);
         } elseif (str_starts_with($path, '/api/profiles/')) {
-            $tags = array_merge($tags, ['profiles', 'user']);
+            $tags = array_merge($tags, ['profiles', 'user', 'profile', 'recommendations']);
         } elseif (str_starts_with($path, '/api/v4/subscription/')
             || str_starts_with($path, '/api/v4/account/')
             || str_starts_with($path, '/api/v4/box/')

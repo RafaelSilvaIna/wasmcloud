@@ -30,9 +30,11 @@ class PlatformService {
     ];
 
     private PlatformModel $model;
+    private ?RecommendationService $recommendations;
 
-    public function __construct(PlatformModel $model) {
+    public function __construct(PlatformModel $model, ?RecommendationService $recommendations = null) {
         $this->model = $model;
+        $this->recommendations = $recommendations;
     }
 
     /**
@@ -66,7 +68,8 @@ class PlatformService {
         $batchSize = $perPage * 3;
         $approved  = [];
         $offset    = 0;
-        $maxPasses = 8; // Evita loop infinito
+        $targetApproved = $this->recommendations ? min($perPage * 2, 72) : $perPage;
+        $maxPasses = $this->recommendations ? 10 : 8; // Evita loop infinito
         $passes    = 0;
 
         // Avança o offset base de acordo com a página solicitada
@@ -74,7 +77,7 @@ class PlatformService {
         // consome ~(perPage * 3) registros do banco
         $baseOffset = ($page - 1) * ($perPage * 3);
 
-        while (count($approved) < $perPage && $passes < $maxPasses) {
+        while (count($approved) < $targetApproved && $passes < $maxPasses) {
             $currentOffset = $baseOffset + $offset;
 
             if ($currentOffset >= $totalBanco) {
@@ -85,13 +88,24 @@ class PlatformService {
             $filtered = $this->filterByProvider($lot, $providerId);
 
             foreach ($filtered as $item) {
-                if (count($approved) >= $perPage) break;
+                if (count($approved) >= $targetApproved) break;
                 $approved[] = $item;
             }
 
             $offset += $batchSize;
             $passes++;
         }
+
+        if ($this->recommendations) {
+            $approved = $this->recommendations->rerankCandidates($approved, [
+                'route' => 'platform',
+                'brand' => $marca,
+                'type' => $tipo,
+                'limit' => $perPage,
+            ]);
+        }
+
+        $approved = array_slice($approved, 0, $perPage);
 
         // Enriquece com dados do TMDB (poster HD, nota, sinopse, etc.)
         $enriched = $this->enrich($approved);

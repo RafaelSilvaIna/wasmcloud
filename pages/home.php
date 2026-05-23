@@ -492,12 +492,15 @@ if (!isset($_SESSION['profile_is_kids']) && isset($_SESSION['profile_id'])) {
 
             <?php if ($isKidsProfile): ?>
                 <!-- Trilhos para Perfil Infantil -->
+                <div id="rail-kids-recomendados"></div>
                 <div id="rail-kids-animacao"></div>
                 <div id="rail-kids-familia"></div>
                 <div id="rail-kids-comedia"></div>
                 <div id="rail-kids-fantasia"></div>
                 <div id="rail-kids-musica"></div>
             <?php else: ?>
+                <!-- Recomendações personalizadas -->
+                <div id="rail-recomendados"></div>
                 <!-- Top 10 Séries -->
                 <div id="rail-top10-series"></div>
                 <!-- Top 10 Filmes -->
@@ -537,6 +540,7 @@ if (!isset($_SESSION['profile_is_kids']) && isset($_SESSION['profile_id'])) {
 
                 if (window.PIPO_IS_KIDS) {
                     // ── Trilhos para Perfil Infantil ──────────────────────────
+                    new PipoRail('rail-kids-recomendados', 'Escolhidos para Você', 'recomendados', 18);
                     new PipoRail('rail-kids-animacao', 'Animações e Desenhos', 'animacao_filmes', 18);
                     new PipoRail('rail-kids-familia', 'Para toda a Família', 'familia_filmes', 18);
                     new PipoRail('rail-kids-comedia', 'Diversão Garantida', 'comedia_filmes', 18);
@@ -544,6 +548,7 @@ if (!isset($_SESSION['profile_is_kids']) && isset($_SESSION['profile_id'])) {
                     new PipoRail('rail-kids-musica', 'Músicas e Aventuras', 'musica_filmes', 18);
                 } else {
                     // ── Top 10 ────────────────────────────────────────────────
+                    new PipoRail('rail-recomendados', 'Recomendado para Você', 'recomendados', 18);
                     new PipoRail('rail-top10-series', 'Top 10 Séries Hoje', 'top10_series', 10, { isTop10: true });
                     new PipoRail('rail-top10-filmes', 'Top 10 Filmes Hoje', 'top10_filmes', 10, { isTop10: true });
 

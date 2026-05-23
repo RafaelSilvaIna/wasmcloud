@@ -30,6 +30,11 @@ class ResponseCache {
         }
 
         $variant = !empty($_SESSION['profile_is_kids']) ? 'kids' : 'standard';
+        $scope = hash('sha256', implode('|', [
+            (string) ($_SESSION['user_id'] ?? 'guest'),
+            (string) ($_SESSION['profile_id'] ?? 'none'),
+            session_status() === PHP_SESSION_ACTIVE ? session_id() : 'no-session',
+        ]));
         $query = $_GET;
         ksort($query);
 
@@ -38,6 +43,7 @@ class ResponseCache {
             $path,
             http_build_query($query),
             'profile=' . $variant,
+            'scope=' . $scope,
         ]);
 
         $cache = new self(hash('sha256', $keySource), $ttl);

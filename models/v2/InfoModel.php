@@ -79,7 +79,7 @@ class InfoModel {
 
             if (empty($genPrincipal)) {
                 $stmt = $this->db->prepare(
-                    "SELECT id, id_tmdb, titulo, poster, nota, data_lancamento, tipo
+                    "SELECT id, id_tmdb, titulo, poster, nota, data_lancamento, tipo, generos
                      FROM conteudo
                      WHERE id_tmdb != ? AND tipo = ? AND id_tmdb IS NOT NULL
                      ORDER BY nota DESC
@@ -88,7 +88,7 @@ class InfoModel {
                 $stmt->execute([$tmdbId, $tipo, $limit]);
             } else {
                 $stmt = $this->db->prepare(
-                    "SELECT id, id_tmdb, titulo, poster, nota, data_lancamento, tipo
+                    "SELECT id, id_tmdb, titulo, poster, nota, data_lancamento, tipo, generos
                      FROM conteudo
                      WHERE id_tmdb != ? AND tipo = ? AND generos LIKE ? AND id_tmdb IS NOT NULL
                      ORDER BY nota DESC

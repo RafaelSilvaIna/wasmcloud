@@ -33,6 +33,7 @@ class ContentModel {
 
         $catMap = [
             'lancamentos'          => ['tipo' => null,    'gen' => null,          'ord' => 'data_lancamento DESC'],
+            'recomendados'         => ['tipo' => null,    'gen' => null,          'ord' => 'nota DESC, data_lancamento DESC'],
             'lancamentos_filmes'   => ['tipo' => 'filme', 'gen' => null,          'ord' => 'data_lancamento DESC'],
             'lancamentos_series'   => ['tipo' => 'serie', 'gen' => null,          'ord' => 'data_lancamento DESC'],
             'top_filmes'           => ['tipo' => 'filme', 'gen' => null,          'ord' => 'nota DESC'],
@@ -75,7 +76,7 @@ class ContentModel {
         ];
 
         $conf = $catMap[$category] ?? $catMap['lancamentos'];
-        $sql = "SELECT id, id_tmdb, titulo, poster, capa, nota, data_lancamento, tipo FROM conteudo WHERE id_tmdb IS NOT NULL AND id_tmdb != ''";
+        $sql = "SELECT id, id_tmdb, titulo, poster, capa, nota, data_lancamento, tipo, generos FROM conteudo WHERE id_tmdb IS NOT NULL AND id_tmdb != ''";
         $params = [];
 
         if ($conf['tipo']) {
@@ -96,7 +97,7 @@ class ContentModel {
             }
         }
 
-        $queryLimit = $isKids ? min(120, max((int)$limit * 4, (int)$limit)) : (int)$limit;
+        $queryLimit = $isKids ? min(160, max((int)$limit * 6, (int)$limit)) : min(180, max((int)$limit * 5, (int)$limit));
         $sql .= " ORDER BY " . $conf['ord'] . " LIMIT " . $queryLimit;
 
         $stmt = $this->db->prepare($sql);

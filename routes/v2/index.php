@@ -7,6 +7,8 @@ require_once __DIR__ . '/../../utils/v2/ResponseUtil.php';
 require_once __DIR__ . '/../../hooks/v2/ApiHook.php';
 require_once __DIR__ . '/../../helpers/v2/ResponseCache.php';
 require_once __DIR__ . '/../../helpers/v2/TMDBHelper.php';
+require_once __DIR__ . '/../../models/v2/RecommendationModel.php';
+require_once __DIR__ . '/../../services/v2/RecommendationService.php';
 
 // --- Classes da API de Conteúdo (Home/Trilhos) ---
 require_once __DIR__ . '/../../models/v2/ContentModel.php';
@@ -56,18 +58,23 @@ ApiHook::init();
 
 try {
     $requestUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+    $recommendations = null;
+
+    if (($pdo ?? null) instanceof PDO && ($pdoCineveo ?? null) instanceof PDO) {
+        $recommendations = new RecommendationService(new RecommendationModel($pdo, $pdoCineveo));
+    }
 
     // Rota 1: Trilhos e Conteúdo Geral
     if (strpos($requestUri, '/api/v2/conteudo') === 0) {
         $model = new ContentModel($pdoCineveo);
-        $service = new ContentService($model);
+        $service = new ContentService($model, $recommendations);
         $controller = new ContentController($service);
         $controller->handleRequest();
 
     // Rota 2: Trending — Recentes e Populares
     } elseif (strpos($requestUri, '/api/v2/trending') === 0) {
         $model      = new TrendingModel($pdoCineveo);
-        $service    = new TrendingService($model);
+        $service    = new TrendingService($model, $recommendations);
         $controller = new TrendingController($service);
         $controller->handleRequest();
 
@@ -83,7 +90,7 @@ try {
     } elseif (strpos($requestUri, '/api/v2/info') === 0) {
         $model      = new InfoModel($pdoCineveo);
         $tmdbHelper = new TMDBHelper();
-        $service    = new InfoService($model, $tmdbHelper);
+        $service    = new InfoService($model, $tmdbHelper, $recommendations);
         $controller = new InfoController($service);
         $controller->handle();
 
@@ -94,7 +101,7 @@ try {
     // Rota 6: Conteúdos por plataforma de streaming (Netflix, Prime, Disney+ etc.)
     } elseif (strpos($requestUri, '/api/v2/plataforma') === 0) {
         $model      = new PlatformModel($pdoCineveo);
-        $service    = new PlatformService($model);
+        $service    = new PlatformService($model, $recommendations);
         $controller = new PlatformController($service);
         $controller->handle();
 

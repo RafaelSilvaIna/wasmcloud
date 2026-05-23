@@ -29,8 +29,8 @@ class TrendingModel {
      * @return array
      */
     public function getTrending(int $limit = 20, bool $isKids = false, ?string $tipo = null): array {
-        // Busca 3x o limite para compensar a filtragem pós-TMDB (logo/galeria/sinopse)
-        $fetchLimit = $isKids ? $limit * 10 : $limit * 3;
+        // Busca um lote maior para permitir reranking personalizado antes do enriquecimento TMDB.
+        $fetchLimit = $isKids ? $limit * 10 : $limit * 5;
 
         $sql  = "SELECT id, id_tmdb, titulo, poster, capa, nota, data_lancamento, tipo, generos
                  FROM conteudo

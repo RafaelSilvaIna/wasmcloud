@@ -6,18 +6,30 @@
  */
 class TrendingService {
     private $model;
+    private ?RecommendationService $recommendations;
 
     private const KIDS_ALLOWED_CERTIFICATIONS = ['L', '10', '12'];
     private const KIDS_ALLOWED_GENRES = ['animacao', 'familia', 'comedia', 'aventura', 'fantasia', 'musica'];
     private const KIDS_BLOCKED_GENRES = ['terror', 'suspense', 'crime', 'guerra', 'misterio', 'drama'];
 
-    public function __construct($model) {
+    public function __construct($model, ?RecommendationService $recommendations = null) {
         $this->model = $model;
+        $this->recommendations = $recommendations;
     }
 
     public function fetchTrending(int $limit = 12, bool $isKids = false, ?string $tipo = null): array {
         $rawItems = $this->model->getTrending($limit, $isKids, $tipo);
         if (empty($rawItems)) return [];
+
+        if ($this->recommendations) {
+            $rawItems = $this->recommendations->rerankCandidates($rawItems, [
+                'route' => 'trending',
+                'type' => $tipo,
+                'limit' => $limit,
+            ]);
+        }
+
+        $rawItems = array_slice($rawItems, 0, min(count($rawItems), max($limit * 3, $limit)));
 
         $tmdbData = TMDBHelper::getRichData($rawItems);
         $result = [];
