@@ -1,6 +1,7 @@
 Options -Indexes -ExecCGI
 ServerSignature Off
 DirectoryIndex index.php index.html
+AddType application/manifest+json .webmanifest
 
 <IfModule mod_headers.c>
     Header set X-Content-Type-Options "nosniff"
@@ -8,7 +9,20 @@ DirectoryIndex index.php index.html
     Header set X-Frame-Options "SAMEORIGIN"
     Header set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
     Header set Referrer-Policy "strict-origin-when-cross-origin"
+    Header set X-DNS-Prefetch-Control "on"
     Header unset X-Powered-By
+
+    <FilesMatch "\.(?:css|js|mjs|png|jpe?g|gif|webp|svg|ico|woff2?|ttf)$">
+        Header set Cache-Control "public, max-age=86400, stale-while-revalidate=604800"
+    </FilesMatch>
+
+    <FilesMatch "^(sw\.js|manifest\.webmanifest)$">
+        Header set Cache-Control "no-cache, must-revalidate"
+    </FilesMatch>
+
+    <Files "sw.js">
+        Header set Service-Worker-Allowed "/"
+    </Files>
 </IfModule>
 
 <IfModule mod_deflate.c>

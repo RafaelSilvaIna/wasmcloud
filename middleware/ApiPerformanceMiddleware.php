@@ -8,12 +8,16 @@ final class ApiPerformanceMiddleware
 {
     private const TARGET_MS = 300;
     private const CACHE_ROOT = __DIR__ . '/../data/cache/api-performance';
-    private const STALE_SECONDS = 120;
+    private const STALE_SECONDS = 600;
+    private const FAILSAFE_SECONDS = 86400;
+    private const FILL_WAIT_MICROSECONDS = 650000;
+    private const FILL_WAIT_STEP_MICROSECONDS = 50000;
     private const VERSION_FILE = self::CACHE_ROOT . '/versions.json';
 
     private static bool $booted = false;
     private static float $startedAt = 0.0;
     private static ?array $cacheContext = null;
+    private static $fillLockHandle = null;
 
     public static function boot(): void
     {
@@ -83,17 +87,26 @@ final class ApiPerformanceMiddleware
     {
         $durationMs = (int) round((microtime(true) - self::$startedAt) * 1000);
 
-        if (!headers_sent()) {
-            header('Server-Timing: app;dur=' . $durationMs, false);
-            header('X-Response-Time: ' . $durationMs . 'ms', false);
-            header('X-Performance-Target: ' . self::TARGET_MS . 'ms', false);
-        }
+        try {
+            if (!headers_sent()) {
+                header('Server-Timing: app;dur=' . $durationMs, false);
+                header('X-Response-Time: ' . $durationMs . 'ms', false);
+                header('X-Performance-Target: ' . self::TARGET_MS . 'ms', false);
+            }
 
-        if (self::$cacheContext !== null) {
-            self::storeCache(self::$cacheContext, $body, $durationMs);
-        }
+            if (self::$cacheContext !== null) {
+                $failSafeBody = self::failSafeBodyIfNeeded(self::$cacheContext, $body, $durationMs);
+                if ($failSafeBody !== null) {
+                    return $failSafeBody;
+                }
 
-        return $body;
+                self::storeCache(self::$cacheContext, $body, $durationMs);
+            }
+
+            return $body;
+        } finally {
+            self::releaseFillLock();
+        }
     }
 
     private static function cacheContext(string $path): ?array
@@ -128,6 +141,7 @@ final class ApiPerformanceMiddleware
             'versions' => $versions,
             'scope_dir' => $scopeDir,
             'file' => $scopeDir . '/' . $key . '.json',
+            'lock_file' => $scopeDir . '/' . $key . '.lock',
         ];
     }
 
@@ -135,7 +149,7 @@ final class ApiPerformanceMiddleware
     {
         $entry = self::readEntry((string) $context['file']);
         if (!$entry) {
-            self::cacheHeader('MISS');
+            self::coordinateMiss($context, null, 'MISS');
             return;
         }
 
@@ -143,40 +157,13 @@ final class ApiPerformanceMiddleware
         $expiresAt = (int) ($entry['expires_at'] ?? 0);
         $staleUntil = (int) ($entry['stale_until'] ?? 0);
         if ($staleUntil < $now) {
-            self::cacheHeader('EXPIRED');
+            self::coordinateMiss($context, $entry, 'EXPIRED');
             return;
         }
 
-        $etag = (string) ($entry['etag'] ?? '');
         if ($expiresAt >= $now || self::canServeStale($entry)) {
             $status = $expiresAt >= $now ? 'HIT' : 'STALE';
-            $body = (string) ($entry['body'] ?? '');
-            $code = (int) ($entry['status'] ?? 200);
-            $age = max(0, $now - (int) ($entry['created_at'] ?? $now));
-
-            if (!headers_sent()) {
-                if ($etag !== '') {
-                    header('ETag: ' . $etag);
-                }
-                header('Age: ' . $age);
-                header('Content-Type: application/json; charset=utf-8');
-                header('Cache-Control: private, max-age=' . (int) $context['ttl'] . ', stale-while-revalidate=' . self::STALE_SECONDS);
-                header('Vary: Cookie, Authorization');
-                header('Cache-Tag: ' . implode(',', (array) ($context['tags'] ?? [])));
-                self::cacheHeader($status);
-                header('Server-Timing: app;dur=0;desc="origin-cache"');
-                header('X-Response-Time: 0ms');
-                header('X-Performance-Target: ' . self::TARGET_MS . 'ms');
-            }
-
-            if ($etag !== '' && trim((string) ($_SERVER['HTTP_IF_NONE_MATCH'] ?? '')) === $etag) {
-                http_response_code(304);
-                exit;
-            }
-
-            http_response_code($code);
-            echo $body;
-            exit;
+            self::emitCached($context, $entry, $status);
         }
 
         self::cacheHeader('MISS-STALE');
@@ -202,6 +189,7 @@ final class ApiPerformanceMiddleware
             'created_at' => $now,
             'expires_at' => $now + $ttl,
             'stale_until' => $now + $ttl + self::STALE_SECONDS,
+            'fail_safe_until' => $now + $ttl + self::STALE_SECONDS + self::FAILSAFE_SECONDS,
             'origin_duration_ms' => $durationMs,
             'tags' => $context['tags'] ?? [],
             'versions' => $context['versions'] ?? '',
@@ -217,11 +205,161 @@ final class ApiPerformanceMiddleware
             header_remove('Pragma');
             header_remove('Expires');
             header('ETag: ' . $entry['etag']);
-            header('Cache-Control: private, max-age=' . $ttl . ', stale-while-revalidate=' . self::STALE_SECONDS, true);
+            header('Cache-Control: private, max-age=' . $ttl . ', stale-while-revalidate=' . self::STALE_SECONDS . ', stale-if-error=' . self::FAILSAFE_SECONDS, true);
             header('Vary: Cookie, Authorization', false);
             header('Cache-Tag: ' . implode(',', (array) ($context['tags'] ?? [])), false);
             self::cacheHeader('MISS-STORE');
         }
+    }
+
+    private static function coordinateMiss(array $context, ?array $staleEntry, string $status): void
+    {
+        if (self::acquireFillLock($context)) {
+            self::cacheHeader($status . '-FILL');
+            return;
+        }
+
+        $entry = self::waitForFreshEntry((string) $context['file']);
+        if ($entry && self::canServeFresh($entry)) {
+            self::emitCached($context, $entry, 'HIT-WAIT');
+        }
+
+        if ($staleEntry && self::canServeStale($staleEntry)) {
+            self::emitCached($context, $staleEntry, 'STALE-WAIT');
+        }
+
+        self::cacheHeader($status . '-PARALLEL');
+    }
+
+    private static function emitCached(array $context, array $entry, string $cacheStatus): void
+    {
+        $now = time();
+        $etag = (string) ($entry['etag'] ?? '');
+        $body = (string) ($entry['body'] ?? '');
+        $code = (int) ($entry['status'] ?? 200);
+        $age = max(0, $now - (int) ($entry['created_at'] ?? $now));
+
+        if (!headers_sent()) {
+            header_remove('Pragma');
+            header_remove('Expires');
+            if ($etag !== '') {
+                header('ETag: ' . $etag);
+            }
+            header('Age: ' . $age);
+            header('Content-Type: application/json; charset=utf-8', true);
+            header('Cache-Control: private, max-age=' . (int) $context['ttl'] . ', stale-while-revalidate=' . self::STALE_SECONDS . ', stale-if-error=' . self::FAILSAFE_SECONDS, true);
+            header('Vary: Cookie, Authorization', false);
+            header('Cache-Tag: ' . implode(',', (array) ($context['tags'] ?? [])), false);
+            self::cacheHeader($cacheStatus);
+            header('Server-Timing: app;dur=0;desc="origin-cache"', false);
+            header('X-Response-Time: 0ms', false);
+            header('X-Performance-Target: ' . self::TARGET_MS . 'ms', false);
+            if (str_contains($cacheStatus, 'STALE')) {
+                header('Warning: 110 - "Response is Stale"', false);
+            }
+        }
+
+        if ($etag !== '' && trim((string) ($_SERVER['HTTP_IF_NONE_MATCH'] ?? '')) === $etag) {
+            http_response_code(304);
+            exit;
+        }
+
+        http_response_code($code);
+        echo $body;
+        exit;
+    }
+
+    private static function failSafeBodyIfNeeded(array $context, string $body, int $durationMs): ?string
+    {
+        $status = http_response_code() ?: 200;
+        if ($status < 500 && trim($body) !== '') {
+            return null;
+        }
+
+        $entry = self::readEntry((string) $context['file']);
+        if (!$entry || !self::canServeFailSafe($entry)) {
+            return null;
+        }
+
+        $cachedBody = (string) ($entry['body'] ?? '');
+        if ($cachedBody === '' || !self::looksJson($cachedBody)) {
+            return null;
+        }
+
+        $now = time();
+        $age = max(0, $now - (int) ($entry['created_at'] ?? $now));
+        $etag = (string) ($entry['etag'] ?? '');
+        $reason = $status >= 500 ? 'status-' . $status : 'empty-body';
+
+        if (!headers_sent()) {
+            header_remove('Pragma');
+            header_remove('Expires');
+            header_remove('Cache-Control');
+            header_remove('Content-Type');
+            if ($etag !== '') {
+                header('ETag: ' . $etag, true);
+            }
+            header('Age: ' . $age, true);
+            header('Content-Type: application/json; charset=utf-8', true);
+            header('Cache-Control: private, max-age=0, stale-if-error=' . self::FAILSAFE_SECONDS, true);
+            header('Vary: Cookie, Authorization', false);
+            header('Warning: 110 - "Response is Stale"', false);
+            header('Server-Timing: app;dur=' . $durationMs . ';desc="origin-failsafe"', false);
+            header('X-Response-Time: ' . $durationMs . 'ms', false);
+            header('X-Performance-Target: ' . self::TARGET_MS . 'ms', false);
+            header('X-Fail-Safe-Reason: ' . $reason, false);
+            self::cacheHeader('FAILSAFE');
+        }
+
+        http_response_code((int) ($entry['status'] ?? 200));
+        return $cachedBody;
+    }
+
+    private static function waitForFreshEntry(string $file): ?array
+    {
+        $deadline = microtime(true) + (self::FILL_WAIT_MICROSECONDS / 1000000);
+
+        do {
+            usleep(self::FILL_WAIT_STEP_MICROSECONDS);
+            $entry = self::readEntry($file);
+            if ($entry && self::canServeFresh($entry)) {
+                return $entry;
+            }
+        } while (microtime(true) < $deadline);
+
+        return null;
+    }
+
+    private static function acquireFillLock(array $context): bool
+    {
+        $dir = (string) $context['scope_dir'];
+        if (!is_dir($dir)) {
+            @mkdir($dir, 0775, true);
+        }
+
+        $handle = @fopen((string) $context['lock_file'], 'c');
+        if (!$handle) {
+            return false;
+        }
+
+        if (flock($handle, LOCK_EX | LOCK_NB)) {
+            self::$fillLockHandle = $handle;
+            return true;
+        }
+
+        fclose($handle);
+        return false;
+    }
+
+    private static function releaseFillLock(): void
+    {
+        if (self::$fillLockHandle === null) {
+            return;
+        }
+
+        flock(self::$fillLockHandle, LOCK_UN);
+        fclose(self::$fillLockHandle);
+        self::$fillLockHandle = null;
     }
 
     private static function ttlForPath(string $path): int
@@ -457,9 +595,24 @@ final class ApiPerformanceMiddleware
         return !empty($_SESSION['profile_is_kids']) ? 'kids' : 'standard';
     }
 
+    private static function canServeFresh(array $entry): bool
+    {
+        return (int) ($entry['expires_at'] ?? 0) >= time();
+    }
+
     private static function canServeStale(array $entry): bool
     {
         return (int) ($entry['stale_until'] ?? 0) >= time();
+    }
+
+    private static function canServeFailSafe(array $entry): bool
+    {
+        $fallbackUntil = (int) ($entry['fail_safe_until'] ?? 0);
+        if ($fallbackUntil <= 0) {
+            $fallbackUntil = (int) ($entry['stale_until'] ?? 0) + self::FAILSAFE_SECONDS;
+        }
+
+        return $fallbackUntil >= time();
     }
 
     private static function readEntry(string $file): ?array

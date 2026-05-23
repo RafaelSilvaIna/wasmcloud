@@ -77,7 +77,7 @@ class PipoRail {
         this.track = document.getElementById(`${this.host.id}__track`);
         this._bindNav();
         this._showSkeletons(this.isTop10 ? 6 : 6);
-        this._fetch();
+        PipoRail._enqueueFetch(() => this._fetch());
     }
 
     /* ──────────────────────────────────────────────────────────────────
@@ -203,6 +203,41 @@ class PipoRail {
         } catch (err) {
             console.error(`[PipoRail "${this.title}"]`, err);
             this.track.innerHTML = '<p class="slick-error">Não foi possível carregar os títulos.</p>';
+        }
+    }
+
+    static _enqueueFetch(task) {
+        if (!this._queue) {
+            this._queue = [];
+            this._activeFetches = 0;
+            this._maxFetches = 4;
+        }
+
+        this._queue.push(task);
+        this._drainFetchQueue();
+    }
+
+    static _drainFetchQueue() {
+        if (!this._queue || this._activeFetches >= this._maxFetches) return;
+
+        const task = this._queue.shift();
+        if (!task) return;
+
+        this._activeFetches += 1;
+        const run = () => {
+            Promise.resolve()
+                .then(task)
+                .catch(() => {})
+                .finally(() => {
+                    this._activeFetches = Math.max(0, this._activeFetches - 1);
+                    this._drainFetchQueue();
+                });
+        };
+
+        if ('requestIdleCallback' in window && this._activeFetches > 2) {
+            window.requestIdleCallback(run, { timeout: 350 });
+        } else {
+            run();
         }
     }
 

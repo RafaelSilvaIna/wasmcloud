@@ -1,0 +1,21 @@
+{
+  "name": "PipoCine",
+  "short_name": "PipoCine",
+  "description": "PipoCine com carregamento rapido, cache local e sincronizacao resiliente.",
+  "start_url": "/home",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#08090d",
+  "theme_color": "#0a0c10",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/assets/img/logo-pipocine.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["entertainment", "video"],
+  "prefer_related_applications": false
+}

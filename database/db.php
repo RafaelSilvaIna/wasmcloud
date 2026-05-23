@@ -43,6 +43,22 @@ function applyRequestGuard(): void
     }
 }
 
+function applyPerformanceResilienceGuard(): void
+{
+    $guard = __DIR__ . '/../helpers/PerformanceResilienceGuard.php';
+    if (is_file($guard)) {
+        require_once $guard;
+        PerformanceResilienceGuard::boot();
+    }
+}
+
+function applyFrontendResilienceBridge(): void
+{
+    if (class_exists('PerformanceResilienceGuard', false)) {
+        PerformanceResilienceGuard::bootFrontendBridge();
+    }
+}
+
 function shouldSkipGlobalSecurity(): bool
 {
     $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
@@ -240,15 +256,21 @@ if (defined('PIPOCINE_DB_CONFIG_ONLY') && PIPOCINE_DB_CONFIG_ONLY === true) {
 // ======================
 // BOOTSTRAP
 // ======================
+applyPerformanceResilienceGuard();
 applyRateLimit();
 initSession();
 applyApiAccessHook();
 applyApiPerformanceMiddleware();
+applyFrontendResilienceBridge();
 
 // DB connections
 $pdoCineveo = createPDO(DB_CINE['name'], DB_CINE['user'], DB_CINE['pass']);
 
 if (!$pdoCineveo) {
+    if (class_exists('PerformanceResilienceGuard', false)) {
+        PerformanceResilienceGuard::serviceUnavailable('cineveo_database');
+    }
+
     http_response_code(503);
     exit;
 }
