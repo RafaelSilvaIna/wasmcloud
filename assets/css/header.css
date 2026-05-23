@@ -9,21 +9,22 @@
     left: 0;
     width: 100%;
     z-index: 1000;
-    transition: background 0.4s ease, box-shadow 0.4s ease;
+    transition: background 0.35s ease, box-shadow 0.35s ease, border-color 0.35s ease;
 }
 
 .header-transparent {
     background: linear-gradient(to bottom,
-            rgba(0, 0, 0, 0.75) 0%,
-            rgba(0, 0, 0, 0) 100%);
+            rgba(4, 4, 6, 0.82) 0%,
+            rgba(4, 4, 6, 0.34) 66%,
+            rgba(4, 4, 6, 0) 100%);
     box-shadow: none;
 }
 
 .header-solid {
-    background: rgba(20, 20, 20, 0.97);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06);
+    background: rgba(10, 10, 12, 0.86);
+    backdrop-filter: blur(18px) saturate(130%);
+    -webkit-backdrop-filter: blur(18px) saturate(130%);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.28), 0 1px 0 rgba(255, 255, 255, 0.07);
 }
 
 /* ── Container ───────────────────────────────────────────────────── */
@@ -31,7 +32,7 @@
     display: flex;
     align-items: center;
     padding: 0 4%;
-    height: 68px;
+    height: 72px;
     max-width: 1920px;
     margin: 0 auto;
 }
@@ -45,21 +46,22 @@
 }
 
 .logo-img {
-    height: 40px;
+    height: 42px;
     width: auto;
     object-fit: contain;
-    transition: opacity 0.2s ease;
+    transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
 .logo-img:hover {
     opacity: 0.85;
+    transform: translateY(-1px);
 }
 
 /* ── Desktop nav ─────────────────────────────────────────────────── */
 .desktop-nav {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 6px;
     /* Remove position absolute — alinha naturalmente à esquerda após logo */
     position: static;
     transform: none;
@@ -67,27 +69,31 @@
 }
 
 .nav-link {
-    color: rgba(255, 255, 255, 0.72);
-    font-size: 0.875rem;
-    font-weight: 500;
-    padding: 6px 14px;
-    border-radius: 4px;
-    background: transparent;
-    letter-spacing: 0.01em;
-    transition: color 0.15s ease, background 0.15s ease;
+    color: rgba(255, 255, 255, 0.68);
+    font-size: 0.86rem;
+    font-weight: 700;
+    padding: 9px 14px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid transparent;
+    letter-spacing: 0;
+    transition: color 0.18s ease, background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
     white-space: nowrap;
 }
 
 .nav-link:hover {
     color: #fff;
-    background: rgba(255, 255, 255, 0.08);
-    transform: none;
+    background: rgba(255, 255, 255, 0.09);
+    border-color: rgba(255, 255, 255, 0.08);
+    transform: translateY(-1px);
 }
 
 .nav-link.active {
     color: #fff;
     font-weight: 700;
-    background: transparent;
+    background: rgba(229, 9, 20, 0.16);
+    border-color: rgba(229, 9, 20, 0.32);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
 }
 
 /* ── Actions (direita) ───────────────────────────────────────────── */
@@ -101,17 +107,17 @@
 
 /* Busca */
 .search-btn {
-    background: transparent;
-    border: none;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.06);
     color: rgba(255, 255, 255, 0.8);
     cursor: pointer;
     width: 40px;
     height: 40px;
-    border-radius: 6px;
+    border-radius: 999px;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: color 0.15s ease, background 0.15s ease;
+    transition: color 0.18s ease, background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
     flex-shrink: 0;
 }
 
@@ -122,8 +128,9 @@
 
 .search-btn:hover {
     color: #fff;
-    background: rgba(255, 255, 255, 0.08);
-    transform: none;
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.12);
+    transform: translateY(-1px);
 }
 
 /* User menu container */
@@ -191,21 +198,22 @@
     gap: 6px;
     cursor: pointer;
     padding: 3px 6px 3px 3px;
-    border-radius: 6px;
-    border: 1px solid transparent;
-    background: transparent;
-    transition: border-color 0.15s ease, background 0.15s ease;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    background: rgba(255, 255, 255, 0.05);
+    transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
 }
 
 .profile-header-btn:hover {
     border-color: rgba(255, 255, 255, 0.14);
-    background: rgba(255, 255, 255, 0.06);
+    background: rgba(255, 255, 255, 0.09);
+    transform: translateY(-1px);
 }
 
 .profile-active-avatar {
     width: 34px;
     height: 34px;
-    border-radius: 4px;
+    border-radius: 50%;
     object-fit: cover;
     flex-shrink: 0;
 }
@@ -461,68 +469,78 @@
     .mobile-bottom-nav {
         display: flex;
         position: fixed;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        background: rgba(14, 14, 14, 0.96);
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
-        border-top: 1px solid rgba(255, 255, 255, 0.07);
-        justify-content: space-around;
+        right: 18px;
+        bottom: calc(8px + env(safe-area-inset-bottom));
+        left: 18px;
+        width: auto;
+        background: rgba(12, 12, 14, 0.82);
+        backdrop-filter: blur(24px) saturate(140%);
+        -webkit-backdrop-filter: blur(24px) saturate(140%);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 18px;
+        justify-content: space-between;
         align-items: center;
-        padding: 10px 0;
-        padding-bottom: calc(10px + env(safe-area-inset-bottom));
+        gap: 4px;
+        padding: 5px;
         z-index: 1000;
-        /* Sem border-radius — linha reta como Netflix mobile */
+        box-shadow: 0 20px 42px rgba(0, 0, 0, 0.48), inset 0 1px 0 rgba(255, 255, 255, 0.08);
     }
 
     .mobile-nav-item {
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 4px;
-        color: rgba(255, 255, 255, 0.45);
-        font-size: 0.68rem;
-        font-weight: 600;
-        letter-spacing: 0.03em;
+        justify-content: center;
+        gap: 3px;
+        color: rgba(255, 255, 255, 0.52);
+        font-size: 0.56rem;
+        font-weight: 800;
+        letter-spacing: 0;
         text-transform: uppercase;
-        padding: 4px 12px;
-        border-radius: 6px;
-        transition: color 0.15s ease;
+        padding: 6px 5px;
+        border-radius: 14px;
+        transition: color 0.18s ease, background 0.18s ease, transform 0.18s ease;
         -webkit-tap-highlight-color: transparent;
-        min-width: 56px;
+        min-width: 0;
+        flex: 1 1 0;
         text-align: center;
     }
 
     .mobile-nav-item svg {
-        width: 22px;
-        height: 22px;
+        width: 19px;
+        height: 19px;
         stroke-width: 1.75;
         transition: stroke 0.15s ease;
     }
 
+    .mobile-nav-item:hover {
+        color: rgba(255, 255, 255, 0.86);
+        background: rgba(255, 255, 255, 0.06);
+    }
+
     .mobile-nav-item.active {
         color: #fff;
+        background: linear-gradient(180deg, rgba(229, 9, 20, 0.22), rgba(229, 9, 20, 0.1));
+        box-shadow: inset 0 0 0 1px rgba(229, 9, 20, 0.2);
     }
 
     .mobile-nav-item.active svg {
-        /* Ícone preenchido no ativo — feito por stroke */
         stroke: #fff;
     }
 
-    /* Indicador do item ativo — ponto vermelho acima do ícone */
     .mobile-nav-item.active::before {
         content: '';
         display: block;
-        width: 3px;
-        height: 3px;
-        border-radius: 50%;
+        width: 14px;
+        height: 2px;
+        border-radius: 999px;
         background: var(--color-accent, #e50914);
-        margin-bottom: 2px;
+        margin-bottom: 0;
+        box-shadow: 0 0 14px rgba(229, 9, 20, 0.72);
     }
 
     body {
-        padding-bottom: calc(70px + env(safe-area-inset-bottom));
+        padding-bottom: calc(72px + env(safe-area-inset-bottom));
     }
 }
 
@@ -551,13 +569,12 @@
     }
 
     .mobile-nav-item {
-        font-size: 0.62rem;
-        padding: 4px 8px;
-        min-width: 48px;
+        font-size: 0.52rem;
+        padding: 6px 4px;
     }
 
     .mobile-nav-item svg {
-        width: 20px;
-        height: 20px;
+        width: 18px;
+        height: 18px;
     }
 }
