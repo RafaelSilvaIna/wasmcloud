@@ -126,6 +126,26 @@ if (strpos($requestUri, '/cdn/') === 0) {
 
 if (strpos($requestUri, '/api/') === 0) {
 
+    if ($requestUri === '/api/player/log') {
+        require_once __DIR__ . '/../models/player/PlayerLogModel.php';
+        require_once __DIR__ . '/../services/player/PlayerLogService.php';
+        require_once __DIR__ . '/../controllers/player/PlayerLogController.php';
+
+        if (!$pdo) {
+            header('Content-Type: application/json; charset=utf-8');
+            http_response_code(503);
+            echo json_encode(['success' => false, 'error' => 'Banco indisponivel.']);
+            exit;
+        }
+
+        (new \Controllers\Player\PlayerLogController(
+            new \Services\Player\PlayerLogService(
+                new \Models\Player\PlayerLogModel($pdo)
+            )
+        ))->handle($requestMethod);
+        exit;
+    }
+
     if (strpos($requestUri, '/api/admin/') === 0) {
         require_once __DIR__ . '/admin/index.php';
         exit;

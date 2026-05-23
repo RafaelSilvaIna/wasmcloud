@@ -10,6 +10,7 @@ require_once __DIR__ . '/../components/admin/AdminSidebar.php';
 require_once __DIR__ . '/../components/admin/AdminUsersPanel.php';
 require_once __DIR__ . '/../components/admin/magner/AdminUsageMetricsPanel.php';
 require_once __DIR__ . '/../components/admin/magner/AdminApiMetricsPanel.php';
+require_once __DIR__ . '/../components/admin/magner/AdminPlayerLogsPanel.php';
 require_once __DIR__ . '/../components/admin/subscriptions/AdminSubscriptionsPanel.php';
 require_once __DIR__ . '/../components/admin/suporte/AdminSupportPanel.php';
 require_once __DIR__ . '/../components/admin/security/AdminSecurityPanel.php';
@@ -277,6 +278,7 @@ $adminRoute = preg_replace('/[^a-z0-9_-]/i', '', (string) ($_GET['route'] ?? 'ov
                 <?php AdminSubscriptionsPanel::render(); ?>
                 <?php AdminUsageMetricsPanel::render(); ?>
                 <?php AdminApiMetricsPanel::render(); ?>
+                <?php AdminPlayerLogsPanel::render(); ?>
                 <?php AdminSupportPanel::render(); ?>
                 <?php AdminSecurityPanel::render(); ?>
                 <?php AdminRouteLocksPanel::render(); ?>
@@ -353,6 +355,9 @@ $adminRoute = preg_replace('/[^a-z0-9_-]/i', '', (string) ($_GET['route'] ?? 'ov
         }
         if (route === 'api-metrics' && window.AdminApiMetricsPanel) {
             window.AdminApiMetricsPanel.load();
+        }
+        if (route === 'player-logs' && window.AdminPlayerLogsPanel) {
+            window.AdminPlayerLogsPanel.load();
         }
         if (route === 'subscriptions' && window.AdminSubscriptionsPanel) {
             window.AdminSubscriptionsPanel.load();

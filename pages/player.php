@@ -588,8 +588,20 @@ $playerFeatures = \Helpers\Player\PlayerFeatureRegistry::build($hasPremiumFillAc
         .error-message {
             font-size: 13px;
             color: var(--text-secondary);
-            max-width: 380px;
+            max-width: 430px;
             line-height: 1.6;
+        }
+        .error-help-link {
+            color: rgba(255,255,255,.54);
+            font-size: 12px;
+            font-weight: 650;
+            text-decoration: none;
+            border-bottom: 1px solid rgba(255,255,255,.2);
+            transition: color var(--transition), border-color var(--transition);
+        }
+        .error-help-link:hover {
+            color: #fff;
+            border-color: rgba(229,9,20,.72);
         }
         .error-actions {
             display: flex;
@@ -1260,8 +1272,9 @@ $playerFeatures = \Helpers\Player\PlayerFeatureRegistry::build($hasPremiumFillAc
         <div class="error-icon">
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
         </div>
-        <div class="error-title" id="err-title">Vídeo indisponível</div>
-        <div class="error-message" id="err-message">Este conteúdo ainda não possui link de vídeo disponível.</div>
+        <div class="error-title" id="err-title">Erro no player</div>
+        <div class="error-message" id="err-message">O erro foi reportado automaticamente para a equipe do Pipocine e sera corrigido o mais rapido possivel. Pedimos desculpas pelo transtorno.</div>
+        <a class="error-help-link" href="/docs/player-error" target="_blank" rel="noopener">Saiba mais</a>
         <div class="error-actions">
             <button class="btn-retry" id="btn-retry" onclick="loadVideo()">
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h5M20 20v-5h-5M4 9A8 8 0 0119.9 15M20 15a8 8 0 01-15.9-6"/></svg>
@@ -1384,6 +1397,83 @@ $playerFeatures = \Helpers\Player\PlayerFeatureRegistry::build($hasPremiumFillAc
 
     maskPlayerUrl();
 
+    const reportedPlayerErrors = new Set();
+    const FRIENDLY_PLAYER_ERROR_TITLE = 'Erro no player';
+    const FRIENDLY_PLAYER_ERROR_MESSAGE = 'O erro foi reportado automaticamente para a equipe do Pipocine e sera corrigido o mais rapido possivel. Pedimos desculpas pelo transtorno.';
+
+    function browserName() {
+        const ua = navigator.userAgent || '';
+        if (/Edg\//.test(ua)) return 'Edge';
+        if (/OPR\//.test(ua)) return 'Opera';
+        if (/Firefox\//.test(ua)) return 'Firefox';
+        if (/Chrome\//.test(ua) && !/Chromium\//.test(ua)) return 'Chrome';
+        if (/Safari\//.test(ua) && !/Chrome\//.test(ua)) return 'Safari';
+        return 'Unknown';
+    }
+
+    function connectionInfo() {
+        const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+        if (!connection) return {};
+        return {
+            effectiveType: connection.effectiveType || null,
+            downlink: connection.downlink || null,
+            rtt: connection.rtt || null,
+            saveData: Boolean(connection.saveData),
+        };
+    }
+
+    function reportPlayerError(title, message, context = {}) {
+        const stage = context.stage || 'unknown';
+        const key = `${stage}:${title || ''}:${message || ''}:${AUDIO}`;
+        if (reportedPlayerErrors.has(key)) return;
+        reportedPlayerErrors.add(key);
+
+        const payload = {
+            severity: context.severity || 'error',
+            event_type: context.event_type || 'player_error',
+            stage,
+            content_id: TMDB_ID,
+            content_title: CONTENT_TITLE,
+            content_type: CONTENT_TYPE,
+            season: CURRENT_S,
+            episode: CURRENT_E,
+            audio: AUDIO,
+            error_title: title || '',
+            error_message: message || '',
+            technical_message: context.technical_message || message || title || '',
+            player_url: ORIGINAL_PLAYER_URL,
+            api_url: API_URL,
+            media_type: context.media_type || currentMediaType || '',
+            media_url: context.media_url || currentMediaUrl || '',
+            is_embedded_browser: IS_EMBEDDED_BROWSER,
+            is_vpn_suspected: false,
+            browser_name: browserName(),
+            network: connectionInfo(),
+            diagnostics: {
+                readyState: video?.readyState ?? null,
+                networkState: video?.networkState ?? null,
+                videoErrorCode: video?.error?.code ?? null,
+                hlsDetails: context.hls_details || null,
+                maskedUrl: window.location.href,
+            },
+        };
+
+        const body = JSON.stringify(payload);
+        try {
+            if (navigator.sendBeacon) {
+                const blob = new Blob([body], { type: 'application/json' });
+                if (navigator.sendBeacon('/api/player/log', blob)) return;
+            }
+        } catch (_) {}
+
+        fetch('/api/player/log', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body,
+            keepalive: true,
+        }).catch(() => {});
+    }
+
     // ─── Elementos ───────────────────────────────────────────────────────
     const video          = document.getElementById('pip-video');
     const splitAudio     = document.getElementById('pip-audio');
@@ -1452,6 +1542,12 @@ $playerFeatures = \Helpers\Player\PlayerFeatureRegistry::build($hasPremiumFillAc
         if (!IS_EMBEDDED_BROWSER) return false;
 
         const href = currentAbsoluteUrl();
+        reportPlayerError('Acesso via navegador interno', 'O player foi aberto dentro de um navegador interno de aplicativo.', {
+            stage: 'embedded_browser',
+            severity: 'warning',
+            event_type: 'player_blocked_environment',
+            technical_message: 'Embedded browser detected by server-side user-agent pattern.',
+        });
         const android = /Android/i.test(navigator.userAgent);
         const ios = /iPhone|iPad|iPod/i.test(navigator.userAgent);
 
@@ -2349,7 +2445,10 @@ $playerFeatures = \Helpers\Player\PlayerFeatureRegistry::build($hasPremiumFillAc
             .then(r => r.json())
             .then(data => {
                 if (!data.success) {
-                    showError(data.error || 'Vídeo indisponível', data.message || '');
+                    showError(data.error || 'Vídeo indisponível', data.message || '', {
+                        stage: 'api_response',
+                        technical_message: JSON.stringify(data),
+                    });
                     return;
                 }
                 // Atualiza badge de áudio
@@ -2367,20 +2466,41 @@ $playerFeatures = \Helpers\Player\PlayerFeatureRegistry::build($hasPremiumFillAc
                 const playback = configurePlaybackSource(data);
                 startPlayer(playback.url, playback.mediaType, playback.fallbackUrl, playback.fallbackType);
             })
-            .catch(() => showError('Erro de conexão', 'Não foi possível conectar ao servidor de vídeo.'));
+            .catch(error => showError('Erro de conexão', 'Não foi possível conectar ao servidor de vídeo.', {
+                stage: 'api_fetch',
+                technical_message: error?.message || 'Fetch failed',
+            }));
     }
 
     window.loadVideo = loadVideo;
 
-    function showError(title, message) {
+    function showError(title, message, context = {}) {
         loaderOverlay.classList.add('hidden');
-        errTitle.textContent   = title   || 'Vídeo indisponível';
-        errMessage.textContent = message || '';
+        errTitle.textContent = FRIENDLY_PLAYER_ERROR_TITLE;
+        errMessage.textContent = FRIENDLY_PLAYER_ERROR_MESSAGE;
+        reportPlayerError(title, message, context);
         errorOverlay.classList.add('visible');
     }
 
+    window.addEventListener('error', event => {
+        showError('Erro interno do player', event.message || 'Erro de runtime no player.', {
+            stage: 'runtime_error',
+            severity: 'fatal',
+            technical_message: `${event.message || 'Runtime error'} @ ${event.filename || 'inline'}:${event.lineno || 0}:${event.colno || 0}`,
+        });
+    });
+
+    window.addEventListener('unhandledrejection', event => {
+        const reason = event.reason;
+        showError('Erro interno do player', reason?.message || String(reason || 'Promise rejeitada no player.'), {
+            stage: 'unhandled_rejection',
+            severity: 'fatal',
+            technical_message: reason?.stack || reason?.message || String(reason || 'Unhandled rejection'),
+        });
+    });
+
     function startPlayer(url, mediaType, fallbackUrl = '', fallbackType = '') {
-        if (!url) { showError('URL inválida', 'O link de vídeo retornado é inválido.'); return; }
+        if (!url) { showError('URL inválida', 'O link de vídeo retornado é inválido.', { stage: 'invalid_media_url', media_type: mediaType || '' }); return; }
 
         currentMediaUrl = url;
         currentMediaType = mediaType || '';
@@ -2412,7 +2532,13 @@ $playerFeatures = \Helpers\Player\PlayerFeatureRegistry::build($hasPremiumFillAc
                         startPlayer(fallbackUrl, fallbackType || 'auto');
                         return;
                     }
-                    showError('Erro ao carregar stream', 'O video HLS encontrou um erro fatal.');
+                    showError('Erro ao carregar stream', 'O video HLS encontrou um erro fatal.', {
+                        stage: 'hls_error',
+                        media_type: mediaType || 'm3u8',
+                        media_url: url,
+                        hls_details: d,
+                        technical_message: d?.details || d?.type || 'Fatal HLS error',
+                    });
                 });
             } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
                 // Safari nativo
@@ -2421,7 +2547,11 @@ $playerFeatures = \Helpers\Player\PlayerFeatureRegistry::build($hasPremiumFillAc
                 video.addEventListener('canplay', onReady, { once: true });
                 video.addEventListener('error', onVideoError, { once: true });
             } else {
-                showError('Formato não suportado', 'Seu navegador não suporta streams HLS.');
+                showError('Formato não suportado', 'Seu navegador não suporta streams HLS.', {
+                    stage: 'unsupported_hls',
+                    media_type: mediaType || 'm3u8',
+                    media_url: url,
+                });
             }
         } else {
             // MP4/WebM: usa canplay — dispara assim que o buffer inicial está pronto
@@ -2471,7 +2601,12 @@ $playerFeatures = \Helpers\Player\PlayerFeatureRegistry::build($hasPremiumFillAc
     }
 
     function onVideoError() {
-        showError('Erro ao carregar vídeo', 'Não foi possível reproduzir este arquivo de vídeo.');
+        showError('Erro ao carregar vídeo', 'Não foi possível reproduzir este arquivo de vídeo.', {
+            stage: 'video_element_error',
+            media_type: currentMediaType || '',
+            media_url: currentMediaUrl || '',
+            technical_message: video?.error ? `HTMLMediaElement error code ${video.error.code}` : 'Unknown video element error',
+        });
     }
 
     // ─── Controles de vídeo ──────────────────────────────────────────────
@@ -2805,16 +2940,29 @@ $playerFeatures = \Helpers\Player\PlayerFeatureRegistry::build($hasPremiumFillAc
         fetch(url)
             .then(r => r.json())
             .then(data => {
-                if (!data.success) { showError(data.error, data.message); return; }
+                if (!data.success) {
+                    showError(data.error, data.message, {
+                        stage: 'api_response_audio_switch',
+                        technical_message: JSON.stringify(data),
+                    });
+                    return;
+                }
                 if (data.audio) { AUDIO = data.audio; audioBadge.textContent = data.audio === 'dub' ? 'DUB' : 'LEG'; }
                 if (IS_SERIE && data.next_episode) { nextEpData = data.next_episode; buildNextEpLink(nextEpData); }
                 const playback = configurePlaybackSource(data);
                 startPlayerAt(playback.url, playback.mediaType, resumeAt, playback.fallbackUrl, playback.fallbackType);
             })
-            .catch(() => showError('Erro de conexão', ''));
+            .catch(error => showError('Erro de conexão', '', {
+                stage: 'api_fetch_audio_switch',
+                technical_message: error?.message || 'Fetch failed',
+            }));
     }
 
     function startPlayerAt(url, mediaType, resumeAt, fallbackUrl = '', fallbackType = '') {
+        if (!url) {
+            showError('URL inválida', 'O link de vídeo retornado é inválido.', { stage: 'invalid_media_url_audio_switch', media_type: mediaType || '' });
+            return;
+        }
         currentMediaUrl = url || '';
         currentMediaType = mediaType || '';
         const isHLS = mediaType === 'm3u8' || url.includes('.m3u8');
@@ -2840,7 +2988,13 @@ $playerFeatures = \Helpers\Player\PlayerFeatureRegistry::build($hasPremiumFillAc
                     startPlayerAt(fallbackUrl, fallbackType || 'auto', resumeAt);
                     return;
                 }
-                showError('Erro ao carregar stream', 'O video HLS encontrou um erro fatal.');
+                showError('Erro ao carregar stream', 'O video HLS encontrou um erro fatal.', {
+                    stage: 'hls_error_audio_switch',
+                    media_type: mediaType || 'm3u8',
+                    media_url: url,
+                    hls_details: d,
+                    technical_message: d?.details || d?.type || 'Fatal HLS error',
+                });
             });
         } else {
             video.src = url;

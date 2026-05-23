@@ -12,6 +12,7 @@ require_once $rootDir . '/models/admin/AdminModel.php';
 require_once $rootDir . '/models/admin/AdminUserModerationModel.php';
 require_once $rootDir . '/models/admin/AdminUsageMetricsModel.php';
 require_once $rootDir . '/models/admin/AdminApiMetricsModel.php';
+require_once $rootDir . '/models/admin/AdminPlayerLogModel.php';
 require_once $rootDir . '/models/admin/AdminSubscriptionModel.php';
 require_once $rootDir . '/models/admin/AdminAdsReviewModel.php';
 require_once $rootDir . '/models/admin/AdminRouteLockModel.php';
@@ -21,6 +22,7 @@ require_once $rootDir . '/services/admin/AdminAuthService.php';
 require_once $rootDir . '/services/admin/AdminUserModerationService.php';
 require_once $rootDir . '/services/admin/AdminUsageMetricsService.php';
 require_once $rootDir . '/services/admin/AdminApiMetricsService.php';
+require_once $rootDir . '/services/admin/AdminPlayerLogService.php';
 require_once $rootDir . '/services/admin/AdminSubscriptionService.php';
 require_once $rootDir . '/services/admin/AdminAdsReviewService.php';
 require_once $rootDir . '/services/admin/AdminRouteLockService.php';
@@ -28,6 +30,7 @@ require_once $rootDir . '/services/admin/AdminStatusService.php';
 require_once $rootDir . '/controllers/admin/AdminController.php';
 require_once $rootDir . '/controllers/admin/AdminUsageMetricsController.php';
 require_once $rootDir . '/controllers/admin/AdminApiMetricsController.php';
+require_once $rootDir . '/controllers/admin/AdminPlayerLogController.php';
 require_once $rootDir . '/controllers/admin/AdminSubscriptionController.php';
 require_once $rootDir . '/controllers/admin/SecurityAdminController.php';
 require_once $rootDir . '/controllers/admin/AdminAdsReviewController.php';
@@ -38,6 +41,7 @@ use Controllers\Admin\AdminController;
 use Controllers\Admin\AdminSubscriptionController;
 use Controllers\Admin\AdminUsageMetricsController;
 use Controllers\Admin\AdminApiMetricsController;
+use Controllers\Admin\AdminPlayerLogController;
 use Controllers\Admin\AdminAdsReviewController;
 use Controllers\Admin\AdminRouteLockController;
 use Controllers\Admin\AdminStatusController;
@@ -46,6 +50,7 @@ use Models\Admin\AdminSubscriptionModel;
 use Models\Admin\AdminUserModerationModel;
 use Models\Admin\AdminUsageMetricsModel;
 use Models\Admin\AdminApiMetricsModel;
+use Models\Admin\AdminPlayerLogModel;
 use Models\Admin\AdminAdsReviewModel;
 use Models\Admin\AdminRouteLockModel;
 use Models\Admin\AdminStatusModel;
@@ -55,6 +60,7 @@ use Services\Admin\AdminSubscriptionService;
 use Services\Admin\AdminUserModerationService;
 use Services\Admin\AdminUsageMetricsService;
 use Services\Admin\AdminApiMetricsService;
+use Services\Admin\AdminPlayerLogService;
 use Services\Admin\AdminAdsReviewService;
 use Services\Admin\AdminRouteLockService;
 use Services\Admin\AdminStatusService;
@@ -117,6 +123,13 @@ try {
         $apiMetrics = new AdminApiMetricsService(new AdminApiMetricsModel($pdo));
         $apiMetricsController = new AdminApiMetricsController($auth, $apiMetrics);
         $apiMetricsController->handle($action, $method);
+        exit;
+    }
+
+    if (str_starts_with($action, 'player-logs/')) {
+        $playerLogs = new AdminPlayerLogService(new AdminPlayerLogModel($pdo));
+        $playerLogController = new AdminPlayerLogController($auth, $playerLogs);
+        $playerLogController->handle($action, $method);
         exit;
     }
 

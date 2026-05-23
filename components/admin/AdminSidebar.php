@@ -156,6 +156,7 @@ final class AdminSidebar
                     <span class="admin-nav-label">Inteligência</span>
                     <a href="?route=metrics" data-admin-nav="metrics"><i data-lucide="chart-no-axes-combined"></i><span>Métricas de uso</span></a>
                     <a href="?route=api-metrics" data-admin-nav="api-metrics"><i data-lucide="code-xml"></i><span>Métricas de API</span></a>
+                    <a href="?route=player-logs" data-admin-nav="player-logs"><i data-lucide="monitor-play"></i><span>Player logs</span></a>
                 </section>
                 <section class="admin-nav-group">
                     <span class="admin-nav-label">Relacionamento e risco</span>
