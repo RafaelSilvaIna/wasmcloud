@@ -686,52 +686,122 @@ if (!isset($_SESSION['user_id'])) {
 
         /* ─── CAST ──────────────────────────────────────── */
         .cast-scroll {
-            display: flex;
-            gap: 12px;
-            overflow-x: auto;
-            padding-bottom: 8px;
-            scrollbar-width: none;
-            -webkit-overflow-scrolling: touch;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(156px, 1fr));
+            gap: 16px;
+            overflow: visible;
+            padding: 2px 0 0;
         }
-        .cast-scroll::-webkit-scrollbar { display: none; }
 
         .cast-card {
-            flex-shrink: 0;
-            width: 96px;
+            width: 100%;
+            min-width: 0;
             display: flex;
             flex-direction: column;
-            gap: 6px;
+            gap: 11px;
             cursor: pointer;
+            padding: 10px;
+            border: 1px solid rgba(148,163,184,.13);
+            border-radius: var(--radius-lg);
+            background:
+                linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.025)),
+                rgba(18,21,28,.64);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,.04);
+            transition: transform var(--transition), border-color var(--transition), background var(--transition), box-shadow var(--transition);
+        }
+        .cast-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(226,232,240,.26);
+            background:
+                linear-gradient(180deg, rgba(255,255,255,.095), rgba(255,255,255,.035)),
+                rgba(26,30,40,.82);
+            box-shadow: 0 18px 38px rgba(0,0,0,.34), inset 0 1px 0 rgba(255,255,255,.06);
         }
         .cast-photo {
-            width: 96px; height: 96px;
-            border-radius: 50%;
+            width: 100%;
+            aspect-ratio: 3 / 4;
+            height: auto;
+            border-radius: var(--radius);
             object-fit: cover;
             object-position: top;
             background: var(--surface3);
-            border: 2px solid var(--border);
-            transition: border-color var(--transition), transform var(--transition);
+            border: 1px solid rgba(255,255,255,.14);
+            box-shadow: 0 12px 24px rgba(0,0,0,.32);
+            transition: border-color var(--transition), filter var(--transition), transform var(--transition);
         }
         .cast-card:hover .cast-photo {
-            border-color: var(--border-strong);
-            transform: scale(1.04);
+            border-color: rgba(255,255,255,.28);
+            filter: saturate(1.08) contrast(1.03);
+        }
+        .cast-info {
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
         }
         .cast-name {
-            font-size: 12px;
-            font-weight: 600;
-            color: var(--text-primary);
+            font-size: 13px;
+            line-height: 1.25;
+            font-weight: 750;
+            color: var(--text-pure);
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            text-align: center;
         }
         .cast-char {
             font-size: 11px;
-            color: var(--text-muted);
+            line-height: 1.35;
+            color: #8fa1c2;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            text-align: center;
+        }
+        #pip-cast-section:not(.is-expanded) .cast-card:nth-child(n+5) {
+            display: none;
+        }
+        .cast-toggle {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            min-height: 38px;
+            padding: 0 14px;
+            border: 1px solid rgba(148,163,184,.22);
+            border-radius: var(--radius);
+            background: rgba(255,255,255,.06);
+            color: var(--text-primary);
+            font: inherit;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: border-color var(--transition), background var(--transition), color var(--transition), transform var(--transition);
+        }
+        .cast-toggle.is-visible {
+            display: inline-flex;
+        }
+        .cast-toggle:hover {
+            border-color: rgba(229,9,20,.46);
+            background: rgba(229,9,20,.14);
+            color: var(--text-pure);
+            transform: translateY(-1px);
+        }
+        .cast-toggle svg {
+            width: 15px;
+            height: 15px;
+            transition: transform var(--transition);
+        }
+        #pip-cast-section.is-expanded .cast-toggle svg {
+            transform: rotate(180deg);
+        }
+
+        @media (max-width: 640px) {
+            .cast-scroll {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 12px;
+            }
+            .cast-card {
+                padding: 8px;
+            }
+            .cast-name { font-size: 12px; }
         }
 
         /* ─── ERROR STATE ───────────────────────────────── */
@@ -901,6 +971,10 @@ if (!isset($_SESSION['user_id'])) {
             <div class="pip-section">
                 <div class="section-header">
                     <h2 class="section-title">Elenco</h2>
+                    <button type="button" class="cast-toggle" id="cast-toggle" aria-expanded="false" aria-controls="cast-list">
+                        <span id="cast-toggle-label">Ver mais</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+                    </button>
                 </div>
                 <div class="cast-scroll" id="cast-list"></div>
             </div>
@@ -937,8 +1011,10 @@ if (!isset($_SESSION['user_id'])) {
     <template id="tpl-cast-card">
         <div class="cast-card">
             <img src="${photo}" alt="${name}" class="cast-photo" loading="lazy">
-            <span class="cast-name">${name}</span>
-            <span class="cast-char">${character}</span>
+            <div class="cast-info">
+                <span class="cast-name">${name}</span>
+                <span class="cast-char">${character}</span>
+            </div>
         </div>
     </template>
 
@@ -1200,13 +1276,15 @@ if (!isset($_SESSION['user_id'])) {
             const castSection = document.getElementById('pip-cast-section');
             const divider     = document.getElementById('pip-cast-divider');
             const list        = document.getElementById('cast-list');
+            const toggle      = document.getElementById('cast-toggle');
+            const toggleLabel = document.getElementById('cast-toggle-label');
             const tpl         = document.getElementById('tpl-cast-card').innerHTML;
             const mediaType   = ['serie', 'tv'].includes(type) ? 'tv' : 'movie';
 
             try {
                 const res  = await fetch(`https://api.themoviedb.org/3/${mediaType}/${id}/credits?api_key=dc6299fd1adb4e32cf16017eecb33295&language=pt-BR`);
                 const data = await res.json();
-                const cast = (data.cast || []).filter(a => a.profile_path).slice(0, 16);
+                const cast = (data.cast || []).filter(a => a.profile_path).slice(0, 12);
 
                 if (!cast.length) return;
 
@@ -1219,6 +1297,19 @@ if (!isset($_SESSION['user_id'])) {
 
                 castSection.style.display = 'block';
                 divider.style.display     = 'block';
+                castSection.classList.remove('is-expanded');
+
+                if (toggle && toggleLabel) {
+                    const hasMore = cast.length > 4;
+                    toggle.classList.toggle('is-visible', hasMore);
+                    toggle.setAttribute('aria-expanded', 'false');
+                    toggleLabel.textContent = 'Ver mais';
+                    toggle.onclick = () => {
+                        const expanded = castSection.classList.toggle('is-expanded');
+                        toggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+                        toggleLabel.textContent = expanded ? 'Ver menos' : 'Ver mais';
+                    };
+                }
 
             } catch { /* silently fail */ }
         }

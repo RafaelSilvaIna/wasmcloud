@@ -301,6 +301,28 @@ $playerFeatures = \Helpers\Player\PlayerFeatureRegistry::build($hasPremiumFillAc
             opacity: .72;
         }
 
+        .cast-launcher-shell {
+            position: relative;
+        }
+
+        .native-cast-launcher {
+            position: absolute;
+            inset: 0;
+            z-index: 2;
+            width: 100%;
+            height: 100%;
+            border: 0;
+            opacity: .01;
+            pointer-events: none;
+            cursor: pointer;
+            --connected-color: #fff;
+            --disconnected-color: #fff;
+        }
+
+        .cast-launcher-ready .native-cast-launcher {
+            pointer-events: auto;
+        }
+
         .display-option-icon {
             width: 34px;
             height: 34px;
@@ -348,73 +370,9 @@ $playerFeatures = \Helpers\Player\PlayerFeatureRegistry::build($hasPremiumFillAc
             height: 0;
         }
 
-        .cast-menu-panel {
-            width: 360px;
-            max-height: min(76vh, 620px);
-            overflow: auto;
-            scrollbar-width: none;
-            -ms-overflow-style: none;
-        }
-
-        .cast-menu-panel::-webkit-scrollbar {
-            width: 0;
-            height: 0;
-        }
-
-        .cast-option-list {
-            display: flex;
-            flex-direction: column;
-            gap: 3px;
-        }
-
-        .cast-feature-list {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 4px;
-            margin-top: 5px;
-        }
-
-        .cast-feature-pill {
-            max-width: 100%;
-            padding: 3px 6px;
-            border-radius: 3px;
-            background: rgba(255,255,255,.07);
-            color: rgba(255,255,255,.58);
-            font-size: 9px;
-            font-weight: 800;
-            line-height: 1.2;
-        }
-
-        .cast-action-row {
-            display: grid;
-            grid-template-columns: 1fr auto;
-            gap: 8px;
-            padding: 8px 0 0;
-            margin-top: 8px;
-            border-top: 1px solid rgba(255,255,255,.1);
-        }
-
-        .cast-action-btn {
-            min-height: 38px;
-            border: 0;
-            border-radius: 4px;
-            padding: 0 12px;
-            background: #fff;
-            color: #08080a;
-            font-size: 12px;
-            font-weight: 900;
-            cursor: pointer;
-        }
-
-        .cast-action-btn.secondary {
-            border: 1px solid rgba(255,255,255,.16);
-            background: rgba(255,255,255,.08);
-            color: #fff;
-        }
-
         .cast-status {
             min-height: 28px;
-            padding: 8px 10px 2px;
+            padding: 8px 10px 2px 54px;
             color: rgba(255,255,255,.58);
             font-size: 11px;
             line-height: 1.35;
@@ -999,7 +957,7 @@ $playerFeatures = \Helpers\Player\PlayerFeatureRegistry::build($hasPremiumFillAc
                 max-height: calc(100dvh - 76px);
             }
             .cast-menu-panel {
-                width: min(360px, calc(100vw - 24px));
+                width: min(330px, calc(100vw - 24px));
                 max-height: calc(100dvh - 76px);
             }
 
@@ -1202,37 +1160,29 @@ $playerFeatures = \Helpers\Player\PlayerFeatureRegistry::build($hasPremiumFillAc
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16a1 1 0 011 1v10a1 1 0 01-1 1h-5"/><path stroke-linecap="round" stroke-linejoin="round" d="M4 17a5 5 0 015 5"/><path stroke-linecap="round" stroke-linejoin="round" d="M4 13a9 9 0 019 9"/><path stroke-linecap="round" stroke-linejoin="round" d="M4 21h.01"/></svg>
                 <span>Transmitir</span>
             </button>
-            <div class="display-menu-panel cast-menu-panel" id="cast-menu-panel" role="menu" aria-label="Transmissao de video">
+            <div class="display-menu-panel settings-menu-panel cast-menu-panel" id="cast-menu-panel" role="menu" aria-label="Transmissao de video">
                 <div class="settings-section">
                     <div class="settings-title">
-                        <span>Transmissao</span>
-                        <span class="settings-hint">TV</span>
+                        <span>TV</span>
+                        <span class="settings-hint">transmissao</span>
                     </div>
-                    <div class="cast-option-list">
-                        <?php foreach ($playerFeatures['cast'] as $feature): ?>
-                        <button class="display-option player-feature-option<?php echo $feature['enabled'] ? '' : ' locked'; ?><?php echo $feature['id'] === 'tv_standard' ? ' active' : ''; ?>" type="button" data-feature-group="cast" data-feature-id="<?php echo htmlspecialchars($feature['id']); ?>" role="menuitemradio" aria-checked="<?php echo $feature['id'] === 'tv_standard' ? 'true' : 'false'; ?>" aria-disabled="<?php echo $feature['enabled'] ? 'false' : 'true'; ?>">
+                    <?php foreach ($playerFeatures['cast'] as $feature): ?>
+                    <div class="cast-launcher-shell" id="cast-launcher-shell">
+                        <button class="display-option player-feature-option<?php echo $feature['enabled'] ? '' : ' locked'; ?> active" id="cast-standard-option" type="button" data-feature-group="cast" data-feature-id="<?php echo htmlspecialchars($feature['id']); ?>" role="menuitemradio" aria-checked="true" aria-disabled="<?php echo $feature['enabled'] ? 'false' : 'true'; ?>">
                             <span class="display-option-icon" aria-hidden="true">
-                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16v10H4z"/><path stroke-linecap="round" stroke-linejoin="round" d="M8 21h8"/></svg>
+                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16v10H4z"/><path stroke-linecap="round" stroke-linejoin="round" d="M8 21h8"/><path stroke-linecap="round" stroke-linejoin="round" d="M6 17a4 4 0 014 4"/><path stroke-linecap="round" stroke-linejoin="round" d="M4 21h.01"/></svg>
                             </span>
                             <span class="display-option-text">
                                 <strong><?php echo htmlspecialchars($feature['label']); ?></strong>
                                 <span><?php echo htmlspecialchars($feature['enabled'] ? $feature['description'] : 'Disponivel no plano pago ou cortesia.'); ?></span>
-                                <span class="cast-feature-list" aria-hidden="true">
-                                    <?php foreach (array_slice($feature['features'], 0, 4) as $item): ?>
-                                    <span class="cast-feature-pill"><?php echo htmlspecialchars($item); ?></span>
-                                    <?php endforeach; ?>
-                                </span>
                             </span>
                             <span class="settings-option-badge"><?php echo $feature['tier'] === 'free' ? 'Free' : 'Pro'; ?></span>
                         </button>
-                        <?php endforeach; ?>
+                        <google-cast-launcher id="native-cast-launcher" class="native-cast-launcher" aria-label="Abrir permissao de transmissao"></google-cast-launcher>
                     </div>
+                    <?php endforeach; ?>
                 </div>
-                <div class="cast-status" id="cast-status">Escolha um perfil e conecte uma TV compativel.</div>
-                <div class="cast-action-row">
-                    <button class="cast-action-btn" type="button" id="cast-connect-btn">Conectar TV</button>
-                    <button class="cast-action-btn secondary" type="button" id="cast-stop-btn">Parar</button>
-                </div>
+                <div class="cast-status" id="cast-status">Usa AirPlay, Chromecast ou Remote Playback quando o dispositivo permitir.</div>
             </div>
         </div>
     </div>
@@ -1508,9 +1458,9 @@ $playerFeatures = \Helpers\Player\PlayerFeatureRegistry::build($hasPremiumFillAc
     const settingsBtn    = document.getElementById('player-settings-btn');
     const castMenu       = document.getElementById('cast-menu');
     const castMenuBtn    = document.getElementById('cast-menu-btn');
-    const castConnectBtn = document.getElementById('cast-connect-btn');
-    const castStopBtn    = document.getElementById('cast-stop-btn');
     const castStatus     = document.getElementById('cast-status');
+    const castLauncherShell = document.getElementById('cast-launcher-shell');
+    const nativeCastLauncher = document.getElementById('native-cast-launcher');
 
     let hls           = null;
     let nextEpData    = null;
@@ -1532,7 +1482,9 @@ $playerFeatures = \Helpers\Player\PlayerFeatureRegistry::build($hasPremiumFillAc
     let playbackUsesSplitAudio = false;
     let googleCastSdkPromise = null;
     let googleCastInitialized = false;
-    let castReconnectAttempts = 0;
+    let googleCastWarmupStarted = false;
+    let castPermissionPromptOpen = false;
+    let googleCastMediaLoadPromise = null;
 
     function currentAbsoluteUrl() {
         return IS_EMBEDDED_BROWSER ? ORIGINAL_PLAYER_URL : window.location.href;
@@ -1867,6 +1819,7 @@ $playerFeatures = \Helpers\Player\PlayerFeatureRegistry::build($hasPremiumFillAc
                     applyDataMode(id, true);
                 } else if (group === 'cast') {
                     applyCastMode(id, true);
+                    connectToTv();
                 }
             });
         });
@@ -2093,12 +2046,19 @@ $playerFeatures = \Helpers\Player\PlayerFeatureRegistry::build($hasPremiumFillAc
             settingsBtn?.setAttribute('aria-expanded', 'false');
             castMenuBtn.setAttribute('aria-expanded', String(open));
             updateCastStatus();
+            if (open) warmupCastPermissionPrompt('menu');
             showControls();
         });
 
+        ['pointerenter', 'focus', 'touchstart'].forEach(eventName => {
+            castMenuBtn.addEventListener(eventName, () => warmupCastPermissionPrompt('intent'), { passive: true });
+        });
+
+        nativeCastLauncher?.addEventListener('click', () => {
+            updateCastStatus('Abrindo seletor de transmissao do navegador...');
+        }, { passive: true });
+
         castMenu.addEventListener('click', (event) => event.stopPropagation());
-        castConnectBtn?.addEventListener('click', () => connectToTv());
-        castStopBtn?.addEventListener('click', () => stopCasting());
         setupCastAvailability();
         updateCastStatus();
     }
@@ -2132,15 +2092,15 @@ $playerFeatures = \Helpers\Player\PlayerFeatureRegistry::build($hasPremiumFillAc
             applyAudioMode(params.preferredAudioMode, false);
         }
 
-        updateCastStatus(`${feature.label} selecionado. Conecte uma TV compativel.`);
+        updateCastStatus(`${feature.label} selecionada. Procurando recurso nativo do dispositivo.`);
         if (persist) showToast(feature.label);
     }
 
     function updateCastStatus(message = '') {
         if (!castStatus) return;
         const feature = getFeature('cast', activeCastMode) || getFeature('cast', 'tv_standard');
-        const suffix = feature ? `Perfil: ${feature.label}.` : '';
-        castStatus.textContent = message || `${suffix} Use AirPlay, Chromecast ou Remote Playback quando disponivel.`;
+        const suffix = feature ? `${feature.label}.` : 'Transmissao Padrao.';
+        castStatus.textContent = message || `${suffix} Usa AirPlay, Chromecast ou Remote Playback quando o dispositivo permitir.`;
     }
 
     function mediaUrlForCast() {
@@ -2162,24 +2122,76 @@ $playerFeatures = \Helpers\Player\PlayerFeatureRegistry::build($hasPremiumFillAc
         return 'video/mp4';
     }
 
+    function isSecureCastContext() {
+        return window.isSecureContext || ['localhost', '127.0.0.1'].includes(window.location.hostname);
+    }
+
+    function hasTransientUserActivation() {
+        return navigator.userActivation?.isActive !== false;
+    }
+
+    function googleCastReady() {
+        return Boolean(window.cast?.framework && window.chrome?.cast && googleCastInitialized);
+    }
+
+    function warmupCastPermissionPrompt(reason = '') {
+        if (googleCastReady() || googleCastWarmupStarted || !isSecureCastContext()) return;
+
+        googleCastWarmupStarted = true;
+        if (reason === 'menu') {
+            updateCastStatus('Preparando permissao de transmissao do navegador...');
+        }
+
+        initGoogleCast()
+            .then((ready) => {
+                if (!ready) {
+                    googleCastWarmupStarted = false;
+                    if (reason === 'menu') {
+                        updateCastStatus('Chromecast nao foi liberado por este navegador. Tentaremos as APIs nativas.');
+                    }
+                    return;
+                }
+
+                if (reason === 'menu') {
+                    updateCastStatus('Permissao pronta. Toque em Transmissao Padrao para escolher a TV.');
+                }
+            })
+            .catch(() => {
+                googleCastWarmupStarted = false;
+                if (reason === 'menu') {
+                    updateCastStatus('Chromecast nao carregou agora. Ainda tentaremos AirPlay ou Remote Playback.');
+                }
+            });
+    }
+
+    function scheduleCastPermissionWarmup() {
+        const warmCast = () => warmupCastPermissionPrompt('ready');
+        if ('requestIdleCallback' in window) {
+            requestIdleCallback(warmCast, { timeout: 2500 });
+        } else {
+            setTimeout(warmCast, 900);
+        }
+    }
+
     function setupCastAvailability() {
+        video.disableRemotePlayback = false;
+
         if (video.remote?.addEventListener) {
             video.remote.addEventListener('connect', () => updateCastStatus('Transmitindo pela TV.'));
             video.remote.addEventListener('connecting', () => updateCastStatus('Conectando com a TV...'));
             video.remote.addEventListener('disconnect', () => {
-                const feature = getFeature('cast', activeCastMode);
-                updateCastStatus(feature?.params?.reconnect ? 'TV desconectada. Tentando manter o perfil ativo.' : 'Transmissao encerrada.');
+                updateCastStatus('Transmissao encerrada.');
             });
         }
 
         if (video.remote?.watchAvailability) {
             video.remote.watchAvailability((available) => {
-                if (available) updateCastStatus('TV detectada. Toque em Conectar TV.');
+                if (available) updateCastStatus('TV detectada. Toque em Transmissao Padrao.');
             }).catch(() => {});
         }
 
         video.addEventListener('webkitplaybacktargetavailabilitychanged', (event) => {
-            if (event.availability === 'available') updateCastStatus('AirPlay disponivel. Toque em Conectar TV.');
+            if (event.availability === 'available') updateCastStatus('AirPlay disponivel. Toque em Transmissao Padrao.');
         });
 
         video.addEventListener('webkitcurrentplaybacktargetiswirelesschanged', () => {
@@ -2194,29 +2206,61 @@ $playerFeatures = \Helpers\Player\PlayerFeatureRegistry::build($hasPremiumFillAc
             return;
         }
 
+        if (castPermissionPromptOpen) return;
+        castPermissionPromptOpen = true;
+
         applyCastMode(feature.id, false);
 
         if (!mediaUrlForCast()) {
             updateCastStatus('Aguarde o video carregar antes de transmitir.');
             showToast('Aguarde o video carregar.');
+            castPermissionPromptOpen = false;
             return;
         }
 
-        updateCastStatus('Procurando TVs compativeis...');
-
-        if (typeof video.webkitShowPlaybackTargetPicker === 'function') {
-            try {
-                video.webkitShowPlaybackTargetPicker();
-                updateCastStatus('Selecione a TV pelo AirPlay.');
-                return;
-            } catch (_) {}
+        if (!isSecureCastContext()) {
+            updateCastStatus('A transmissao exige HTTPS ou localhost para o navegador liberar permissao.');
+            showToast('Abra em HTTPS para transmitir.');
+            castPermissionPromptOpen = false;
+            return;
         }
 
-        if (await startGoogleCast()) return;
-        if (await startRemotePlayback()) return;
+        if (!hasTransientUserActivation()) {
+            updateCastStatus('Toque novamente em Transmissao Padrao para o navegador abrir a permissao.');
+            showToast('Toque novamente para permitir.');
+            castPermissionPromptOpen = false;
+            return;
+        }
 
-        updateCastStatus('Nenhuma API de transmissao foi liberada neste navegador.');
-        showToast('Transmissao indisponivel neste navegador.');
+        updateCastStatus('Abrindo permissao de transmissao do navegador...');
+
+        try {
+            if (googleCastReady() && await startGoogleCast(true)) return;
+
+            if (typeof video.webkitShowPlaybackTargetPicker === 'function') {
+                try {
+                    video.webkitShowPlaybackTargetPicker();
+                    updateCastStatus('Selecione a TV pelo AirPlay.');
+                    return;
+                } catch (_) {}
+            }
+
+            if (await startRemotePlayback()) return;
+
+            if (!googleCastReady()) {
+                updateCastStatus('Preparando Chromecast. Toque novamente em Transmissao Padrao.');
+                warmupCastPermissionPrompt('menu');
+                showToast('Toque novamente para escolher a TV.');
+                return;
+            }
+
+            if (await startGoogleCast(true)) return;
+
+            updateCastStatus('Nenhuma permissao de transmissao foi liberada por este navegador.');
+            showToast('Transmissao indisponivel neste navegador.');
+        } finally {
+            castPermissionPromptOpen = false;
+        }
     }
 
     async function startRemotePlayback() {
@@ -2245,7 +2289,11 @@ $playerFeatures = \Helpers\Player\PlayerFeatureRegistry::build($hasPremiumFillAc
             };
 
             const existing = document.querySelector('script[data-pipocine-cast-sdk]');
-            if (existing) return;
+            if (existing) {
+                existing.addEventListener('load', () => resolve(Boolean(window.cast?.framework)), { once: true });
+                existing.addEventListener('error', () => reject(new Error('Falha ao carregar Google Cast')), { once: true });
+                return;
+            }
 
             const script = document.createElement('script');
             script.src = 'https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1';
@@ -2268,7 +2316,8 @@ $playerFeatures = \Helpers\Player\PlayerFeatureRegistry::build($hasPremiumFillAc
 
     async function initGoogleCast() {
         await loadGoogleCastSdk();
-        if (googleCastInitialized || !window.cast?.framework || !window.chrome?.cast) return true;
+        if (googleCastInitialized) return true;
+        if (!window.cast?.framework || !window.chrome?.cast) return false;
 
         const castContext = cast.framework.CastContext.getInstance();
         castContext.setOptions({
@@ -2279,8 +2328,10 @@ $playerFeatures = \Helpers\Player\PlayerFeatureRegistry::build($hasPremiumFillAc
         castContext.addEventListener(cast.framework.CastContextEventType.SESSION_STATE_CHANGED, (event) => {
             const state = event.sessionState;
             if (state === cast.framework.SessionState.SESSION_STARTED || state === cast.framework.SessionState.SESSION_RESUMED) {
-                castReconnectAttempts = 0;
-                updateCastStatus('TV conectada.');
+                updateCastStatus('TV conectada. Enviando video...');
+                loadGoogleCastMedia(event.session).catch(() => {
+                    updateCastStatus('TV conectada, mas nao foi possivel enviar o video.');
+                });
             }
 
             if (state === cast.framework.SessionState.SESSION_ENDED) {
@@ -2289,12 +2340,17 @@ $playerFeatures = \Helpers\Player\PlayerFeatureRegistry::build($hasPremiumFillAc
         });
 
         googleCastInitialized = true;
+        castLauncherShell?.classList.add('cast-launcher-ready');
+        nativeCastLauncher?.setAttribute('title', 'Abrir seletor de transmissao');
         return true;
     }
 
-    async function startGoogleCast() {
+    async function startGoogleCast(requireGesture = false) {
         try {
-            await initGoogleCast();
+            if (requireGesture && !hasTransientUserActivation()) return false;
+            const ready = await initGoogleCast();
+            if (!ready) return false;
+            if (requireGesture && !hasTransientUserActivation()) return false;
             const castContext = cast.framework.CastContext.getInstance();
             const session = castContext.getCurrentSession() || await castContext.requestSession();
             if (!session) return false;
@@ -2306,6 +2362,14 @@ $playerFeatures = \Helpers\Player\PlayerFeatureRegistry::build($hasPremiumFillAc
     }
 
     async function loadGoogleCastMedia(existingSession = null) {
+        if (googleCastMediaLoadPromise) return googleCastMediaLoadPromise;
+        googleCastMediaLoadPromise = loadGoogleCastMediaNow(existingSession).finally(() => {
+            googleCastMediaLoadPromise = null;
+        });
+        return googleCastMediaLoadPromise;
+    }
+
+    async function loadGoogleCastMediaNow(existingSession = null) {
         if (!window.chrome?.cast?.media || !window.cast?.framework) return false;
 
         const session = existingSession || cast.framework.CastContext.getInstance().getCurrentSession();
@@ -2314,7 +2378,6 @@ $playerFeatures = \Helpers\Player\PlayerFeatureRegistry::build($hasPremiumFillAc
         const url = mediaUrlForCast();
         if (!url) return false;
 
-        const feature = getFeature('cast', activeCastMode) || getFeature('cast', 'tv_standard');
         const mediaInfo = new chrome.cast.media.MediaInfo(url, castContentType(url, currentMediaType));
         mediaInfo.streamType = chrome.cast.media.StreamType.BUFFERED;
         mediaInfo.metadata = new chrome.cast.media.GenericMediaMetadata();
@@ -2323,11 +2386,8 @@ $playerFeatures = \Helpers\Player\PlayerFeatureRegistry::build($hasPremiumFillAc
         if (CONTENT_POSTER) mediaInfo.metadata.images = [{ url: CONTENT_POSTER }];
         mediaInfo.customData = {
             app: 'Pipocine',
-            profile: feature?.id || 'tv_standard',
-            hdr: Boolean(feature?.params?.hdr),
-            fps: feature?.params?.fps || 30,
-            targetLatency: feature?.params?.targetLatency || 'normal',
-            spatialAudio: Boolean(feature?.params?.spatialAudio),
+            profile: 'tv_standard',
+            targetLatency: 'normal',
         };
 
         const request = new chrome.cast.media.LoadRequest(mediaInfo);
@@ -2336,35 +2396,13 @@ $playerFeatures = \Helpers\Player\PlayerFeatureRegistry::build($hasPremiumFillAc
         await session.loadMedia(request);
 
         if (!video.paused) video.pause();
-        updateCastStatus(`Transmitindo: ${feature?.label || 'TV'}.`);
+        updateCastStatus('Transmitindo: Transmissao Padrao.');
         showToast('Transmitindo para TV');
         return true;
     }
 
     function handleCastEnded() {
-        const feature = getFeature('cast', activeCastMode);
-        const maxAttempts = Number(feature?.params?.reconnectAttempts || 0);
-        if (!feature?.params?.reconnect || castReconnectAttempts >= maxAttempts) {
-            updateCastStatus('Transmissao encerrada.');
-            return;
-        }
-
-        castReconnectAttempts++;
-        updateCastStatus(`Reconectando TV... tentativa ${castReconnectAttempts}/${maxAttempts}.`);
-        setTimeout(() => {
-            startGoogleCast().catch(() => updateCastStatus('Nao foi possivel reconectar automaticamente.'));
-        }, 1400);
-    }
-
-    function stopCasting() {
-        try {
-            if (window.cast?.framework) {
-                const session = cast.framework.CastContext.getInstance().getCurrentSession();
-                if (session) session.endSession(true);
-            }
-        } catch (_) {}
         updateCastStatus('Transmissao encerrada.');
-        showToast('Transmissao encerrada');
     }
 
     function effectiveDataFeature() {
@@ -2520,6 +2558,7 @@ $playerFeatures = \Helpers\Player\PlayerFeatureRegistry::build($hasPremiumFillAc
                         RESUME_TIME = 0;
                     }
                     primeMobileLandscapeFullscreen();
+                    scheduleCastPermissionWarmup();
                     video.play().catch(() => {});
                 });
                 hls.on(Hls.Events.ERROR, (_e, d) => {
@@ -2597,6 +2636,7 @@ $playerFeatures = \Helpers\Player\PlayerFeatureRegistry::build($hasPremiumFillAc
             RESUME_TIME = 0; // aplica apenas uma vez
         }
         primeMobileLandscapeFullscreen();
+        scheduleCastPermissionWarmup();
         video.play().catch(() => {});
     }
 
@@ -2976,6 +3016,7 @@ $playerFeatures = \Helpers\Player\PlayerFeatureRegistry::build($hasPremiumFillAc
                 loaderOverlay.classList.add('hidden');
                 showControls();
                 primeMobileLandscapeFullscreen();
+                scheduleCastPermissionWarmup();
                 video.play().catch(() => {});
             });
             hls.on(Hls.Events.ERROR, (_e, d) => {
@@ -3004,6 +3045,7 @@ $playerFeatures = \Helpers\Player\PlayerFeatureRegistry::build($hasPremiumFillAc
                 loaderOverlay.classList.add('hidden');
                 showControls();
                 primeMobileLandscapeFullscreen();
+                scheduleCastPermissionWarmup();
                 video.play().catch(() => {});
             };
             const fallbackAt = setTimeout(() => {
