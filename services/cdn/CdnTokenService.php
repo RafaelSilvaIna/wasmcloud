@@ -4,21 +4,30 @@ declare(strict_types=1);
 
 namespace Services\Cdn;
 
+use Hooks\Cdn\CdnTokenCleanupHook;
+use Models\Cdn\CdnTokenModel;
+
+require_once __DIR__ . '/../../models/cdn/CdnTokenModel.php';
+require_once __DIR__ . '/../../hooks/cdn/CdnTokenCleanupHook.php';
+
 final class CdnTokenService
 {
-    private const DEFAULT_TTL = 900;
+    private const DEFAULT_TTL = 14400;
 
     private string $secret;
     private int $ttl;
+    private CdnTokenModel $tokens;
 
-    public function __construct(?string $secret = null, ?int $ttl = null)
+    public function __construct(?string $secret = null, ?int $ttl = null, ?CdnTokenModel $tokens = null)
     {
         $fallback = defined('SESSION_NAME') && defined('DB_PIPO') && defined('DB_CINE')
             ? hash('sha256', SESSION_NAME . (DB_PIPO['pass'] ?? '') . (DB_CINE['pass'] ?? ''))
             : hash('sha256', __DIR__);
 
         $this->secret = (string) ($secret ?? getenv('PIPOCINE_CDN_SECRET') ?: $fallback);
-        $this->ttl = max(60, min(3600, (int) ($ttl ?? getenv('PIPOCINE_CDN_TTL') ?: self::DEFAULT_TTL)));
+        $this->ttl = max(300, min(21600, (int) ($ttl ?? getenv('PIPOCINE_CDN_TTL') ?: self::DEFAULT_TTL)));
+        $this->tokens = $tokens ?? new CdnTokenModel();
+        CdnTokenCleanupHook::maybeRun($this->tokens);
     }
 
     public function issue(array $claims, string $kind, ?string $profile = null): string
@@ -37,12 +46,12 @@ final class CdnTokenService
             'nonce' => bin2hex(random_bytes(8)),
         ] + $claims;
 
-        return $this->encode($payload);
+        return $this->tokens->create($payload);
     }
 
     public function validate(string $token, string $kind, ?string $profile = null): ?array
     {
-        $payload = $this->decode($token);
+        $payload = $this->tokens->find($token) ?? $this->decode($token);
         if (!$payload) {
             return null;
         }

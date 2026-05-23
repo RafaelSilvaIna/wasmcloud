@@ -36,6 +36,30 @@ final class CdnHeaders
         header('X-Pipocine-CDN-Mode: ' . $mode);
     }
 
+    public static function proxy(string $mode = 'origin-proxy', int $cacheSeconds = 30): void
+    {
+        header('Cache-Control: private, max-age=' . max(0, $cacheSeconds) . ', stale-while-revalidate=30');
+        header('X-Content-Type-Options: nosniff');
+        header('X-Frame-Options: SAMEORIGIN');
+        header('Referrer-Policy: same-origin');
+        header('Accept-Ranges: bytes');
+        header('X-Accel-Buffering: no');
+        header('X-Pipocine-CDN: internal-origin-proxy');
+        header('X-Pipocine-CDN-Mode: ' . $mode);
+    }
+
+    public static function playlist(): void
+    {
+        header('Cache-Control: private, max-age=10, stale-while-revalidate=30');
+        header('X-Content-Type-Options: nosniff');
+        header('X-Frame-Options: SAMEORIGIN');
+        header('Referrer-Policy: same-origin');
+        header('Content-Type: application/vnd.apple.mpegurl; charset=utf-8');
+        header('X-Accel-Buffering: no');
+        header('X-Pipocine-CDN: internal-origin-proxy');
+        header('X-Pipocine-CDN-Mode: hls-playlist');
+    }
+
     public static function rangeNotSatisfiable(int $size): void
     {
         self::noStore();

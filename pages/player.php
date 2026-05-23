@@ -33,6 +33,21 @@ $audio       = strtolower(trim($_GET['audio'] ?? 'dub'));
 $isSerie = in_array($contentType, ['serie', 'series', 'tv'], true);
 
 if ($tmdbId <= 0) {
+    $requestPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '';
+    $lastPlayer = $_SESSION['last_player_request'] ?? null;
+    $lastPlayerAge = time() - (int) ($lastPlayer['ts'] ?? 0);
+
+    if ($requestPath === '/player' && is_array($lastPlayer) && $lastPlayerAge >= 0 && $lastPlayerAge <= 86400) {
+        $contentType = strtolower(trim((string) ($lastPlayer['type'] ?? 'filme')));
+        $tmdbId = (int) ($lastPlayer['id'] ?? 0);
+        $season = max(1, (int) ($lastPlayer['s'] ?? 1));
+        $episode = max(1, (int) ($lastPlayer['e'] ?? 1));
+        $audio = strtolower(trim((string) ($lastPlayer['audio'] ?? 'dub')));
+        $isSerie = in_array($contentType, ['serie', 'series', 'tv'], true);
+    }
+}
+
+if ($tmdbId <= 0) {
     header('Location: /');
     exit;
 }
@@ -55,6 +70,15 @@ if (!$content) {
     header('Location: /');
     exit;
 }
+
+$_SESSION['last_player_request'] = [
+    'id' => $tmdbId,
+    'type' => $isSerie ? 'serie' : 'filme',
+    's' => max(1, $season),
+    'e' => max(1, $episode),
+    'audio' => in_array($audio, ['dub', 'leg'], true) ? $audio : 'dub',
+    'ts' => time(),
+];
 
 // Normaliza imagens
 $backdropImg = $content['capa'] ?? '';
@@ -1700,7 +1724,7 @@ $playerFeatures = \Helpers\Player\PlayerFeatureRegistry::build($hasPremiumFillAc
 
         return {
             url: playbackUsesCdn ? cdnVideoUrlForProfile(activeAudioMode || 'standard') : originalMediaUrl,
-            mediaType: playbackUsesCdn ? 'mp4' : (data?.media_type || ''),
+            mediaType: playbackUsesCdn ? (internalCdn?.media_type || data?.media_type || 'auto') : (data?.media_type || ''),
             fallbackUrl: originalMediaUrl,
             fallbackType: data?.media_type || '',
         };
@@ -1976,7 +2000,7 @@ $playerFeatures = \Helpers\Player\PlayerFeatureRegistry::build($hasPremiumFillAc
             return;
         }
 
-        if (playbackUsesCdn && cdnVideoUrl && switchCdnAudioProfile(feature, persist)) {
+        if (playbackUsesSplitAudio && cdnVideoUrl && switchCdnAudioProfile(feature, persist)) {
             return;
         }
 

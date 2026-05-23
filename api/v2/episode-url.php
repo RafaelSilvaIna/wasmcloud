@@ -88,23 +88,19 @@ function resolveRedirect(string $url): string
         return $url;
     }
 
-    $originHost = (parse_url($url, PHP_URL_SCHEME) ?? 'https') . '://' . $host;
-
     $ch = curl_init();
     curl_setopt_array($ch, [
         CURLOPT_URL            => $url,
         CURLOPT_FOLLOWLOCATION => true,
         CURLOPT_MAXREDIRS      => 10,
         CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_SSL_VERIFYPEER => false,
-        CURLOPT_SSL_VERIFYHOST => false,
+        CURLOPT_SSL_VERIFYPEER => true,
+        CURLOPT_SSL_VERIFYHOST => 2,
         CURLOPT_CONNECTTIMEOUT => 6,
         CURLOPT_TIMEOUT        => 10,
-        CURLOPT_USERAGENT      => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+        CURLOPT_USERAGENT      => 'PipocineMediaProxy/1.0 (+https://pipocine.site)',
         CURLOPT_HTTPHEADER     => [
             'Range: bytes=0-0',          // Solicita apenas 1 byte — só queremos a URL final
-            'Referer: ' . $originHost . '/',
-            'Origin: ' . $originHost,
             'Accept: video/mp4,video/*;q=0.9,*/*;q=0.8',
         ],
     ]);

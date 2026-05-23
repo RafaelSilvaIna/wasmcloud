@@ -15,7 +15,7 @@ require_once __DIR__ . '/../../helpers/cdn/CdnUrlGuard.php';
 final class CdnStreamService
 {
     private const CACHE_VERSION = 1;
-    private const SOURCE_USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36';
+    private const SOURCE_USER_AGENT = 'PipocineMediaProxy/1.0 (+https://pipocine.site)';
 
     public function streamVideoOnly(string $sourceUrl, ?string $sourceOrigin = null): void
     {
@@ -394,13 +394,7 @@ final class CdnStreamService
 
     private function sourceHeaders(string $sourceUrl, ?string $sourceOrigin = null): string
     {
-        $scheme = parse_url($sourceUrl, PHP_URL_SCHEME) ?: 'https';
-        $host = parse_url($sourceUrl, PHP_URL_HOST) ?: '';
-        $origin = $sourceOrigin ?: ($host !== '' ? $scheme . '://' . $host : 'https://pipocine.site');
-
         return implode("\r\n", [
-            'Referer: ' . $origin . '/',
-            'Origin: ' . $origin,
             'Accept: video/mp4,video/*;q=0.9,*/*;q=0.8',
             'Connection: keep-alive',
             '',
