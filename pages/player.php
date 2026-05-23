@@ -1368,11 +1368,21 @@ $playerFeatures = \Helpers\Player\PlayerFeatureRegistry::build($hasPremiumFillAc
     const IS_EMBEDDED_BROWSER = <?php echo $isEmbeddedBrowser ? 'true' : 'false'; ?>;
     const CAN_PREMIUM_FILL = <?php echo $hasPremiumFillAccess ? 'true' : 'false'; ?>;
     const PLAYER_FEATURES = <?php echo json_encode($playerFeatures, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?>;
+    const ORIGINAL_PLAYER_URL = window.location.href;
     let   AUDIO          = <?php echo json_encode($audio); ?>;
 
     // Progresso inicial: lê ?t= da URL (link "Continua Assistindo") ou usa a API
     const _urlT = parseInt(new URLSearchParams(window.location.search).get('t') || '0', 10);
     let RESUME_TIME = _urlT > 5 ? _urlT : 0;
+
+    function maskPlayerUrl() {
+        const cleanPath = `${window.location.origin}/player`;
+        if (window.location.href !== cleanPath) {
+            history.replaceState({ ...(history.state || {}), playerMasked: true }, '', cleanPath);
+        }
+    }
+
+    maskPlayerUrl();
 
     // ─── Elementos ───────────────────────────────────────────────────────
     const video          = document.getElementById('pip-video');
@@ -1435,7 +1445,7 @@ $playerFeatures = \Helpers\Player\PlayerFeatureRegistry::build($hasPremiumFillAc
     let castReconnectAttempts = 0;
 
     function currentAbsoluteUrl() {
-        return window.location.href;
+        return IS_EMBEDDED_BROWSER ? ORIGINAL_PLAYER_URL : window.location.href;
     }
 
     function setupEmbeddedBrowserBlock() {
@@ -2777,9 +2787,7 @@ $playerFeatures = \Helpers\Player\PlayerFeatureRegistry::build($hasPremiumFillAc
         if (newAudio === AUDIO) return;
         const pos = video.currentTime;
         AUDIO = newAudio;
-        const newUrl = new URL(window.location.href);
-        newUrl.searchParams.set('audio', newAudio);
-        history.replaceState(null, '', newUrl.toString());
+        maskPlayerUrl();
         audioBadge.textContent = newAudio === 'dub' ? 'DUB' : 'LEG';
         syncAudioTabs(newAudio);
         // Recarrega o vídeo no tempo atual
