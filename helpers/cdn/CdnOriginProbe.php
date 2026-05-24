@@ -45,7 +45,8 @@ final class CdnOriginProbe
             $isHls ? null : 'bytes=0-1',
             $isHls
                 ? 'application/vnd.apple.mpegurl,application/x-mpegURL,text/plain,*/*;q=0.8'
-                : 'video/*,audio/*,application/octet-stream,*/*;q=0.8'
+                : 'video/*,audio/*,application/octet-stream,*/*;q=0.8',
+            $url
         );
 
         $ch = curl_init();

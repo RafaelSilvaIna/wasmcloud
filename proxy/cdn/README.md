@@ -14,6 +14,25 @@ Configuracao:
 
 - `PIPOCINE_CDN_INTERNAL_ENABLED=0` desativa a CDN interna.
 - `PIPOCINE_CDN_TTL=14400` controla a validade dos tokens em segundos (minimo 300, maximo 21600).
+- `PIPOCINE_CDN_PARTNER_AUTH_JSON` habilita credenciais formais por host, quando a origem autorizar o Pipocine.
+
+Exemplo de credencial autorizada:
+
+```json
+{
+  "media.exemplo.com": {
+    "enabled": true,
+    "headers": {
+      "CF-Access-Client-Id": "id-do-servico",
+      "CF-Access-Client-Secret": "segredo-do-servico"
+    },
+    "mtls_cert": "C:/secure/pipocine-client.pem",
+    "mtls_key": "C:/secure/pipocine-client.key"
+  }
+}
+```
+
+Headers de navegador como `Cookie`, `Referer`, `Origin`, `Host`, `User-Agent` e `Sec-*` sao ignorados de proposito. Esta camada existe para autenticacao server-to-server, nao para simular usuario final.
 
 Modo legado:
 

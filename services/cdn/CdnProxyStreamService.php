@@ -106,7 +106,7 @@ final class CdnProxyStreamService
 
         $ch = curl_init();
         curl_setopt_array($ch, CdnHttpClient::curlBaseOptions($url) + [
-            CURLOPT_HTTPHEADER => CdnHttpClient::requestHeaders($range, 'video/*,audio/*,application/octet-stream,*/*;q=0.8'),
+            CURLOPT_HTTPHEADER => CdnHttpClient::requestHeaders($range, 'video/*,audio/*,application/octet-stream,*/*;q=0.8', $url),
             CURLOPT_HEADERFUNCTION => function ($ch, string $line) use (&$headers, &$status): int {
                 $trimmed = trim($line);
                 if (preg_match('/^HTTP\/\S+\s+(\d+)/i', $trimmed, $m)) {
@@ -188,7 +188,7 @@ final class CdnProxyStreamService
 
         $ch = curl_init();
         curl_setopt_array($ch, CdnHttpClient::curlBaseOptions($url) + [
-            CURLOPT_HTTPHEADER => CdnHttpClient::requestHeaders(null, 'application/vnd.apple.mpegurl,application/x-mpegURL,text/plain,*/*;q=0.8'),
+            CURLOPT_HTTPHEADER => CdnHttpClient::requestHeaders(null, 'application/vnd.apple.mpegurl,application/x-mpegURL,text/plain,*/*;q=0.8', $url),
             CURLOPT_TIMEOUT => 12,
             CURLOPT_HEADERFUNCTION => function ($ch, string $line) use (&$status): int {
                 if (preg_match('/^HTTP\/\S+\s+(\d+)/i', trim($line), $m)) {

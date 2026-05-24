@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace Helpers\Cdn;
 
+require_once __DIR__ . '/CdnPartnerAuth.php';
+
 final class CdnHttpClient
 {
     private const USER_AGENT = 'PipocineMediaProxy/1.0 (+https://pipocine.site)';
     private const MAX_PLAYLIST_BYTES = 5242880;
 
-    public static function requestHeaders(?string $range = null, ?string $accept = null): array
+    public static function requestHeaders(?string $range = null, ?string $accept = null, ?string $url = null): array
     {
         $headers = [
             'User-Agent: ' . self::USER_AGENT,
@@ -26,7 +28,7 @@ final class CdnHttpClient
             $headers[] = 'Range: ' . $range;
         }
 
-        return $headers;
+        return $url ? array_merge($headers, CdnPartnerAuth::headersFor($url)) : $headers;
     }
 
     public static function sanitizeRange(?string $range): ?string
@@ -71,7 +73,7 @@ final class CdnHttpClient
             CURLOPT_LOW_SPEED_LIMIT => 256,
             CURLOPT_LOW_SPEED_TIME => 20,
             CURLOPT_BUFFERSIZE => 1024 * 256,
-        ];
+        ] + CdnPartnerAuth::curlOptionsFor($url);
     }
 
     public static function maxPlaylistBytes(): int
