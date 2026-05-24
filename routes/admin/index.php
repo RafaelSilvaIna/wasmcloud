@@ -14,6 +14,7 @@ require_once $rootDir . '/models/admin/AdminUsageMetricsModel.php';
 require_once $rootDir . '/models/admin/AdminApiMetricsModel.php';
 require_once $rootDir . '/models/admin/AdminPlayerLogModel.php';
 require_once $rootDir . '/models/admin/AdminSubscriptionModel.php';
+require_once $rootDir . '/models/admin/AdminBoxModel.php';
 require_once $rootDir . '/models/admin/AdminAdsReviewModel.php';
 require_once $rootDir . '/models/admin/AdminRouteLockModel.php';
 require_once $rootDir . '/models/admin/AdminStatusModel.php';
@@ -24,6 +25,7 @@ require_once $rootDir . '/services/admin/AdminUsageMetricsService.php';
 require_once $rootDir . '/services/admin/AdminApiMetricsService.php';
 require_once $rootDir . '/services/admin/AdminPlayerLogService.php';
 require_once $rootDir . '/services/admin/AdminSubscriptionService.php';
+require_once $rootDir . '/services/admin/AdminBoxService.php';
 require_once $rootDir . '/services/admin/AdminAdsReviewService.php';
 require_once $rootDir . '/services/admin/AdminRouteLockService.php';
 require_once $rootDir . '/services/admin/AdminStatusService.php';
@@ -32,6 +34,7 @@ require_once $rootDir . '/controllers/admin/AdminUsageMetricsController.php';
 require_once $rootDir . '/controllers/admin/AdminApiMetricsController.php';
 require_once $rootDir . '/controllers/admin/AdminPlayerLogController.php';
 require_once $rootDir . '/controllers/admin/AdminSubscriptionController.php';
+require_once $rootDir . '/controllers/admin/AdminBoxController.php';
 require_once $rootDir . '/controllers/admin/SecurityAdminController.php';
 require_once $rootDir . '/controllers/admin/AdminAdsReviewController.php';
 require_once $rootDir . '/controllers/admin/AdminRouteLockController.php';
@@ -43,6 +46,7 @@ use Controllers\Admin\AdminUsageMetricsController;
 use Controllers\Admin\AdminApiMetricsController;
 use Controllers\Admin\AdminPlayerLogController;
 use Controllers\Admin\AdminAdsReviewController;
+use Controllers\Admin\AdminBoxController;
 use Controllers\Admin\AdminRouteLockController;
 use Controllers\Admin\AdminStatusController;
 use Models\Admin\AdminModel;
@@ -52,6 +56,7 @@ use Models\Admin\AdminUsageMetricsModel;
 use Models\Admin\AdminApiMetricsModel;
 use Models\Admin\AdminPlayerLogModel;
 use Models\Admin\AdminAdsReviewModel;
+use Models\Admin\AdminBoxModel;
 use Models\Admin\AdminRouteLockModel;
 use Models\Admin\AdminStatusModel;
 use Models\Ads\AdsCampaignModel;
@@ -62,6 +67,7 @@ use Services\Admin\AdminUsageMetricsService;
 use Services\Admin\AdminApiMetricsService;
 use Services\Admin\AdminPlayerLogService;
 use Services\Admin\AdminAdsReviewService;
+use Services\Admin\AdminBoxService;
 use Services\Admin\AdminRouteLockService;
 use Services\Admin\AdminStatusService;
 
@@ -137,6 +143,15 @@ try {
         $subscriptions = new AdminSubscriptionService(new AdminSubscriptionModel($pdo));
         $subscriptionController = new AdminSubscriptionController($auth, $subscriptions);
         $subscriptionController->handle($action, $method);
+        exit;
+    }
+
+    if (str_starts_with($action, 'box')) {
+        $boxController = new AdminBoxController(
+            $auth,
+            new AdminBoxService(new AdminBoxModel($pdo))
+        );
+        $boxController->handle($action, $method);
         exit;
     }
 

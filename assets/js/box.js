@@ -104,6 +104,10 @@
     }
 
     function messageBody(item) {
+        if (String(item.type || '').startsWith('admin_')) {
+            return `<p>${esc(item.body || 'Mensagem informativa do Pipocine.')}</p>`;
+        }
+
         if (item.type === 'family_invite') {
             return `
                 <p><strong>${esc(item.actor?.name || 'Um titular')}</strong> convidou sua conta para entrar na familia do Plano Gold.</p>
@@ -162,7 +166,8 @@
 
     function actionUrl(item) {
         const url = String(item.payload?.action_url || '');
-        if (url === '/plan' || url === '/plan/me') return url;
+        if (url.startsWith('/') && !url.startsWith('//')) return url;
+        if (/^https?:\/\//i.test(url)) return url;
         return '';
     }
 

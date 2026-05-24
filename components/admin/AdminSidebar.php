@@ -147,6 +147,7 @@ final class AdminSidebar
                     <a class="active" href="?route=overview" data-admin-nav="overview"><i data-lucide="layout-dashboard"></i><span>Visão geral</span></a>
                     <a href="?route=users" data-admin-nav="users"><i data-lucide="users"></i><span>Usuários</span></a>
                     <a href="?route=subscriptions" data-admin-nav="subscriptions"><i data-lucide="credit-card"></i><span>Assinaturas</span></a>
+                    <a href="?route=box" data-admin-nav="box"><i data-lucide="inbox"></i><span>Box</span></a>
                 </section>
                 <section class="admin-nav-group">
                     <span class="admin-nav-label">Receita</span>
