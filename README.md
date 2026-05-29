@@ -1,59 +1,164 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Wasm Cloud
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Wasm Cloud e uma plataforma de hospedagem em Laravel para gerenciar sites, clientes, planos, dominios, bancos de dados, arquivos, deploys e operacoes administrativas de hospedagem.
 
-## About Laravel
+Este repositorio contem a base backend/frontend da aplicacao. A aplicacao roda em Laravel 12, PHP 8.2+, Vite e PostgreSQL.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Objetivo
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+O projeto deve evoluir como um painel de hospedagem simples, seguro e escalavel. As primeiras entregas devem priorizar:
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- cadastro e autenticacao de usuarios;
+- gestao de clientes e contas de hospedagem;
+- planos de hospedagem;
+- dominios e status de DNS;
+- controle de arquivos, sites e recursos;
+- painel administrativo;
+- registros de auditoria;
+- operacoes seguras de banco de dados;
+- base pronta para futuras integracoes com Docker, filas, storage e automacoes.
 
-## Learning Laravel
+## Stack
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+- PHP 8.2+
+- Laravel 12
+- PostgreSQL
+- Vite
+- Tailwind CSS
+- PHPUnit
+- Apache/XAMPP em desenvolvimento local
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## Requisitos Locais
 
-## Laravel Sponsors
+- PHP disponivel no terminal
+- Composer
+- Node.js e npm
+- PostgreSQL rodando no Docker
+- Apache do XAMPP apontando para `public/`
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+## Configuracao Do Banco
 
-### Premium Partners
+O ambiente local usa PostgreSQL no Docker com as seguintes variaveis no `.env`:
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+```env
+DB_CONNECTION=pgsql
+DB_HOST=127.0.0.1
+DB_PORT=5433
+DB_DATABASE=hospedagem
+DB_USERNAME=admin
+DB_PASSWORD=admin123
+```
 
-## Contributing
+Nunca versionar o arquivo `.env`. Atualize tambem o `.env.example` apenas com valores seguros e sem segredos reais.
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## Instalacao
 
-## Code of Conduct
+```bash
+composer install
+npm install
+cp .env.example .env
+php artisan key:generate
+php artisan migrate
+npm run build
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+No Windows com XAMPP, caso o projeto ja esteja em `C:\xampp\htdocs`, confirme que o Apache esta servindo a pasta:
 
-## Security Vulnerabilities
+```text
+C:/xampp/htdocs/public
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+O Laravel deve ser acessado por:
 
-## License
+```text
+http://localhost
+```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+## Desenvolvimento
+
+Para rodar os assets em modo desenvolvimento:
+
+```bash
+npm run dev
+```
+
+Para limpar caches quando alterar configuracoes:
+
+```bash
+php artisan optimize:clear
+```
+
+Para rodar migrations:
+
+```bash
+php artisan migrate
+```
+
+Para executar testes:
+
+```bash
+php artisan test
+```
+
+## Servidor Web
+
+O servidor web deve sempre apontar para `public/`, conforme a recomendacao do Laravel. A raiz do projeto nao deve ser exposta ao navegador.
+
+Exemplo de VirtualHost local:
+
+```apache
+<VirtualHost *:80>
+    ServerName localhost
+    DocumentRoot "C:/xampp/htdocs/public"
+
+    <Directory "C:/xampp/htdocs/public">
+        AllowOverride All
+        Require all granted
+    </Directory>
+</VirtualHost>
+```
+
+## Padroes De Desenvolvimento
+
+- Usar os recursos nativos do Laravel antes de criar solucoes proprias.
+- Validar toda entrada externa com Form Requests ou validadores dedicados.
+- Usar migrations para qualquer alteracao estrutural no banco.
+- Usar Eloquent com relacionamentos claros e casts quando fizer sentido.
+- Evitar logica pesada em controllers.
+- Proteger rotas administrativas com middleware de autenticacao e autorizacao.
+- Criar testes para fluxos criticos de autenticacao, hospedagem, permissoes, faturamento e operacoes destrutivas.
+- Manter mensagens, nomes de classes e arquivos em um padrao consistente.
+
+## Seguranca
+
+As politicas detalhadas estao em `SECURITY.md`. Como regra geral:
+
+- nao expor `.env`, `storage/`, `vendor/`, `database/` ou a raiz do projeto;
+- nao salvar senhas, tokens ou chaves em codigo;
+- usar CSRF nas rotas web;
+- usar policies/gates para autorizacao;
+- registrar acoes sensiveis em auditoria;
+- nunca confiar em dados vindos do navegador;
+- usar prepared statements/Eloquent Query Builder em vez de SQL concatenado;
+- proteger uploads por tipo, tamanho, nome e local de armazenamento.
+
+## Estrutura Importante
+
+```text
+app/          Codigo da aplicacao Laravel
+config/       Configuracoes versionadas
+database/     Migrations, seeders e factories
+public/       Unica pasta exposta pelo servidor web
+resources/    Views, estilos e scripts fonte
+routes/       Rotas web, API e console
+storage/      Logs, cache e arquivos locais privados
+tests/        Testes automatizados
+```
+
+## Agentes E Automacoes
+
+Qualquer agente, assistente ou automacao que modificar este projeto deve seguir o arquivo `AGENTS.md`.
+
+## Licenca
+
+Projeto privado em desenvolvimento. A licenca final deve ser definida antes de qualquer distribuicao publica.
