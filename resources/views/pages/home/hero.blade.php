@@ -1,84 +1,135 @@
 <section class="hero-section" id="hero" aria-labelledby="hero-title">
     <div class="hero-background" aria-hidden="true"></div>
 
-    <div class="page-shell hero-layout">
+    <div class="page-shell hero-shell">
         <div class="hero-copy-block" data-hero-copy>
-            <p class="eyebrow">Wasm Cloud</p>
-            <h1 id="hero-title">Hospedagem com controle.</h1>
+            <div class="hero-kicker">
+                <span>Wasm Cloud</span>
+                <span>Console profissional para deploys, terminais e operacao</span>
+            </div>
+
+            <h1 id="hero-title">Controle sua hospedagem pelo terminal e pelo painel.</h1>
+
             <p class="hero-copy">
-                Do banco ao aplicativo, tudo em um fluxo claro.
+                Execute deploys, acompanhe logs, gerencie ambientes e publique aplicacoes com uma experiencia clara para operacao diaria.
             </p>
 
             <div class="hero-actions">
-                <a class="primary-action large" href="#fluxo">Ver arquitetura</a>
+                <a class="primary-action large" href="#fluxo">Comecar agora</a>
+                <a class="secondary-action large" href="#fluxo">Ver console</a>
             </div>
+
+            <dl class="hero-proof" aria-label="Destaques da plataforma">
+                <div>
+                    <dt>Terminal</dt>
+                    <dd>Comandos assistidos</dd>
+                </div>
+                <div>
+                    <dt>Deploy</dt>
+                    <dd>Pipeline monitorado</dd>
+                </div>
+                <div>
+                    <dt>Operacao</dt>
+                    <dd>Logs em tempo real</dd>
+                </div>
+            </dl>
         </div>
 
-        <div class="flow-stage" id="fluxo" aria-label="Fluxo animado da plataforma">
-            <svg class="flow-svg" data-flow-svg viewBox="0 0 760 480" role="img" aria-labelledby="flow-title flow-desc">
-                <title id="flow-title">Fluxo Wasm Cloud</title>
-                <desc id="flow-desc">Animacao mostrando banco de dados, autenticacao, hospedagem e aplicativo conectados.</desc>
+        <div class="flow-stage" id="fluxo" aria-label="Mockup de gerenciamento por terminal e deploy">
+            <div class="product-frame" data-console-mockup>
+                <div class="product-toolbar" aria-hidden="true">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                    <strong>console.wasmcloud.local</strong>
+                </div>
 
-                <defs>
-                    <filter id="softGlow" x="-40%" y="-40%" width="180%" height="180%">
-                        <feGaussianBlur stdDeviation="7" result="blur" />
-                        <feMerge>
-                            <feMergeNode in="blur" />
-                            <feMergeNode in="SourceGraphic" />
-                        </feMerge>
-                    </filter>
-                </defs>
+                <div class="product-canvas">
+                    <aside class="console-sidebar" aria-label="Resumo operacional">
+                        <div class="deploy-status">
+                            <span class="status-dot"></span>
+                            <span>Producao</span>
+                            <strong>Online</strong>
+                        </div>
 
-                <rect class="svg-panel" x="20" y="20" width="720" height="440" rx="16" />
-                <path class="svg-hairline" d="M130 240H670" />
-                <path class="svg-route" id="wasm-flow-route" d="M130 240C190 176 250 176 310 240C370 304 430 304 490 240C550 176 610 176 670 240" />
+                        <div class="console-metric-grid">
+                            <div>
+                                <span>Deploy</span>
+                                <strong>2m 14s</strong>
+                            </div>
+                            <div>
+                                <span>Build</span>
+                                <strong>Passou</strong>
+                            </div>
+                            <div>
+                                <span>Logs</span>
+                                <strong>24/min</strong>
+                            </div>
+                            <div>
+                                <span>Release</span>
+                                <strong>v1.8.3</strong>
+                            </div>
+                        </div>
+                    </aside>
 
-                <circle class="svg-pulse" data-flow-pulse r="7" />
-                <circle class="svg-pulse muted" data-flow-pulse r="5" />
-                <circle class="svg-pulse muted" data-flow-pulse r="4" />
+                    <div class="terminal-workspace">
+                        <div class="workspace-tabs" aria-label="Areas do console">
+                            <button type="button" aria-pressed="true">Terminal</button>
+                            <button type="button">Deploy</button>
+                            <button type="button">Logs</button>
+                            <button type="button">Ambientes</button>
+                        </div>
 
-                <g class="svg-node" data-flow-node transform="translate(70 164)">
-                    <rect width="120" height="152" rx="14" />
-                    <g class="node-symbol" transform="translate(38 28)">
-                        <rect width="44" height="44" rx="8" />
-                        <ellipse cx="22" cy="17" rx="13" ry="6" />
-                        <path d="M9 17v14c0 3.3 5.8 6 13 6s13-2.7 13-6V17" />
-                    </g>
-                    <text x="60" y="110" text-anchor="middle">Banco</text>
-                </g>
+                        <div class="terminal-layout">
+                            <section class="terminal-window" aria-label="Terminal de deploy">
+                                <div class="terminal-header">
+                                    <span>wasm-cloud / producao</span>
+                                    <strong>executando</strong>
+                                </div>
 
-                <g class="svg-node" data-flow-node transform="translate(250 164)">
-                    <rect width="120" height="152" rx="14" />
-                    <g class="node-symbol" transform="translate(38 28)">
-                        <rect width="44" height="44" rx="8" />
-                        <path d="M14 21v-5a8 8 0 0 1 16 0v5" />
-                        <rect x="11" y="20" width="22" height="17" rx="4" />
-                    </g>
-                    <text x="60" y="110" text-anchor="middle">Auth</text>
-                </g>
+                                <div class="terminal-stream" data-terminal-stream>
+                                    <p data-terminal-line><span>$</span> wasm deploy --env producao</p>
+                                    <p data-terminal-line><span>01</span> preparando artefatos</p>
+                                    <p data-terminal-line><span>02</span> instalando dependencias</p>
+                                    <p data-terminal-line><span>03</span> compilando assets</p>
+                                    <p data-terminal-line><span>04</span> publicando release v1.8.3</p>
+                                    <p data-terminal-line><span>ok</span> deploy concluido sem erros</p>
+                                    <p class="terminal-cursor" data-terminal-cursor><span>$</span> aguardando proximo comando</p>
+                                </div>
+                            </section>
 
-                <g class="svg-node" data-flow-node transform="translate(430 164)">
-                    <rect width="120" height="152" rx="14" />
-                    <g class="node-symbol" transform="translate(38 28)">
-                        <rect width="44" height="44" rx="8" />
-                        <rect x="10" y="11" width="24" height="9" rx="2" />
-                        <rect x="10" y="25" width="24" height="9" rx="2" />
-                        <circle cx="29" cy="15.5" r="1.8" />
-                        <circle cx="29" cy="29.5" r="1.8" />
-                    </g>
-                    <text x="60" y="110" text-anchor="middle">Host</text>
-                </g>
+                            <aside class="deploy-monitor" aria-label="Monitor de deploy">
+                                <div class="monitor-card">
+                                    <span>Progresso</span>
+                                    <strong>84%</strong>
+                                    <div class="progress-track">
+                                        <i data-progress-bar></i>
+                                    </div>
+                                </div>
 
-                <g class="svg-node" data-flow-node transform="translate(610 164)">
-                    <rect width="120" height="152" rx="14" />
-                    <g class="node-symbol" transform="translate(38 28)">
-                        <rect width="44" height="44" rx="8" />
-                        <rect x="13" y="9" width="18" height="27" rx="3" />
-                        <path d="M18 31h8" />
-                    </g>
-                    <text x="60" y="110" text-anchor="middle">App</text>
-                </g>
-            </svg>
+                                <ol class="deploy-steps">
+                                    <li data-deploy-step>
+                                        <span></span>
+                                        Build validado
+                                    </li>
+                                    <li data-deploy-step>
+                                        <span></span>
+                                        Variaveis verificadas
+                                    </li>
+                                    <li data-deploy-step>
+                                        <span></span>
+                                        Release publicado
+                                    </li>
+                                    <li data-deploy-step>
+                                        <span></span>
+                                        Health check ativo
+                                    </li>
+                                </ol>
+                            </aside>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </section>

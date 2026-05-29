@@ -1,86 +1,149 @@
 import './bootstrap';
 
 import { gsap } from 'gsap';
-import { MotionPathPlugin } from 'gsap/MotionPathPlugin';
-
-gsap.registerPlugin(MotionPathPlugin);
 
 const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-function initHeroFlow() {
-    const svg = document.querySelector('[data-flow-svg]');
-    const route = document.querySelector('#wasm-flow-route');
-    const pulses = gsap.utils.toArray('[data-flow-pulse]');
-    const nodes = gsap.utils.toArray('[data-flow-node]');
-    const copy = document.querySelector('[data-hero-copy]');
+function mountInteractiveSections() {
+    if (document.querySelector('[data-postgres-root]')) {
+        import('./components/PostgresSection.jsx').then(({ mountPostgresSection }) => {
+            mountPostgresSection();
+        });
+    }
 
-    if (!svg || !route || !pulses.length) {
+    if (document.querySelector('[data-global-network-root]')) {
+        import('./components/GlobalNetworkSection.jsx').then(({ mountGlobalNetworkSection }) => {
+            mountGlobalNetworkSection();
+        });
+    }
+
+    if (document.querySelector('[data-load-balancing-root]')) {
+        import('./components/LoadBalancingSection.jsx').then(({ mountLoadBalancingSection }) => {
+            mountLoadBalancingSection();
+        });
+    }
+
+    if (document.querySelector('[data-project-cta-root]')) {
+        import('./components/ProjectCtaSection.jsx').then(({ mountProjectCtaSection }) => {
+            mountProjectCtaSection();
+        });
+    }
+}
+
+function initSmoothScroll() {
+    const links = gsap.utils.toArray('a[href^="#"]');
+
+    links.forEach((link) => {
+        link.addEventListener('click', (event) => {
+            const hash = link.getAttribute('href');
+
+            if (!hash || hash === '#') {
+                return;
+            }
+
+            const target = document.querySelector(hash);
+
+            if (!target) {
+                return;
+            }
+
+            event.preventDefault();
+
+            if (prefersReducedMotion) {
+                target.scrollIntoView({ block: 'start' });
+            } else {
+                const scrollState = { y: window.scrollY };
+                const targetY = Math.max(target.getBoundingClientRect().top + window.scrollY - 92, 0);
+
+                gsap.to(scrollState, {
+                    duration: .95,
+                    ease: 'power3.out',
+                    y: targetY,
+                    onUpdate() {
+                        window.scrollTo(0, scrollState.y);
+                    },
+                });
+            }
+
+            window.history.pushState(null, '', hash);
+        });
+    });
+}
+
+function initHeroConsole() {
+    const copy = document.querySelector('[data-hero-copy]');
+    const mockup = document.querySelector('[data-console-mockup]');
+
+    if (!mockup) {
         return;
     }
 
     if (prefersReducedMotion) {
-        gsap.set(pulses, { opacity: 1, motionPath: { path: route, align: route, end: .5 } });
+        gsap.set('[data-progress-bar]', { width: '84%' });
         return;
     }
 
-    gsap.from([copy, svg], {
+    gsap.from([copy, mockup], {
         autoAlpha: 0,
         duration: .9,
         ease: 'power2.out',
-        stagger: .12,
+        stagger: .14,
         y: 18,
     });
 
-    gsap.to(route, {
-        attr: { 'stroke-dashoffset': -72 },
-        duration: 5.5,
-        ease: 'none',
+    gsap.from('[data-terminal-line]', {
+        autoAlpha: 0,
+        duration: .42,
+        ease: 'power2.out',
+        stagger: .18,
+        y: 8,
+        delay: .45,
+    });
+
+    gsap.to('[data-terminal-cursor]', {
+        opacity: .45,
+        duration: .8,
+        ease: 'power1.inOut',
         repeat: -1,
+        yoyo: true,
     });
 
-    pulses.forEach((pulse, index) => {
-        gsap.to(pulse, {
-            duration: 5.8,
-            ease: 'none',
-            repeat: -1,
-            delay: index * 1.65,
-            motionPath: {
-                path: route,
-                align: route,
-                alignOrigin: [0.5, 0.5],
-            },
-        });
+    gsap.fromTo('[data-progress-bar]', { width: '28%' }, {
+        width: '84%',
+        duration: 1.6,
+        ease: 'power3.out',
+        delay: .65,
     });
 
-    gsap.to(nodes, {
-        duration: 1.8,
+    gsap.to('[data-deploy-step] span', {
+        scale: 1.35,
+        opacity: .72,
+        duration: 1.2,
         ease: 'power1.inOut',
         repeat: -1,
         stagger: {
-            each: .5,
+            each: .28,
             repeat: -1,
             yoyo: true,
         },
-        opacity: .78,
-        scale: .985,
     });
 
-    svg.addEventListener('pointermove', (event) => {
-        const bounds = svg.getBoundingClientRect();
+    mockup.addEventListener('pointermove', (event) => {
+        const bounds = mockup.getBoundingClientRect();
         const x = (event.clientX - bounds.left) / bounds.width - .5;
         const y = (event.clientY - bounds.top) / bounds.height - .5;
 
-        gsap.to(svg, {
+        gsap.to(mockup, {
             duration: .6,
             ease: 'power2.out',
-            rotateX: y * -3,
-            rotateY: x * 4,
-            transformPerspective: 900,
+            rotateX: y * -2,
+            rotateY: x * 2.5,
+            transformPerspective: 1200,
         });
     });
 
-    svg.addEventListener('pointerleave', () => {
-        gsap.to(svg, {
+    mockup.addEventListener('pointerleave', () => {
+        gsap.to(mockup, {
             duration: .7,
             ease: 'power2.out',
             rotateX: 0,
@@ -89,4 +152,8 @@ function initHeroFlow() {
     });
 }
 
-document.addEventListener('DOMContentLoaded', initHeroFlow);
+document.addEventListener('DOMContentLoaded', () => {
+    mountInteractiveSections();
+    initSmoothScroll();
+    initHeroConsole();
+});

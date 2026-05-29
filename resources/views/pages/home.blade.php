@@ -3,7 +3,7 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="description" content="Wasm Cloud e uma hospedagem moderna para sites, dominios, banco de dados e operacoes seguras.">
+        <meta name="description" content="Wasm Cloud e uma hospedagem moderna para deploys, terminais, dominios e operacoes seguras.">
 
         <title>Wasm Cloud - Hospedagem moderna</title>
 
@@ -19,6 +19,10 @@
 
         <main>
             @include('pages.home.hero')
+            <div data-postgres-root></div>
+            <div data-global-network-root></div>
+            <div data-load-balancing-root></div>
+            <div data-project-cta-root></div>
         </main>
     </body>
 </html>
