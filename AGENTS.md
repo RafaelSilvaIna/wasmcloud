@@ -27,6 +27,10 @@ Este arquivo orienta agentes de IA, automacoes e desenvolvedores que alterarem e
 ## Regras De Codigo
 
 - Preferir recursos nativos do Laravel.
+- Dividir codigo em blocos profissionais, coesos e pequenos.
+- Nenhum arquivo deve ultrapassar 1000 linhas.
+- Ao chegar perto do limite, extrair componentes, partials, services, actions, Form Requests ou classes dedicadas.
+- Toda nova estrutura deve ser escalavel e facil de localizar por responsabilidade.
 - Controllers devem ser finos; regras de negocio devem ir para services, actions, jobs ou models quando fizer sentido.
 - Validacao deve ficar em Form Requests ou validadores dedicados.
 - Autorizacao deve usar Policies, Gates ou middleware.
