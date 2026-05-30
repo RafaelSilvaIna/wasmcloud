@@ -21,6 +21,7 @@
             data-status="{{ session('status') }}"
             data-error="{{ $errors->any() ? $errors->first() : '' }}"
         ></div>
+        <x-app.header current-page="Dashboard" />
 
         <main class="dashboard-shell" aria-labelledby="dashboard-title">
             <section class="dashboard-panel">
@@ -30,10 +31,7 @@
                     <p>Bem-vindo, {{ auth()->user()->name }}. A proxima etapa e criar seu primeiro projeto.</p>
                 </div>
 
-                <form method="POST" action="{{ route('logout') }}" data-global-loading>
-                    @csrf
-                    <button class="secondary-action" type="submit">Sair</button>
-                </form>
+                <a class="secondary-action" href="{{ route('projects.create') }}" data-global-loading>Criar projeto</a>
             </section>
         </main>
     </body>

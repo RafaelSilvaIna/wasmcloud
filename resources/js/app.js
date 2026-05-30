@@ -17,6 +17,18 @@ function mountInteractiveSections() {
         });
     }
 
+    if (document.querySelector('[data-authenticated-header-root]')) {
+        import('./components/AuthenticatedHeader.jsx').then(({ mountAuthenticatedHeader }) => {
+            mountAuthenticatedHeader();
+        });
+    }
+
+    if (document.querySelector('[data-docs-root]')) {
+        import('./components/DocsPage.jsx').then(({ mountDocsPage }) => {
+            mountDocsPage();
+        });
+    }
+
     if (document.querySelector('[data-postgres-root]')) {
         import('./components/PostgresSection.jsx').then(({ mountPostgresSection }) => {
             mountPostgresSection();
