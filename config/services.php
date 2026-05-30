@@ -22,6 +22,11 @@ return [
         'key' => env('RESEND_API_KEY'),
     ],
 
+    'imgbb' => [
+        'key' => env('IMGBB_API_KEY'),
+        'endpoint' => env('IMGBB_ENDPOINT', 'https://api.imgbb.com/1/upload'),
+    ],
+
     'ses' => [
         'key' => env('AWS_ACCESS_KEY_ID'),
         'secret' => env('AWS_SECRET_ACCESS_KEY'),

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\RegisteredUserController;
+use App\Http\Controllers\Profile\ProfileController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -25,9 +26,16 @@ Route::middleware('auth')->group(function () {
         return view('pages.dashboard.index');
     })->name('dashboard');
 
-    Route::get('/perfil', function () {
-        return view('pages.profile.show');
-    })->name('profile');
+    Route::get('/perfil', [ProfileController::class, 'show'])->name('profile');
+    Route::patch('/perfil/dados', [ProfileController::class, 'updateDetails'])
+        ->middleware('throttle:12,1')
+        ->name('profile.details.update');
+    Route::patch('/perfil/aparencia', [ProfileController::class, 'updateAppearance'])
+        ->middleware('throttle:12,1')
+        ->name('profile.appearance.update');
+    Route::post('/perfil/imagem', [ProfileController::class, 'uploadImage'])
+        ->middleware('throttle:8,1')
+        ->name('profile.image.upload');
 
     Route::redirect('/documentacao', '/documentacao/assinaturas')->name('documentation');
 

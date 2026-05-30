@@ -15,31 +15,30 @@
         @endif
     </head>
     <body>
+        @php
+            $profilePayload = [
+                'name' => $profileUser->name,
+                'email' => $profileUser->email,
+                'phone' => $profileUser->phone,
+                'profile_photo_url' => $profileUser->profile_photo_url,
+                'banner_image_url' => $profileUser->banner_image_url,
+                'banner_color' => $profileUser->banner_color ?: '#101010',
+                'github_url' => $profileUser->github_url,
+                'github_repository_url' => $profileUser->github_repository_url,
+            ];
+        @endphp
+
         <div data-global-loader-root></div>
         <div data-sonner-root data-status="{{ session('status') }}" data-error="{{ $errors->any() ? $errors->first() : '' }}"></div>
         <x-app.header current-page="Perfil" />
 
-        <main class="app-page-shell" aria-labelledby="profile-title">
-            <section class="app-page-panel">
-                <span>Conta</span>
-                <h1 id="profile-title">Perfil do usuario</h1>
-                <p>Base preparada para dados da conta e futura foto de perfil.</p>
-
-                <dl class="app-info-grid">
-                    <div>
-                        <dt>Nome</dt>
-                        <dd>{{ auth()->user()->name }}</dd>
-                    </div>
-                    <div>
-                        <dt>Email</dt>
-                        <dd>{{ auth()->user()->email }}</dd>
-                    </div>
-                    <div>
-                        <dt>Telefone</dt>
-                        <dd>{{ auth()->user()->phone }}</dd>
-                    </div>
-                </dl>
-            </section>
-        </main>
+        <div
+            data-profile-root
+            data-csrf-token="{{ csrf_token() }}"
+            data-details-url="{{ route('profile.details.update') }}"
+            data-appearance-url="{{ route('profile.appearance.update') }}"
+            data-image-url="{{ route('profile.image.upload') }}"
+        ></div>
+        <script type="application/json" data-profile-payload>{!! json_encode($profilePayload, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) !!}</script>
     </body>
 </html>

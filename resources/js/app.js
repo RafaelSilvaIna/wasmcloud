@@ -29,6 +29,12 @@ function mountInteractiveSections() {
         });
     }
 
+    if (document.querySelector('[data-profile-root]')) {
+        import('./components/ProfilePage.jsx').then(({ mountProfilePage }) => {
+            mountProfilePage();
+        });
+    }
+
     if (document.querySelector('[data-postgres-root]')) {
         import('./components/PostgresSection.jsx').then(({ mountPostgresSection }) => {
             mountPostgresSection();

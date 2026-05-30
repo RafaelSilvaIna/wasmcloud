@@ -35,9 +35,11 @@ function initialsFromName(name) {
         .toUpperCase();
 }
 
-function AuthenticatedHeader({ logoUrl, userName, links, csrfToken, currentPage, sidebarToggle }) {
+function AuthenticatedHeader({ logoUrl, userName, avatarUrl, links, csrfToken, currentPage, sidebarToggle }) {
     const headerRef = useRef(null);
     const [pageTitle, setPageTitle] = useState(currentPage);
+    const [profileName, setProfileName] = useState(userName);
+    const [profileAvatarUrl, setProfileAvatarUrl] = useState(avatarUrl);
     const reduceMotion = useReducedMotion();
     const showCurrentWidget = sidebarToggle;
 
@@ -84,6 +86,22 @@ function AuthenticatedHeader({ logoUrl, userName, links, csrfToken, currentPage,
 
         return () => window.removeEventListener('wasmcloud:page-title', handlePageTitle);
     }, [currentPage, showCurrentWidget]);
+
+    useEffect(() => {
+        const handleProfileUpdated = (event) => {
+            if (event.detail?.name) {
+                setProfileName(event.detail.name);
+            }
+
+            if ('profile_photo_url' in (event.detail || {})) {
+                setProfileAvatarUrl(event.detail.profile_photo_url || '');
+            }
+        };
+
+        window.addEventListener('wasmcloud:profile-updated', handleProfileUpdated);
+
+        return () => window.removeEventListener('wasmcloud:profile-updated', handleProfileUpdated);
+    }, []);
 
     return (
         <motion.header
@@ -145,11 +163,13 @@ function AuthenticatedHeader({ logoUrl, userName, links, csrfToken, currentPage,
                         {...props}
                     >
                         <span className="profile-avatar" aria-hidden="true">
-                            {initialsFromName(userName) || <User size={17} />}
+                            {profileAvatarUrl
+                                ? <img src={profileAvatarUrl} alt="" />
+                                : (initialsFromName(profileName) || <User size={17} />)}
                         </span>
                         <span className="profile-copy">
                             <small>Perfil</small>
-                            <strong>{userName}</strong>
+                            <strong>{profileName}</strong>
                         </span>
                         <ChevronDown className={open ? 'is-open' : ''} size={17} aria-hidden="true" />
                     </button>
@@ -170,6 +190,7 @@ export function mountAuthenticatedHeader() {
         <AuthenticatedHeader
             logoUrl={rootElement.dataset.logoUrl}
             userName={rootElement.dataset.userName || 'Usuario'}
+            avatarUrl={rootElement.dataset.avatarUrl || ''}
             csrfToken={rootElement.dataset.csrfToken || ''}
             currentPage={rootElement.dataset.currentPage || 'Dashboard'}
             sidebarToggle={rootElement.dataset.sidebarToggle === 'true'}

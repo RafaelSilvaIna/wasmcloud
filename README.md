@@ -51,6 +51,17 @@ DB_PASSWORD=admin123
 
 Nunca versionar o arquivo `.env`. Atualize tambem o `.env.example` apenas com valores seguros e sem segredos reais.
 
+## Uploads De Perfil
+
+Fotos de perfil e banners sao enviados pelo backend para o ImgBB. Configure a chave apenas no `.env` local ou no ambiente de producao:
+
+```env
+IMGBB_API_KEY=
+IMGBB_ENDPOINT=https://api.imgbb.com/1/upload
+```
+
+Nao exponha essa chave em variaveis `VITE_*`, no frontend, em logs ou em documentacao publica.
+
 ## Instalacao
 
 ```bash
