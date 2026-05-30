@@ -62,6 +62,18 @@ IMGBB_ENDPOINT=https://api.imgbb.com/1/upload
 
 Nao exponha essa chave em variaveis `VITE_*`, no frontend, em logs ou em documentacao publica.
 
+## Configuracoes E Sessoes
+
+A pagina de configuracoes gerais usa a tabela `sessions` do Laravel para listar dispositivos conectados e permitir encerrar uma sessao especifica ou todas as outras sessoes. A identificacao de navegador/sistema usa `ua-parser/uap-php`.
+
+Para localizacao aproximada por IP, o endpoint pode ser configurado por ambiente:
+
+```env
+IP_GEOLOCATION_ENDPOINT=https://ipwho.is/%s
+```
+
+IPs locais, privados, VPNs e proxies podem retornar localizacao aproximada ou `Rede local`.
+
 ## Instalacao
 
 ```bash

@@ -12,5 +12,7 @@
     data-create-project-url="{{ route('projects.create') }}"
     data-api-url="{{ route('api.docs') }}"
     data-system-specs-url="{{ route('system.specs') }}"
+    data-settings-url="{{ route('settings') }}"
+    data-session-status-url="{{ route('session.status') }}"
     data-logout-url="{{ route('logout') }}"
 ></div>

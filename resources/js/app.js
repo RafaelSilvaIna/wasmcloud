@@ -35,6 +35,12 @@ function mountInteractiveSections() {
         });
     }
 
+    if (document.querySelector('[data-settings-root]')) {
+        import('./components/SettingsPage.jsx').then(({ mountSettingsPage }) => {
+            mountSettingsPage();
+        });
+    }
+
     if (document.querySelector('[data-postgres-root]')) {
         import('./components/PostgresSection.jsx').then(({ mountPostgresSection }) => {
             mountPostgresSection();

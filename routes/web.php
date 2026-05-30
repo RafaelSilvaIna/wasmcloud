@@ -3,11 +3,14 @@
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Profile\ProfileController;
+use App\Http\Controllers\Settings\AccountSessionController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return view('pages.home');
 })->name('home');
+
+Route::get('/sessao/status', [AccountSessionController::class, 'status'])->name('session.status');
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login');
@@ -65,6 +68,17 @@ Route::middleware('auth')->group(function () {
     Route::get('/sistema/especificacoes', function () {
         return view('pages.system.specs');
     })->name('system.specs');
+
+    Route::get('/configuracoes', [AccountSessionController::class, 'index'])->name('settings');
+    Route::get('/configuracoes/sessoes', [AccountSessionController::class, 'list'])
+        ->middleware('throttle:30,1')
+        ->name('settings.sessions.index');
+    Route::delete('/configuracoes/sessoes/outras', [AccountSessionController::class, 'destroyOthers'])
+        ->middleware('throttle:8,1')
+        ->name('settings.sessions.destroy-others');
+    Route::delete('/configuracoes/sessoes/{session}', [AccountSessionController::class, 'destroy'])
+        ->middleware('throttle:12,1')
+        ->name('settings.sessions.destroy');
 
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
 });

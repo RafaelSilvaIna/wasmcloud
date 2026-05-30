@@ -27,7 +27,7 @@ class AppHeaderTest extends TestCase
     {
         $user = User::factory()->create();
 
-        foreach ([route('profile'), route('documentation.article', 'assinaturas'), route('projects.create'), route('api.docs'), route('system.specs')] as $url) {
+        foreach ([route('profile'), route('documentation.article', 'assinaturas'), route('projects.create'), route('api.docs'), route('system.specs'), route('settings')] as $url) {
             $this->actingAs($user)->get($url)->assertOk();
         }
     }

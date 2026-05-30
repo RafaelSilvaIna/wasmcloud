@@ -1,0 +1,353 @@
+@import 'tailwindcss';
+
+@source '../js/components/SettingsPage.jsx';
+@source '../views/pages/settings/*.blade.php';
+
+.settings-shell {
+    width: min(1160px, calc(100% - 32px));
+    min-height: 100svh;
+    margin-inline: auto;
+    padding: 118px 0 58px;
+    color: #fff;
+}
+
+.settings-hero,
+.settings-section {
+    border: 1px solid rgb(255 255 255 / 10%);
+    border-radius: 8px;
+    background:
+        radial-gradient(circle at 54% 0%, rgb(255 255 255 / 9%), transparent 32%),
+        rgb(5 5 5 / 76%);
+    box-shadow: 0 26px 90px rgb(0 0 0 / 28%);
+}
+
+.settings-hero {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 22px;
+    padding: 34px;
+}
+
+.settings-hero span,
+.settings-section-head span {
+    color: #72f2a7;
+    font-size: .76rem;
+    font-weight: 850;
+    text-transform: uppercase;
+}
+
+.settings-hero h1 {
+    margin: 10px 0 0;
+    font-size: clamp(2.45rem, 6vw, 4.5rem);
+    font-weight: 720;
+    line-height: 1;
+}
+
+.settings-hero p,
+.settings-section-head p,
+.settings-section--split p,
+.settings-modal-note p {
+    max-width: 680px;
+    margin: 14px 0 0;
+    color: rgb(255 255 255 / 66%);
+    line-height: 1.65;
+}
+
+.settings-refresh-button,
+.settings-danger-button,
+.settings-device-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 40px;
+    border: 1px solid rgb(255 255 255 / 12%);
+    border-radius: 6px;
+    background: rgb(255 255 255 / 6%);
+    color: #fff;
+    cursor: pointer;
+    font: inherit;
+    font-size: .9rem;
+    font-weight: 760;
+    padding-inline: 14px;
+    transition: background .2s ease, border-color .2s ease, opacity .2s ease;
+}
+
+.settings-refresh-button:hover,
+.settings-danger-button:hover,
+.settings-device-action:hover {
+    border-color: rgb(255 255 255 / 20%);
+    background: rgb(255 255 255 / 10%);
+}
+
+.settings-danger-button,
+.settings-device-action {
+    color: #ffdbdb;
+}
+
+.settings-danger-button:disabled {
+    cursor: not-allowed;
+    opacity: .45;
+}
+
+.settings-section {
+    margin-top: 18px;
+    padding: 24px;
+}
+
+.settings-section-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20px;
+    margin-bottom: 22px;
+}
+
+.settings-section-head h2,
+.settings-section--split h2 {
+    margin: 6px 0 0;
+    font-size: clamp(1.35rem, 3vw, 2rem);
+}
+
+.settings-empty-state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    min-height: 160px;
+    border: 1px dashed rgb(255 255 255 / 14%);
+    border-radius: 8px;
+    color: rgb(255 255 255 / 64%);
+}
+
+.settings-empty-state svg {
+    animation: settings-spin .85s linear infinite;
+}
+
+.settings-device-list {
+    display: grid;
+    gap: 12px;
+}
+
+.settings-device-card {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 16px;
+    align-items: center;
+    padding: 18px;
+    border: 1px solid rgb(255 255 255 / 9%);
+    border-radius: 8px;
+    background: rgb(255 255 255 / 4%);
+}
+
+.settings-device-card.is-current {
+    border-color: rgb(114 242 167 / 34%);
+    background: rgb(114 242 167 / 6%);
+}
+
+.settings-device-icon {
+    display: inline-grid;
+    width: 48px;
+    height: 48px;
+    place-items: center;
+    border: 1px solid rgb(255 255 255 / 10%);
+    border-radius: 8px;
+    background: rgb(0 0 0 / 28%);
+    color: #72f2a7;
+}
+
+.settings-device-copy {
+    display: grid;
+    gap: 12px;
+    min-width: 0;
+}
+
+.settings-device-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.settings-device-title h3 {
+    margin: 0;
+    overflow: hidden;
+    font-size: 1.02rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.settings-device-title span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #72f2a7;
+    font-size: .78rem;
+    font-weight: 850;
+    white-space: nowrap;
+}
+
+.settings-device-card dl {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 10px;
+    margin: 0;
+}
+
+.settings-device-card dl > div {
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+}
+
+.settings-device-card dt {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: rgb(255 255 255 / 46%);
+    font-size: .7rem;
+    font-weight: 850;
+    text-transform: uppercase;
+}
+
+.settings-device-card dd {
+    min-width: 0;
+    margin: 0;
+    overflow: hidden;
+    color: rgb(255 255 255 / 78%);
+    font-size: .84rem;
+    font-weight: 680;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.settings-section--split {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1px;
+    padding: 0;
+    overflow: hidden;
+    background: rgb(255 255 255 / 9%);
+}
+
+.settings-section--split article {
+    padding: 24px;
+    background: rgb(5 5 5 / 88%);
+}
+
+.settings-section--split svg {
+    color: #72f2a7;
+}
+
+.settings-modal-note {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 12px;
+    padding: 14px;
+    border: 1px solid rgb(255 255 255 / 10%);
+    border-radius: 8px;
+    background: rgb(255 255 255 / 5%);
+}
+
+.settings-modal-note svg {
+    margin-top: 4px;
+    color: #ffdb8a;
+}
+
+.settings-modal-note p {
+    margin: 0;
+}
+
+@keyframes settings-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (max-width: 920px) {
+    .settings-hero,
+    .settings-section-head {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .settings-device-card {
+        grid-template-columns: minmax(0, 1fr);
+        align-items: stretch;
+    }
+
+    .settings-device-action {
+        grid-column: auto;
+        width: fit-content;
+    }
+
+    .settings-device-icon {
+        width: 42px;
+        height: 42px;
+        order: -1;
+    }
+
+    .settings-device-card dl,
+    .settings-section--split {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 640px) {
+    .settings-shell {
+        width: calc(100% - 24px);
+        padding: 94px 0 34px;
+    }
+
+    .settings-hero,
+    .settings-section,
+    .settings-section--split article {
+        padding: 18px;
+    }
+
+    .settings-refresh-button,
+    .settings-danger-button,
+    .settings-device-action {
+        width: 100%;
+    }
+
+    .settings-device-title {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .settings-device-card {
+        gap: 14px;
+        padding: 16px;
+    }
+
+    .settings-device-copy {
+        gap: 14px;
+    }
+
+    .settings-device-title h3 {
+        max-width: 100%;
+        white-space: normal;
+    }
+
+    .settings-device-card dl {
+        gap: 12px;
+    }
+
+    .settings-device-card dt,
+    .settings-device-card dd {
+        justify-content: flex-start;
+        text-align: left;
+    }
+
+    .settings-device-card dd {
+        overflow: visible;
+        text-overflow: clip;
+        white-space: normal;
+    }
+
+    .settings-device-action {
+        width: 100%;
+    }
+}

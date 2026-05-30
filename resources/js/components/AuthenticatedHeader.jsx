@@ -21,6 +21,7 @@ const iconMap = {
     createProject: PlusCircle,
     api: Code2,
     systemSpecs: Settings2,
+    settings: Settings2,
     projects: Boxes,
     logout: LogOut,
 };
@@ -49,6 +50,7 @@ function AuthenticatedHeader({ logoUrl, userName, avatarUrl, links, csrfToken, c
         { label: 'Criar Projeto', href: links.createProject, icon: iconMap.createProject },
         { label: 'API', href: links.api, icon: iconMap.api },
         { label: 'Especificacoes do sistema', href: links.systemSpecs, icon: iconMap.systemSpecs },
+        { label: 'Configuracoes gerais', href: links.settings, icon: iconMap.settings },
         { type: 'separator', key: 'account-separator' },
         { label: 'Sair', href: links.logout, icon: iconMap.logout, method: 'POST', csrfToken },
     ], [csrfToken, links]);
@@ -57,6 +59,7 @@ function AuthenticatedHeader({ logoUrl, userName, avatarUrl, links, csrfToken, c
         { label: 'Criar Projeto', href: links.createProject, currentNames: ['Criar Projeto'] },
         { label: 'Documentacao', href: links.documentation, currentNames: ['Documentacao'] },
         { label: 'API', href: links.api, currentNames: ['API'] },
+        { label: 'Configuracoes', href: links.settings, currentNames: ['Configuracoes gerais'] },
     ], [links]);
 
     useEffect(() => {
@@ -102,6 +105,32 @@ function AuthenticatedHeader({ logoUrl, userName, avatarUrl, links, csrfToken, c
 
         return () => window.removeEventListener('wasmcloud:profile-updated', handleProfileUpdated);
     }, []);
+
+    useEffect(() => {
+        if (!links.sessionStatus) {
+            return undefined;
+        }
+
+        const checkSession = async () => {
+            try {
+                const response = await fetch(links.sessionStatus, {
+                    headers: { Accept: 'application/json' },
+                    credentials: 'same-origin',
+                });
+                const payload = await response.json();
+
+                if (!payload.authenticated) {
+                    window.location.assign(payload.login_url || links.logout || '/login');
+                }
+            } catch {
+                // Keep the app quiet during transient network failures.
+            }
+        };
+
+        const interval = window.setInterval(checkSession, 15000);
+
+        return () => window.clearInterval(interval);
+    }, [links.logout, links.sessionStatus]);
 
     return (
         <motion.header
@@ -201,6 +230,8 @@ export function mountAuthenticatedHeader() {
                 createProject: rootElement.dataset.createProjectUrl,
                 api: rootElement.dataset.apiUrl,
                 systemSpecs: rootElement.dataset.systemSpecsUrl,
+                settings: rootElement.dataset.settingsUrl,
+                sessionStatus: rootElement.dataset.sessionStatusUrl,
                 logout: rootElement.dataset.logoutUrl,
             }}
         />
