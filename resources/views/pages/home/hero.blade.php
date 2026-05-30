@@ -15,7 +15,13 @@
             </p>
 
             <div class="hero-actions">
-                <a class="primary-action large" href="#fluxo">Comecar agora</a>
+                <a
+                    class="primary-action large"
+                    href="{{ auth()->check() ? route('dashboard') : route('register') }}"
+                    data-global-loading
+                >
+                    {{ auth()->check() ? 'Acessar dashboard' : 'Comecar agora' }}
+                </a>
                 <a class="secondary-action large" href="#fluxo">Ver console</a>
             </div>
 

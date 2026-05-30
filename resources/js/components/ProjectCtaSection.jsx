@@ -42,7 +42,10 @@ function MotionBlock({ children, delay = 0, className = '' }) {
     );
 }
 
-function ProjectCtaSection() {
+function ProjectCtaSection({ authenticated = false, dashboardUrl = '/dashboard', registerUrl = '/cadastro' }) {
+    const primaryUrl = authenticated ? dashboardUrl : registerUrl;
+    const primaryLabel = authenticated ? 'Acessar projetos' : 'Criar projeto';
+
     return (
         <section className="project-cta-section" id="criar-projeto" aria-labelledby="project-cta-title">
             <div className="page-shell project-cta-shell">
@@ -60,8 +63,8 @@ function ProjectCtaSection() {
                     </p>
 
                     <div className="project-cta-actions">
-                        <a className="primary-action large" href="#fluxo">
-                            Criar projeto
+                        <a className="primary-action large" href={primaryUrl} data-global-loading>
+                            {primaryLabel}
                             <ArrowRight size={17} aria-hidden="true" />
                         </a>
                         <a className="secondary-action large" href="#postgres">Ver recursos inclusos</a>
@@ -115,5 +118,11 @@ export function mountProjectCtaSection() {
         return;
     }
 
-    createRoot(rootElement).render(<ProjectCtaSection />);
+    createRoot(rootElement).render(
+        <ProjectCtaSection
+            authenticated={rootElement.dataset.authenticated === 'true'}
+            dashboardUrl={rootElement.dataset.dashboardUrl || '/dashboard'}
+            registerUrl={rootElement.dataset.registerUrl || '/cadastro'}
+        />
+    );
 }

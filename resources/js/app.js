@@ -5,6 +5,18 @@ import { gsap } from 'gsap';
 const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 function mountInteractiveSections() {
+    if (document.querySelector('[data-global-loader-root]')) {
+        import('./components/GlobalPageLoader.jsx').then(({ mountGlobalPageLoader }) => {
+            mountGlobalPageLoader();
+        });
+    }
+
+    if (document.querySelector('[data-sonner-root]')) {
+        import('./components/AppNotifications.jsx').then(({ mountAppNotifications }) => {
+            mountAppNotifications();
+        });
+    }
+
     if (document.querySelector('[data-postgres-root]')) {
         import('./components/PostgresSection.jsx').then(({ mountPostgresSection }) => {
             mountPostgresSection();
@@ -31,42 +43,44 @@ function mountInteractiveSections() {
 }
 
 function initSmoothScroll() {
-    const links = gsap.utils.toArray('a[href^="#"]');
+    document.addEventListener('click', (event) => {
+        const link = event.target.closest('a[href^="#"]');
 
-    links.forEach((link) => {
-        link.addEventListener('click', (event) => {
-            const hash = link.getAttribute('href');
+        if (!link) {
+            return;
+        }
 
-            if (!hash || hash === '#') {
-                return;
-            }
+        const hash = link.getAttribute('href');
 
-            const target = document.querySelector(hash);
+        if (!hash || hash === '#') {
+            return;
+        }
 
-            if (!target) {
-                return;
-            }
+        const target = document.querySelector(hash);
 
-            event.preventDefault();
+        if (!target) {
+            return;
+        }
 
-            if (prefersReducedMotion) {
-                target.scrollIntoView({ block: 'start' });
-            } else {
-                const scrollState = { y: window.scrollY };
-                const targetY = Math.max(target.getBoundingClientRect().top + window.scrollY - 92, 0);
+        event.preventDefault();
 
-                gsap.to(scrollState, {
-                    duration: .95,
-                    ease: 'power3.out',
-                    y: targetY,
-                    onUpdate() {
-                        window.scrollTo(0, scrollState.y);
-                    },
-                });
-            }
+        if (prefersReducedMotion) {
+            target.scrollIntoView({ block: 'start' });
+        } else {
+            const scrollState = { y: window.scrollY };
+            const targetY = Math.max(target.getBoundingClientRect().top + window.scrollY - 92, 0);
 
-            window.history.pushState(null, '', hash);
-        });
+            gsap.to(scrollState, {
+                duration: .95,
+                ease: 'power3.out',
+                y: targetY,
+                onUpdate() {
+                    window.scrollTo(0, scrollState.y);
+                },
+            });
+        }
+
+        window.history.pushState(null, '', hash);
     });
 }
 

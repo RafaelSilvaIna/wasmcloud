@@ -19,6 +19,12 @@
 
     <div class="header-actions">
         <a class="link-action" href="#contato">Contato</a>
-        <a class="primary-action" href="#criar-projeto">Comecar</a>
+        <a
+            class="primary-action"
+            href="{{ auth()->check() ? route('dashboard') : route('register') }}"
+            data-global-loading
+        >
+            {{ auth()->check() ? 'Dashboard' : 'Comecar' }}
+        </a>
     </div>
 </header>
