@@ -41,6 +41,18 @@ function mountInteractiveSections() {
         });
     }
 
+    if (document.querySelector('[data-workspaces-dashboard-root]')) {
+        import('./components/WorkspacesDashboard.jsx').then(({ mountWorkspacesDashboard }) => {
+            mountWorkspacesDashboard();
+        });
+    }
+
+    if (document.querySelector('[data-workspace-create-root]')) {
+        import('./components/WorkspaceCreatePage.jsx').then(({ mountWorkspaceCreatePage }) => {
+            mountWorkspaceCreatePage();
+        });
+    }
+
     if (document.querySelector('[data-postgres-root]')) {
         import('./components/PostgresSection.jsx').then(({ mountPostgresSection }) => {
             mountPostgresSection();

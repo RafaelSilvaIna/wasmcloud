@@ -204,7 +204,6 @@ function ProfilePage({ initialProfile, endpoints, csrfToken }) {
                     </button>
 
                     <div className="profile-title-block">
-                        <span>Perfil da conta</span>
                         <h1 id="profile-title">{profile.name}</h1>
                         <p>Gerencie sua identidade, links tecnicos e a aparencia usada nas paginas autenticadas.</p>
                     </div>

@@ -4,6 +4,7 @@ use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Profile\ProfileController;
 use App\Http\Controllers\Settings\AccountSessionController;
+use App\Http\Controllers\Workspace\WorkspaceController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -25,9 +26,7 @@ Route::middleware('guest')->group(function () {
 });
 
 Route::middleware('auth')->group(function () {
-    Route::get('/dashboard', function () {
-        return view('pages.dashboard.index');
-    })->name('dashboard');
+    Route::get('/dashboard', [WorkspaceController::class, 'dashboard'])->name('dashboard');
 
     Route::get('/perfil', [ProfileController::class, 'show'])->name('profile');
     Route::patch('/perfil/dados', [ProfileController::class, 'updateDetails'])
@@ -47,6 +46,8 @@ Route::middleware('auth')->group(function () {
             'assinaturas' => 'Como funcionam as assinaturas',
             'cobranca-consumo' => 'Como funciona a cobranca por consumo',
             'processamento-pagamentos' => 'Como os pagamentos sao processados',
+            'workspaces' => 'Sobre Workspaces',
+            'menores-de-idade' => 'Menores de idade usando a Wasm Cloud',
         ];
 
         abort_unless(array_key_exists($article, $articles), 404);
@@ -60,6 +61,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/projetos/criar', function () {
         return view('pages.projects.create');
     })->name('projects.create');
+
+    Route::get('/workspaces/criar', [WorkspaceController::class, 'create'])->name('workspaces.create');
+    Route::post('/workspaces', [WorkspaceController::class, 'store'])
+        ->middleware('throttle:8,1')
+        ->name('workspaces.store');
 
     Route::get('/api', function () {
         return view('pages.api.index');

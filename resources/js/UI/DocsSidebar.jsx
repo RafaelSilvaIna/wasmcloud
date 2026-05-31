@@ -84,7 +84,7 @@ export function DocsSidebar({ articles, activeArticleId, open, onClose }) {
                 </label>
 
                 {recentArticles.length > 0 && (
-                    <div className="docs-recent">
+                    <div className="docs-recent" data-docs-section>
                         <div className="docs-sidebar-label">
                             <Clock3 size={15} aria-hidden="true" />
                             Ultimas paginas
@@ -106,22 +106,28 @@ export function DocsSidebar({ articles, activeArticleId, open, onClose }) {
                     </div>
                 )}
 
-                <Menu>
-                    {Object.entries(categories).map(([category, categoryArticles]) => (
-                        <SubMenu defaultOpen icon={<BookOpen size={16} />} label={category} key={category}>
-                            {categoryArticles.map((article) => (
-                                <MenuItem
-                                    active={activeArticleId === article.id}
-                                    component={<a href={article.href} data-global-loading />}
-                                    icon={<FileText size={16} />}
-                                    key={article.id}
-                                >
-                                    {article.title}
-                                </MenuItem>
-                            ))}
-                        </SubMenu>
-                    ))}
-                </Menu>
+                <div data-docs-section>
+                    <div className="docs-sidebar-label">
+                        <BookOpen size={15} aria-hidden="true" />
+                        Categorias
+                    </div>
+                    <Menu>
+                        {Object.entries(categories).map(([category, categoryArticles]) => (
+                            <SubMenu defaultOpen icon={<BookOpen size={16} />} label={category} key={category}>
+                                {categoryArticles.map((article) => (
+                                    <MenuItem
+                                        active={activeArticleId === article.id}
+                                        component={<a href={article.href} data-global-loading />}
+                                        icon={<FileText size={16} />}
+                                        key={article.id}
+                                    >
+                                        {article.title}
+                                    </MenuItem>
+                                ))}
+                            </SubMenu>
+                        ))}
+                    </Menu>
+                </div>
             </Sidebar>
         </aside>
     );

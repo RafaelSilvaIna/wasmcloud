@@ -55,12 +55,18 @@ function AuthenticatedHeader({ logoUrl, userName, avatarUrl, links, csrfToken, c
         { label: 'Sair', href: links.logout, icon: iconMap.logout, method: 'POST', csrfToken },
     ], [csrfToken, links]);
 
-    const navItems = useMemo(() => [
-        { label: 'Criar Projeto', href: links.createProject, currentNames: ['Criar Projeto'] },
-        { label: 'Documentacao', href: links.documentation, currentNames: ['Documentacao'] },
-        { label: 'API', href: links.api, currentNames: ['API'] },
-        { label: 'Configuracoes', href: links.settings, currentNames: ['Configuracoes gerais'] },
-    ], [links]);
+    const navItems = useMemo(() => {
+        if (showCurrentWidget) {
+            return [{ label: 'Dashboard', href: links.dashboard, currentNames: [] }];
+        }
+
+        return [
+            { label: 'Criar Projeto', href: links.createProject, currentNames: ['Criar Projeto'] },
+            { label: 'Documentacao', href: links.documentation, currentNames: ['Documentacao'] },
+            { label: 'API', href: links.api, currentNames: ['API'] },
+            { label: 'Configuracoes', href: links.settings, currentNames: ['Configuracoes gerais'] },
+        ];
+    }, [links, showCurrentWidget]);
 
     useEffect(() => {
         if (reduceMotion || !headerRef.current) {
